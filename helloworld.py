@@ -1,6 +1,0 @@
-print "hello world"
-print "stuff happened"
-print "Will testing"
-print "Carissa testing"
-print "Mikenna here"
-print "Hufflepuffs rule"

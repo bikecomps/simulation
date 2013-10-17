@@ -1,6 +1,6 @@
-simulation
-==========
+Simulation of Bike Share Networks
+=================================
 
-Bike share simulation comps
-
-CARLTON IS HERE!
+The goal of this project is to:
+* Predict ...
+* Optimize ...

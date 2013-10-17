@@ -1,9 +1,5 @@
-/* Initial database structure
-	Daniel Alabi and Will Martin
-
-	We might switch to enums, not sure how hard it is to add additional 
-	enums later though
-*/
+-- SQL commands to 
+-- create tables for our Models
 CREATE TABLE stations (
 	id	INTEGER,
 	name CHAR(100),
