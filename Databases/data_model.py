@@ -25,7 +25,6 @@ test_orm=# select * from stations;
 ----+-----------------+----------+-----------------
   1 | Fifth and Union |        5 |               1
 (1 row)
-
 '''
 
 import hidden

@@ -41,33 +41,34 @@ def parse_bike_trips(input_filename):
             # Add to DB
             
 def parse_old_bike_trips(input_filename):
-    '''
-    Parses capitalbikeshare trip csvs using 2010-2011 format.
-    '''
-    search_str = re.compile('\(\d+\)')
-    
-    with open(input_filename) as csv_file:
-        reader = csv.reader(csv_file)
-        headers = next(reader, None)
-        for row in reader:
-            start_time, end_time = row[1:3]
-            bike_id = row[5]
-            rider_type = row[6]
-            
-            # The terminal id's are stored within a longer string, we only want the ids
-            start_station = search_str.search(row[3])
-            end_station = search_str.search(row[4])
-            
-            if start_station == None or end_station == None:
-                print "Invalid row: %s"  %  row
-                continue
-                
-                # Rip off the parentheses
-                start_station = start_station.group()[1:-1] 
-                end_station = end_station.group()[1:-1]
-                
-                # Insert into DB
-                    
+	'''
+	Parses capitalbikeshare trip csvs using 2010-2011 format.
+	'''
+	search_str = re.compile('\(\d+\)')
+	
+	with open(input_filename) as csv_file:
+		reader = csv.reader(csv_file)
+		headers = next(reader, None)
+		for row in reader:
+			start_time, end_time = row[1:3]
+			bike_id = row[5]
+			rider_type = row[6]
+
+			# The terminal id's are stored within a longer string, we only want the ids
+			start_station = search_str.search(row[3])
+			end_station = search_str.search(row[4])
+
+			if start_station == None or end_station == None:
+				print "Invalid row: %s"  %  row
+				continue
+
+			# Rip off the parentheses
+			start_station = start_station.group()[1:-1] 
+			end_station = end_station.group()[1:-1]
+			print start_time, end_time, start_station, end_station
+
+			# Insert into DB
+
 def parse_stations(input_filename):
     '''
     Parses capitalbikeshare station XMLs.
@@ -101,4 +102,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+	main()
