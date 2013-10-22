@@ -11,7 +11,7 @@ Options:
         -s: file is a stations XML file (capitalbikeshare)
 '''
 
-#from BeautifulSoup import BeautifulStoneSoup
+from bs4 import BeautifulSoup
 import csv
 import re
 import sys
@@ -32,20 +32,20 @@ def parse_bike_trips(input_filename):
             start_time = row[1]
             end_time = row[4]
 
-            start_station = row[3]
-            end_station = row[6]
+            start_station_id = row[3]
+            end_station_id = row[6]
             
             bike_id = row[7]
-            rider_type = row[8]
+            rider_type = "Registered" if row[8] == "Subscriber" else row[8]
             
-            # Add to DB
+            # insert into DB
+            print start_time, end_time, start_station_id, end_station_id, bike_id, rider_type
             
 def parse_old_bike_trips(input_filename):
     '''
     Parses capitalbikeshare trip csvs using 2010-2011 format.
     '''
-    search_str = re.compile('\(\d+\)')
-    
+    reg_station_id = r'\((\d+)\)'
     with open(input_filename) as csv_file:
         reader = csv.reader(csv_file)
         headers = next(reader, None)
@@ -53,20 +53,21 @@ def parse_old_bike_trips(input_filename):
             start_time, end_time = row[1:3]
             bike_id = row[5]
             rider_type = row[6]
-            
+        
             # The terminal id's are stored within a longer string, we only want the ids
-            start_station = search_str.search(row[3])
-            end_station = search_str.search(row[4])
-            
+            start_station = re.search(reg_station_id, row[3])
+            end_station = re.search(reg_station_id, row[4])
+
             if start_station == None or end_station == None:
                 print "Invalid row: %s"  %  row
                 continue
                 
-                # Rip off the parentheses
-                start_station = start_station.group()[1:-1] 
-                end_station = end_station.group()[1:-1]
-                
-                # Insert into DB
+            # Rip off the parentheses
+            start_station_id = start_station.group(1)
+            end_station_id = end_station.group(1)
+
+            # Insert into DB
+            print start_time, end_time, start_station_id, end_station_id, bike_id, rider_type
                     
 def parse_stations(input_filename):
     '''
@@ -76,18 +77,16 @@ def parse_stations(input_filename):
     raw_xml = f.read()
     f.close()
     
-    soup = BeautifulStoneSoup(raw_xml)
+    soup = BeautifulSoup(raw_xml)
     for station in soup.findAll('station'):
-        station_attrs = dict(station.attrs)
-        
-        station_id = station_attrs['terminalName']
-        name = station_attrs['name']
-        lat = station_attrs['lat']
-        lon = station_attrs['long']
-        
-        capacity = int(station_attrs['nbBikes']) + int(station_attrs['nbEmptyDocks'])
+        station_id = int(station.terminalname.string)
+        name = station.find('name').string
+        lat = float(station.lat.string)
+        lon = float(station.long.string)
+        capacity = int(station.nbbikes.string) + int(station.nbemptydocks.string)
         
         # Save to DB
+        print station_id, name, lat, lon, capacity
 
 
 def main():
