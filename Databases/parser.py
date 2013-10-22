@@ -68,7 +68,7 @@ def parse_old_bike_trips(input_filename):
 
             # Insert into DB
             print start_time, end_time, start_station_id, end_station_id, bike_id, rider_type
-                    
+
 def parse_stations(input_filename):
     '''
     Parses capitalbikeshare station XMLs.
@@ -100,4 +100,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+	main()
