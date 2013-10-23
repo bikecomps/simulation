@@ -1,3 +1,4 @@
+#!/usr/bin/python
 '''
 Simple parser to read in specific CSVs/XML files related to 
 Capital Bikeshare. Parses and inserts into the DB structure
@@ -54,17 +55,20 @@ def parse_bike_trips(input_filename ):
         headers = next(reader, None)
 
         for row in reader:
-            start_time = row[1]
-            end_time = row[4]
+            try:
+                start_time = row[1]
+                end_time = row[4]
 
-            start_station_id = int(row[3])
-            end_station_id = int(row[6])
-            
-            bike_id = row[7]
-            rider_type = "Registered" if row[8] == "Subscriber" else row[8]
+                start_station_id = int(row[3])
+                end_station_id = int(row[6])
+                
+                bike_id = row[7]
+                rider_type = "Registered" if row[8] == "Subscriber" else row[8]
 
-            data.append([bike_id, rider_type, 'Training', start_time, end_time, start_station_id, 
-                         end_station_id])
+                data.append([bike_id, rider_type, 'Training', start_time, end_time, start_station_id, 
+                             end_station_id])
+            except ValueError:
+                print "Invalid input row, skipping %s" % row
     return (["Bike Id", "Rider Type", "Trip Type", "Start Time", "End Time", 
             "Start Station", "End Station"],data)
   
@@ -84,8 +88,8 @@ def parse_old_bike_trips(input_filename):
             rider_type = row[6]
         
             # The terminal id's are stored within a longer string, we only want the ids
-            start_station = re.search(reg_station_id, row[3])
-            end_station = re.search(reg_station_id, row[4])
+            start_station = int(re.search(reg_station_id, row[3]))
+            end_station = int(re.search(reg_station_id, row[4]))
 
             if start_station == None or end_station == None:
                 print "Invalid row: %s"  %  row
@@ -138,7 +142,7 @@ def main():
     else:
         engine_path = 'postgresql://%s:%s@localhost/%s' % (hidden.DB_USERNAME, hidden.DB_PASSWORD, hidden.DB_NAME)
         
-        engine = create_engine(engine_path, echo=True)    
+        engine = create_engine(engine_path, echo=False)    
         session_factory = sessionmaker(bind=engine)
         Session = scoped_session(session_factory)
         session = Session()
@@ -153,9 +157,11 @@ def main():
                 session.add(Station(line[0], line[1],line[4], intersection))
         else:
             for line in data:
-                session.add(Trip(line[0], line[1], line[2], datetime.datetime.strptime(line[3], "%m/%d/%Y %H:%M"),
+                if session.query(Station).filter(Station.id == line[5]).first() == None or session.query(Station).filter(Station.id == line[6]).first() == None:
+                    print "Invalid station, skipping"
+                else:
+                    session.add(Trip(line[0], line[1], line[2], datetime.datetime.strptime(line[3], "%m/%d/%Y %H:%M"),
                                  datetime.datetime.strptime(line[4], "%m/%d/%Y %H:%M"), line[5], line[6]))
-
         # commit to DB
         session.commit()
 
