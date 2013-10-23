@@ -104,7 +104,7 @@ class Trip(Base):
     Stores all trips from test data as well as created trip data
     '''
     __tablename__ = 'trips'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, Sequence('trip_id_seq'), primary_key=True)
     bike_id = Column(Integer)
     member_type = Column(Enum(u'Casual', u'Registered', name='member_type'), 
                          default=u'Registered')
