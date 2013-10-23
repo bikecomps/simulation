@@ -1,13 +1,18 @@
 '''
 Simple parser to read in specific CSVs/XML files related to 
-Capital Bikeshare. Parses and inserts into the DB structure.
-Assumes valid DB arguments
+Capital Bikeshare. Parses and inserts into the DB structure
+or to a CSV file.
+Assumes valid DB arguments.
+
+Before inserting trips into database, make sure to insert
+ALL stations because of foreign key constraints on
+the start and end stations of every trip.
 
 Usage: python parser.py -t | -ot | -s filename
 
 Options:
         -t: file is a trips file (capitalbikeshare) with post 2011 format
-        -ot: file is a trips file (capitalbikeshare) from 2010-2011
+        -to: file is a trips file (capitalbikeshare) from 2010-2011
         -s: file is a stations XML file (capitalbikeshare)
 '''
 
@@ -126,25 +131,11 @@ def main():
     
     headers, data = parse_options[sys.argv[1]](sys.argv[2])
 
-
-    '''
-    northfield = Neighborhood(17000)
-
-    # Create some sample items in memory    
-    intersection_one = Intersection(50, 50, northfield)
-    session.add(intersection_one)
-
-    station_one = Station('Fifth and Union', 5, intersection_one)
-    session.add(station_one)
-    '''
-
     if CSV_WRITER:
         write_to_csv(sys.argv[2], 
                      headers, 
                      data)
     else:
-        # Commit them to the DB
-        #session.commit()
         engine_path = 'postgresql://%s:%s@localhost/%s' % (hidden.DB_USERNAME, hidden.DB_PASSWORD, hidden.DB_NAME)
         
         engine = create_engine(engine_path, echo=True)    
@@ -162,16 +153,11 @@ def main():
                 session.add(Station(line[0], line[1],line[4], intersection))
         else:
             for line in data:
-                start_station = session.query(Station.id == line[5])
-                end_station = session.query(Station.id == line[6])
-                if start_station == None or end_station == None:
-                    print "Query not working for line "+line
-                else:
-                    session.add(Trip(line[0], line[1], line[2], datetime.datetime.strptime(line[3], "%m/%d/%Y %H:%M"),
-                        datetime.datetime.strptime(line[4], "%m/%d/%Y %H:%M"), start_station, end_station))
+                session.add(Trip(line[0], line[1], line[2], datetime.datetime.strptime(line[3], "%m/%d/%Y %H:%M"),
+                                 datetime.datetime.strptime(line[4], "%m/%d/%Y %H:%M"), line[5], line[6]))
 
-    #return (["Bike Id", "Rider Type", "Trip Type", "Start Time", "End Time", 
-    #        "Start Station", "End Station"],data)
+        # commit to DB
         session.commit()
+
 if __name__ == '__main__':
 	main()
