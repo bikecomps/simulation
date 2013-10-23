@@ -106,7 +106,7 @@ class Trip(Base):
     '''
     __tablename__ = 'trips'
     id = Column(Integer, Sequence('trip_id_seq'), primary_key=True)
-    bike_id = Column(Integer)
+    bike_id = Column(String(100))
     member_type = Column(Enum(u'Casual', u'Registered', name='member_type'), 
                          default=u'Registered')
     trip_type = Column(Enum(u'Training', u'Testing', u'Produced', name='trip_type'), 
@@ -149,6 +149,7 @@ def main():
     engine = create_engine(engine_path, echo=True)    
     # Create all tables if we haven't already
     Base.metadata.create_all(engine)
+
 if __name__ == '__main__':
     main()
 

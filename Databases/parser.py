@@ -52,8 +52,8 @@ def parse_bike_trips(input_filename ):
             start_time = row[1]
             end_time = row[4]
 
-            start_station_id = row[3]
-            end_station_id = row[6]
+            start_station_id = int(row[3])
+            end_station_id = int(row[6])
             
             bike_id = row[7]
             rider_type = "Registered" if row[8] == "Subscriber" else row[8]
@@ -87,8 +87,8 @@ def parse_old_bike_trips(input_filename):
                 continue
                 
             # Rip off the parentheses
-            start_station_id = start_station.group(1)
-            end_station_id = end_station.group(1)
+            start_station_id = int(start_station.group(1))
+            end_station_id = int(end_station.group(1))
             data.append([bike_id, rider_type, 'Training', start_time, end_time, start_station_id, 
                          end_station_id])
     return (["Bike Id", "Rider Type", "Trip Type", "Start Time", "End Time", 
@@ -162,14 +162,13 @@ def main():
                 session.add(Station(line[0], line[1],line[4], intersection))
         else:
             for line in data:
-                print line
                 start_station = session.query(Station.id == line[5])
                 end_station = session.query(Station.id == line[6])
                 if start_station == None or end_station == None:
                     print "Query not working for line "+line
                 else:
-                    session.add(Trip(line[0], line[1], line[2], datetime.datetime.strptime(line[3], "%m/%d/%y %H:%M"),
-                        datetime.datetime.strptime(line[4], "%m/%d/%y %H:%M"), start_station, end_station))
+                    session.add(Trip(line[0], line[1], line[2], datetime.datetime.strptime(line[3], "%m/%d/%Y %H:%M"),
+                        datetime.datetime.strptime(line[4], "%m/%d/%Y %H:%M"), start_station, end_station))
 
     #return (["Bike Id", "Rider Type", "Trip Type", "Start Time", "End Time", 
     #        "Start Station", "End Station"],data)
