@@ -11,17 +11,15 @@ Options:
         -s: file is a stations XML file (capitalbikeshare)
 '''
 
-#from BeautifulSoup import BeautifulStoneSoup
+from bs4 import BeautifulSoup
 import csv
 import re
 import sys
-
-DB_NAME = 'TODO'
-TRIP_DB_NAME = 'TODO'
-STATION_DB_NAME = 'TODO'
+import hidden
+import Session
 
 # Before 2012 dumps terminal data is stored in start/end station fields (not own)
-def parse_bike_trips(input_filename):
+def parse_bike_trips(input_filename, session):
     '''
     Parses capitalbikeshare trip csvs using 2012+ format.
     '''
@@ -40,7 +38,7 @@ def parse_bike_trips(input_filename):
             
             # Add to DB
             
-def parse_old_bike_trips(input_filename):
+def parse_old_bike_trips(input_filename, session):
 	'''
 	Parses capitalbikeshare trip csvs using 2010-2011 format.
 	'''
@@ -69,7 +67,7 @@ def parse_old_bike_trips(input_filename):
 
 			# Insert into DB
 
-def parse_stations(input_filename):
+def parse_stations(input_filename, session):
     '''
     Parses capitalbikeshare station XMLs.
     '''
@@ -77,7 +75,7 @@ def parse_stations(input_filename):
     raw_xml = f.read()
     f.close()
     
-    soup = BeautifulStoneSoup(raw_xml)
+    soup = BeautifulSoup(raw_xml, 'xml')
     for station in soup.findAll('station'):
         station_attrs = dict(station.attrs)
         
@@ -98,7 +96,24 @@ def main():
             '-s' : parse_stations
     }
 
-    parse_options[sys.argv[1]](sys.argv[2])
+    session = Session()
+    parse_options[sys.argv[1]](sys.argv[2], session)
+
+
+    '''
+    northfield = Neighborhood(17000)
+
+    # Create some sample items in memory    
+    intersection_one = Intersection(50, 50, northfield)
+    session.add(intersection_one)
+
+    station_one = Station('Fifth and Union', 5, intersection_one)
+    session.add(station_one)
+    '''
+
+    # Commit them to the DB
+    #session.commit()
+
 
 
 if __name__ == '__main__':

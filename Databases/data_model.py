@@ -165,7 +165,7 @@ def main():
     session.add(station_one)
 
     # Commit them to the DB
-    session.commit()
+    #session.commit()
 
 if __name__ == '__main__':
     main()
