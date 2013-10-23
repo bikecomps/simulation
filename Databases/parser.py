@@ -20,14 +20,33 @@ DB_NAME = 'TODO'
 TRIP_DB_NAME = 'TODO'
 STATION_DB_NAME = 'TODO'
 
+CSV_WRITER = True
+
+def write_to_csv(input_filename, header, data):
+    '''
+    Write out data into a new csv file
+    '''
+    out_file = open(re.sub(r'\.csv', '.out.csv', input_filename), 'w')
+    csv_out_file = csv.writer(out_file)
+    # write header
+    csv_out_file.writerow(header)
+
+    for line_data in data:
+        csv_out_file.writerow(line_data)
+
+    out_file.close()
+
 # Before 2012 dumps terminal data is stored in start/end station fields (not own)
 def parse_bike_trips(input_filename):
     '''
     Parses capitalbikeshare trip csvs using 2012+ format.
     '''
+
+    data = []
     with open(input_filename) as csv_file:
         reader = csv.reader(csv_file)
         headers = next(reader, None)
+
         for row in reader:
             start_time = row[1]
             end_time = row[4]
@@ -37,14 +56,23 @@ def parse_bike_trips(input_filename):
             
             bike_id = row[7]
             rider_type = "Registered" if row[8] == "Subscriber" else row[8]
-            
-            # insert into DB
-            print start_time, end_time, start_station_id, end_station_id, bike_id, rider_type
+
+            data.append([start_time, end_time, start_station_id, 
+                         end_station_id, bike_id, rider_type])
+
+    if CSV_WRITER:
+        write_to_csv(input_filename, 
+                     ['Start Time', 'End Time', 'Start Station Id',
+                      'End Station Id', 'Bike Id', 'Rider Type'],
+                     data)
+    
             
 def parse_old_bike_trips(input_filename):
     '''
     Parses capitalbikeshare trip csvs using 2010-2011 format.
     '''
+    data = []
+
     reg_station_id = r'\((\d+)\)'
     with open(input_filename) as csv_file:
         reader = csv.reader(csv_file)
@@ -66,8 +94,15 @@ def parse_old_bike_trips(input_filename):
             start_station_id = start_station.group(1)
             end_station_id = end_station.group(1)
 
-            # Insert into DB
-            print start_time, end_time, start_station_id, end_station_id, bike_id, rider_type
+            data.append([start_time, end_time, start_station_id, 
+                         end_station_id, bike_id, rider_type])
+
+    if CSV_WRITER:
+        write_to_csv(input_filename, 
+                     ['Start Time', 'End Time', 'Start Station Id',
+                      'End Station Id', 'Bike Id', 'Rider Type'],
+                     data)
+
 
 def parse_stations(input_filename):
     '''
@@ -76,7 +111,9 @@ def parse_stations(input_filename):
     f = open(input_filename)
     raw_xml = f.read()
     f.close()
-    
+
+    data = []
+
     soup = BeautifulSoup(raw_xml)
     for station in soup.findAll('station'):
         station_id = int(station.terminalname.string)
@@ -85,8 +122,13 @@ def parse_stations(input_filename):
         lon = float(station.long.string)
         capacity = int(station.nbbikes.string) + int(station.nbemptydocks.string)
         
-        # Save to DB
-        print station_id, name, lat, lon, capacity
+        data.append([station_id, name, lat, lon, capacity])
+
+    if CSV_WRITER:
+        write_to_csv(input_filename,
+                     ['Station Id', 'Name', 'Latitude', 'Capacity'],
+                     data)
+
 
 
 def main():
