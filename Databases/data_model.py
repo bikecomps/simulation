@@ -28,7 +28,7 @@ test_orm=# select * from stations;
 '''
 
 import hidden
-from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, ForeignKey
+from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, ForeignKey, Sequence
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker
 
@@ -45,9 +45,10 @@ class Station(Base):
     capacity = Column(Integer)
     intersection_id = Column(Integer, ForeignKey('intersections.id'))
     intersection = relationship('Intersection',
-                                backref=backref('stations', order_by=id))
+                                backref=backref('stations'))
 
-    def __init__(self, name, capacity, intersection):
+    def __init__(self, id, name, capacity, intersection):
+        self.id = id
         self.name = name
         self.capacity = capacity
         self.intersection = intersection
@@ -57,13 +58,13 @@ class Intersection(Base):
     Simple Intersection class stored in the intersections table.
     '''
     __tablename__ = 'intersections'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, Sequence('inter_id_seq'), primary_key=True)
     lat = Column(Float)
     lon = Column(Float)
     # Ignoring Neighborhood for now
     neighborhood_id = Column(Integer, ForeignKey('neighborhoods.id'))
     neighborhood = relationship('Neighborhood',
-                                backref=backref('intersections', order_by=id))
+                                backref=backref('intersections'))
 
     def __init__(self, lat, lon, neighborhood):
         self.lat = lat
@@ -72,7 +73,7 @@ class Intersection(Base):
 
 class Neighborhood(Base):
     __tablename__ = 'neighborhoods'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, Sequence('neigh_id_seq'), primary_key=True)
     population = Column(Integer)
     # Presumably some other data?
     
@@ -81,7 +82,7 @@ class Neighborhood(Base):
 
 class RoadSegment(Base):
     __tablename__ = 'road_segments'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, Sequence('road_seg_id_seq'), primary_key=True)
     name = Column(String(100))
 
     start_intersection_id = Column(Integer, ForeignKey('intersections.id'))
@@ -116,11 +117,11 @@ class Trip(Base):
 
     start_station_id = Column(Integer, ForeignKey('stations.id'))
     start_station = relationship('Station', foreign_keys=[start_station_id],
-                                 backref=backref('trips_out', order_by=id))
+                                 backref=backref('trips_out'))
 
     end_station_id = Column(Integer, ForeignKey('stations.id'))
     end_station = relationship('Station', foreign_keys=[end_station_id], 
-                               backref=backref('trips_in', order_by=id))
+                               backref=backref('trips_in'))
 
     def __init__(self, bike_id, member_type, trip_type, start_date, end_date,
                  start_station, end_station):
@@ -148,25 +149,6 @@ def main():
     engine = create_engine(engine_path, echo=True)    
     # Create all tables if we haven't already
     Base.metadata.create_all(engine)
-
-    SessionFactory = sessionmaker()
-    SessionFactory.configure(bind=engine)
-    
-    # Sessions are how we interact with DB
-    session = SessionFactory() 
-
-    northfield = Neighborhood(17000)
-
-    # Create some sample items in memory    
-    intersection_one = Intersection(50, 50, northfield)
-    session.add(intersection_one)
-
-    station_one = Station('Fifth and Union', 5, intersection_one)
-    session.add(station_one)
-
-    # Commit them to the DB
-    #session.commit()
-
 if __name__ == '__main__':
     main()
 
