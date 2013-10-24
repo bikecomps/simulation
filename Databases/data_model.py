@@ -132,6 +132,10 @@ class Trip(Base):
         self.end_date = end_date
         self.start_station_id = start_station_id
         self.end_station_id = end_station_id
+   
+    def to_csv(self):
+        return '%s,%s,%s,%s,%s,%s,%s' % (self.bike_id, self.member_type, self.trip_type, self.start_date, self.end_date, self.start_station_id, self.end_station_id)
+   
 
 class Day(Base):
     '''

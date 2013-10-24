@@ -65,13 +65,15 @@ def parse_bike_trips(input_filename ):
                 bike_id = row[7]
                 rider_type = "Registered" if row[8] == "Subscriber" else row[8]
 
-                data.append([bike_id, rider_type, 'Training', start_time, end_time, start_station_id, 
-                             end_station_id])
+                data.append([bike_id, rider_type, 'Training', start_time, end_time, start_station_id, end_station_id])
             except ValueError:
-                print "Invalid input row, skipping %s" % row
+                print "Error on row %s", row
+                
     return (["Bike Id", "Rider Type", "Trip Type", "Start Time", "End Time", 
             "Start Station", "End Station"],data)
-  
+#except ValueError:
+#    print "Invalid input row, skipping %s" % row
+
 def parse_old_bike_trips(input_filename):
     '''
     Parses capitalbikeshare trip csvs using 2010-2011 format.
@@ -163,6 +165,7 @@ def main():
                     session.add(Trip(line[0], line[1], line[2], datetime.datetime.strptime(line[3], "%m/%d/%Y %H:%M"),
                                  datetime.datetime.strptime(line[4], "%m/%d/%Y %H:%M"), line[5], line[6]))
         # commit to DB
+        print "Preparing to commit"
         session.commit()
 
 if __name__ == '__main__':
