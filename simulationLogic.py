@@ -1,7 +1,7 @@
 '''
     TO DO:
     - Use datetime.timedeltas for time and timestep
-    - Use Trip objects instead of tuples. (trip type = 'provided')
+    - Test using Trip objects instead of tuples. (trip type = 'provided')
     - Figure out how we get the timestep
     - How to keep priority queue sorted
     - connect to database
