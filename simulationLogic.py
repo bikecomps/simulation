@@ -6,7 +6,7 @@
     - How to keep priority queue sorted
     - connect to database
 '''
-# import data_model
+import data_model
 import Queue
 import random
 import datetime
@@ -59,10 +59,10 @@ class SimulationLogic:
                 start_time = self.time + random.randint(0, timestep)
                 # Nobody takes longer than 2 hours to bike anywhere, duh!
                 end_time = start_time + random.randint(0, 120)
-                new_trip = [station, end_station_ID, start_time, end_time]
-                # new_trip =  Trip(bike_id, member_type, trip_type, start_date, end_date,start_station_id, end_station_id)
+                # new_trip = [station, end_station_ID, start_time, end_time]
+                new_trip =  data_model.Trip(str(random.randint(1,500)), "Casual", "Produced", start_time, end_time, station, end_station_ID)
 
-                self.pending_departures.put((new_trip[2], new_trip))
+                self.pending_departures.put((start_time, new_trip))
 
                 print "GENERATED", new_trip
 
