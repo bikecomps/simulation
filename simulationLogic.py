@@ -1,7 +1,10 @@
 '''
-  TO DO:
-  - Figure out how we get the timestep
-  - How to keep priority queue sorted 
+    TO DO:
+    - Use datetime.timedeltas for time and timestep
+    - Use Trip objects instead of tuples. (trip type = 'provided')
+    - Figure out how we get the timestep
+    - How to keep priority queue sorted
+    - connect to database
 '''
 # import data_model
 import Queue
@@ -9,7 +12,7 @@ import random
 import datetime
 
 class SimulationLogic:
-    def __init__(self, timestep):
+    def __init__(self):
         self.trip_list = []
         # Pending trips includes tuples (endTime, trip)
         self.pending_departures = Queue.PriorityQueue()
@@ -17,7 +20,6 @@ class SimulationLogic:
         # Assuming time and timestep will be in minutes from the start_time
         self.start_time = None
         self.time = None
-        self.timestep = timestep
         # Connect to database through data_model?
         # {stID : count at self.time}
         self.stations = {}
@@ -38,15 +40,15 @@ class SimulationLogic:
         # self.stations[station] = random.randint(0, capacity)
         
 
-    def update(self):
+    def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        self.generate_new_trips()
-        self.time += self.timestep
+        self.generate_new_trips(timestep)
+        self.time += timestep
         self.resolve_trips()
         # self.terminate_pending_arrivals()
 
         
-    def generate_new_trips(self):
+    def generate_new_trips(self, timestep):
         '''Generates trips COMPLETELY RANDOMLY WOOO'''
             
         for station in self.stations:
@@ -54,10 +56,11 @@ class SimulationLogic:
             print "STATION", station, "HAS", self.stations[station], "BIKES"
             for i in range(num_trips):
                 end_station_ID = random.choice(self.stations.keys())
-                start_time = self.time + random.randint(0, self.timestep)
+                start_time = self.time + random.randint(0, timestep)
                 # Nobody takes longer than 2 hours to bike anywhere, duh!
                 end_time = start_time + random.randint(0, 120)
                 new_trip = [station, end_station_ID, start_time, end_time]
+                # new_trip =  Trip(bike_id, member_type, trip_type, start_date, end_date,start_station_id, end_station_id)
 
                 self.pending_departures.put((new_trip[2], new_trip))
 
