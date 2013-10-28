@@ -7,7 +7,7 @@ class Simulator:
 
     # Still need to make timestep a datetime objects rather than
     # ints. They lose a lot of meaning when just integers.
-    def run(self, start_time, end_time, time_step=1):
+    def run(self, start_time, end_time, timestep=1):
         self.sim_logic.initialize(start_time)
 
         for time in range(start_time, end_time, timestep):
