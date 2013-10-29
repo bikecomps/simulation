@@ -179,6 +179,12 @@ class SimulationLogic:
         return self.trip_list
 
 
+    def flush_to_db(self):
+        '''Adds all trips since initialization to the database'''
+        for trip in self.trip_list:
+            self.session.add(trip)
+        session.commit()
+
     def cleanup(self):
         pass
 
