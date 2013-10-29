@@ -1,5 +1,6 @@
 '''
-    TO DO:
+    simulationLogic.py
+
 '''
 import data_model
 import Queue
@@ -15,31 +16,35 @@ ARRIVAL_TYPE = 1
 class SimulationLogic:
 
     def __init__(self):
-        self.trip_list = []
-        # Pending departures/arrivals includes tuples (endTime, trip)
-        self.pending_departures = Queue.PriorityQueue()
-        self.pending_arrivals = Queue.PriorityQueue()
         # self.time is a datetime, representing the current time in the simulator.
         self.time = None
         # {stID : station's bike count at self.time}
         self.stations = {}
+        # Pending departures/arrivals includes tuples (endTime, trip)
+        self.pending_departures = Queue.PriorityQueue()
+        self.pending_arrivals = Queue.PriorityQueue()
+        # Contains all resolved trips
+        self.trip_list = []
         # List of trips that didn't end at the desired station due to a shortage
+        self.bike_shortages = []
+        self.dock_shortages = []
+       
+
+    def initialize(self, start_time):
+        '''Sets states of stations at the start_time'''
+        self.time = start_time
+        # Stations should eventually be gotten from the database
+        self.stations = {0:5, 1:5, 2:5, 3:5, 4:4}
+        self.pending_departures = Queue.PriorityQueue()
+        self.pending_arrivals = Queue.PriorityQueue()
         self.dock_shortages = []
         self.bike_shortages = []
-
+        self.trip_list = []
         # Might need to move all this to simulator eventually
         engine_path = 'postgresql://%s:%s@localhost/%s' % (hidden.DB_USERNAME, hidden.DB_PASSWORD, hidden.DB_NAME)
         engine = create_engine(engine_path, echo=False)
         Session = sessionmaker(bind=engine)
         self.session = Session()
-                
-
-    def initialize(self, start_time):
-        '''Sets states of stations at the start_time'''
-        self.time = start_time
-        self.stations = {0:5, 1:5, 2:5, 3:5, 4:4}
-        self.pending_departures = Queue.PriorityQueue()
-        self.pending_arrivals = Queue.PriorityQueue()
         
 
     def update(self, timestep):
@@ -74,57 +79,6 @@ class SimulationLogic:
         #     printedQueue.put(pq_trip)
         # self.pending_arrivals = printedQueue
 
-
-    def resolve_departure(self, trip):
-        '''Decrement station count, put in pending_arrivals queue. If station is empty, put it in the bike_shortages list.'''
-        departure_station_ID = trip.start_station_id
-        if self.stations[departure_station_ID] == 0:
-            self.bike_shortages.append(trip)
-        else:
-            self.stations[departure_station_ID] -= 1
-            self.pending_arrivals.put((trip.end_date, trip))
-
-            
-
-    def resolve_arrival(self, trip):
-        '''Increment station count, put in trips list. If desired station is full, put it in the dock_shortages list and try again.'''
-        arrival_station_ID = trip.end_station_id
-        capacity = 5
-        if self.stations[arrival_station_ID] == capacity:
-            self.dock_shortages.append(trip)
-            # Randomly choose another station to try to park at, at a random time (< 2hrs) from now.
-            trip.end_station_id = random.choice(self.stations.keys())
-            trip.end_date += datetime.timedelta(minutes=random.randint(1, 120))
-            self.pending_arrivals.put((trip.end_date, trip))
-        else:
-            self.stations[arrival_station_ID] += 1
-            self.trip_list.append(trip)
-
-
-    def get_first_trip_event(self):
-        '''Returns a tuple for the first departure or arrival's trip including (type of event, trip). Type of event is either departure, arrival, or None.'''
-        if self.pending_departures.empty() and self.pending_arrivals.empty():
-            trip = None
-            eventType = None
-        elif self.pending_arrivals.empty():
-            trip = self.pending_departures.get()[1]
-            eventType = DEPARTURE_TYPE
-        elif self.pending_departures.empty():
-            trip = self.pending_arrivals.get()[1]
-            eventType = ARRIVAL_TYPE
-        else:
-            first_departure = self.pending_departures.get()[1]
-            first_arrival = self.pending_arrivals.get()[1]
-            # If a departure and arrival happen at the exact same time, departures resolve first. This decision was completely arbitrary.
-            if (first_departure.start_date <= first_arrival.end_date):
-                trip = first_departure
-                eventType = DEPARTURE_TYPE
-                self.pending_arrivals.put((first_arrival.end_date, first_arrival))
-            else:
-                trip = first_arrival
-                eventType = ARRIVAL_TYPE
-                self.pending_departures.put((first_departure.start_date, first_departure))
-        return (eventType, trip)
 
     def resolve_trips(self):
         '''Resolves departures & arrivals within the current time interval'''
@@ -174,16 +128,76 @@ class SimulationLogic:
         #     print printTrip(i)
 
 
-    def flush(self):
-        '''Returns list of all trips since initialization'''
-        return self.trip_list
+    def resolve_departure(self, trip):
+        '''Decrement station count, put in pending_arrivals queue. If station is empty, put it in the bike_shortages list.'''
+        departure_station_ID = trip.start_station_id
+        if self.stations[departure_station_ID] == 0:
+            self.bike_shortages.append(trip)
+            self.resolve_sad_departure(trip)
+        else:
+            self.stations[departure_station_ID] -= 1
+            self.pending_arrivals.put((trip.end_date, trip))
+
+            
+    def resolve_sad_departure(self, trip):
+        '''When you want a bike but the station is empty'''
+        pass
+
+    def resolve_arrival(self, trip):
+        '''Increment station count, put in trips list. If desired station is full, put it in the dock_shortages list and try again.'''
+        arrival_station_ID = trip.end_station_id
+        capacity = 5
+        if self.stations[arrival_station_ID] == capacity:
+            self.dock_shortages.append(trip)
+            self.resolve_sad_arrival(trip)
+        else:
+            self.stations[arrival_station_ID] += 1
+            self.trip_list.append(trip)
 
 
-    def flush_to_db(self):
-        '''Adds all trips since initialization to the database'''
-        for trip in self.trip_list:
-            self.session.add(trip)
-        session.commit()
+    def resolve_sad_arrival(self, trip):
+        '''When you want to drop off a bike but the station is full'''
+        # Randomly choose another station to try to park at, at a random time (< 2hrs) from now.
+        trip.end_station_id = random.choice(self.stations.keys())
+        trip.end_date += datetime.timedelta(minutes=random.randint(1, 120))
+        self.pending_arrivals.put((trip.end_date, trip))
+
+
+    def get_first_trip_event(self):
+        '''Returns a tuple for the first departure or arrival's trip including (type of event, trip). Type of event is either departure, arrival, or None.'''
+        if self.pending_departures.empty() and self.pending_arrivals.empty():
+            trip = None
+            eventType = None
+        elif self.pending_arrivals.empty():
+            trip = self.pending_departures.get()[1]
+            eventType = DEPARTURE_TYPE
+        elif self.pending_departures.empty():
+            trip = self.pending_arrivals.get()[1]
+            eventType = ARRIVAL_TYPE
+        else:
+            first_departure = self.pending_departures.get()[1]
+            first_arrival = self.pending_arrivals.get()[1]
+            # If a departure and arrival happen at the exact same time, departures resolve first. This decision was completely arbitrary.
+            if (first_departure.start_date <= first_arrival.end_date):
+                trip = first_departure
+                eventType = DEPARTURE_TYPE
+                self.pending_arrivals.put((first_arrival.end_date, first_arrival))
+            else:
+                trip = first_arrival
+                eventType = ARRIVAL_TYPE
+                self.pending_departures.put((first_departure.start_date, first_departure))
+        return (eventType, trip)
+
+
+    def flush(self, to_database=False):
+        '''Returns list of all trips since initialization, or adds them to the database if to_database is True'''
+        if to_database:
+            for trip in self.trip_list:
+                self.session.add(trip)
+            session.commit()
+        else:
+            return self.trip_list
+
 
     def cleanup(self):
         pass
@@ -208,4 +222,3 @@ def main():
        
 
 if __name__ == "__main__":
-    main()
