@@ -1,7 +1,5 @@
 '''
     TO DO:
-    - Test that datetimes were done correctly
-    - Test use of Trip objects
     - connect to database
 '''
 # import data_model
