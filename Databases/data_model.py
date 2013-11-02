@@ -30,7 +30,7 @@ test_orm=# select * from stations;
 import hidden
 from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, ForeignKey, Sequence
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref, sessionmaker
+from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
 
 Base = declarative_base()
 
@@ -146,6 +146,32 @@ class Day(Base):
     
     def __init__(self, date):
         self.date = date
+
+class Lambda(Base):
+    '''
+    Separate table to store parameters for poisson
+    distributions used to model the number of bike
+    departures between every pair of stations
+    at a specific hour in a given day of the week. 
+    '''
+    __tablename__ = 'lambdas'
+    id = Column(Integer, Sequence('lambda_id_seq'), primary_key=True)
+    start_station_id = Column(Integer, ForeignKey('stations.id'))
+    start_station = relationship('Station', foreign_keys=[start_station_id],
+                                 backref=backref('lambda_start'))
+
+    end_station_id = Column(Integer, ForeignKey('stations.id'))
+    end_station = relationship('Station', foreign_keys=[end_station_id], 
+                               backref=backref('lambda_end'))
+    hour = Column(Integer) # range 0-23
+    day_of_week = Column(Integer) # range 0-6
+
+    def __init__(self, start_station_id, end_station_id, hour, day):
+        self.start_station_id = start_station_id
+        self.end_station_id = end_station_id
+        self.hour = hour
+        self.day_of_week = day
+    
 
 def main():
     # Defaults to using psycopg2 drivers
