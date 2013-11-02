@@ -34,7 +34,6 @@ class SimulationLogic:
         '''Sets states of stations at the start_time'''
         self.time = start_time
         # Stations should eventually be gotten from the database
-        self.stations = {0:5, 1:5, 2:5, 3:5, 4:4}
         self.pending_departures = Queue.PriorityQueue()
         self.pending_arrivals = Queue.PriorityQueue()
         self.dock_shortages = []
@@ -45,6 +44,18 @@ class SimulationLogic:
         engine = create_engine(engine_path, echo=False)
         Session = sessionmaker(bind=engine)
         self.session = Session()
+        self.stations = {}
+        self.initialize_stations()
+        for s in self.stations:
+            print s, self.stations[s]
+
+    def initialize_stations(self, start_time):
+        '''Sets initial bike count for each station.'''
+        queried_stations = self.session.query(data_model.Station)
+        for s in queried_stations:
+            # For now, generates a random count that is less than or equal to the station's capacity.
+            count = random.randint(0,s.capacity)
+            self.stations[s.id] = count
         
 
     def update(self, timestep):
@@ -93,16 +104,16 @@ class SimulationLogic:
                     self.pending_departures.put((trip.start_date, trip))
                     break
                 else:
-                    print "Resolving departure for \t", printTrip(trip)
+                    # print "Resolving departure for \t", printTrip(trip)
                     self.resolve_departure(trip)
             elif eventType == ARRIVAL_TYPE:
                 if trip.end_date > self.time:
                     self.pending_arrivals.put((trip.end_date, trip))
                     break
                 else:
-                    print "Resolving arrival for \t\t", printTrip(trip)
+                    # print "Resolving arrival for \t\t", printTrip(trip)
                     self.resolve_arrival(trip)
-                    print "If dock shortage, new trip is", printTrip(trip)
+                    # print "If dock shortage, new trip is", printTrip(trip)
 
             eventTuple = self.get_first_trip_event()
             eventType = eventTuple[0]
@@ -216,9 +227,10 @@ def main():
     SL.update(step)
     SL.update(step)
     trips = SL.flush()
-    print "ALL TRIPS:"
-    for trip in trips:
-        print printTrip(trip)
+    # print "ALL TRIPS:"
+    # for trip in trips:
+    #     print printTrip(trip)
        
 
 if __name__ == "__main__":
+    main()
