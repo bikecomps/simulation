@@ -52,7 +52,10 @@ class Station(Base):
         self.name = name
         self.capacity = capacity
         self.intersection = intersection
-        
+
+    def __repr__(self):
+        return 'station id: %s, station name: %s, capacity: %s' % (self.id, self.name, self.capacity)
+
 class Intersection(Base):
     '''
     Simple Intersection class stored in the intersections table.
@@ -132,7 +135,10 @@ class Trip(Base):
         self.end_date = end_date
         self.start_station_id = start_station_id
         self.end_station_id = end_station_id
-   
+
+    def __repr__(self):
+        return 'bike id:%s, member type:%s, trip type:%s, start date:%s, end date:%s, start station id:%s, end station id:%s' % (self.bike_id, self.member_type, self.trip_type, self.start_date, self.end_date, self.start_station_id, self.end_station_id)
+
     def to_csv(self):
         return '%s,%s,%s,%s,%s,%s,%s' % (self.bike_id, self.member_type, self.trip_type, self.start_date, self.end_date, self.start_station_id, self.end_station_id)
    
@@ -151,7 +157,7 @@ class Lambda(Base):
     '''
     Separate table to store parameters for poisson
     distributions used to model the number of bike
-    departures between every pair of stations
+    arrivals between every pair of stations
     at a specific hour in a given day of the week. 
     '''
     __tablename__ = 'lambdas'
@@ -165,13 +171,17 @@ class Lambda(Base):
                                backref=backref('lambda_end'))
     hour = Column(Integer) # range 0-23
     day_of_week = Column(Integer) # range 0-6
+    value = Column(Float)
 
-    def __init__(self, start_station_id, end_station_id, hour, day):
+    def __init__(self, start_station_id, end_station_id, hour, day, val):
         self.start_station_id = start_station_id
         self.end_station_id = end_station_id
         self.hour = hour
         self.day_of_week = day
+        self.value = val
     
+    def __repr__(self):
+        return 'start station id: %s, end station id: %s, hour: %s, day of week: %s, value: %.2f' % (self.start_station_id, self.end_station_id, self.hour, self.day_of_week, self.value)
 
 def main():
     # Defaults to using psycopg2 drivers

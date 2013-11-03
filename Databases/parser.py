@@ -22,9 +22,8 @@ import csv
 import re
 import sys
 import hidden
+import utility
 from data_model import *
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
 import datetime
 
 CSV_WRITER = False
@@ -142,12 +141,7 @@ def main():
                      headers, 
                      data)
     else:
-        engine_path = 'postgresql://%s:%s@localhost/%s' % (hidden.DB_USERNAME, hidden.DB_PASSWORD, hidden.DB_NAME)
-        
-        engine = create_engine(engine_path, echo=False)    
-        session_factory = sessionmaker(bind=engine)
-        Session = scoped_session(session_factory)
-        session = Session()
+        session = utility.getDBSession()
         
         if sys.argv[1] == '-s':
             default_neigh = Neighborhood(-1)

@@ -2,9 +2,7 @@ from data_model import *
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import hidden
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import utility
 
 def get_data_for_station_pair(session, station_one, station_two, date_one, date_two):
     values = session.query(Trip).filter(Trip.start_station_id==station_one) \
@@ -24,12 +22,7 @@ def plot_distributions(results):
 
 
 def main():
-    engine_path = 'postgresql://%s:%s@localhost/%s' % (hidden.DB_USERNAME, hidden.DB_PASSWORD, hidden.DB_NAME)
-
-    # echo=False is unnecessary but setting it to True provides useful info.
-    engine = create_engine(engine_path, echo=False)
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    session = utility.getDBSession()
 
     trips = get_data_for_station_pair(session, 31000, 31001, "2012-1-1", "2013-1-1").all()
     plot_distributions(trips)
