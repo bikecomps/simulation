@@ -1,6 +1,5 @@
 '''
     simulationLogic.py
-
 '''
 import data_model
 import Queue
@@ -45,7 +44,7 @@ class SimulationLogic:
         Session = sessionmaker(bind=engine)
         self.session = Session()
         self.stations = {}
-        self.initialize_stations()
+        self.initialize_stations(start_time)
         for s in self.stations:
             print s, self.stations[s]
 
@@ -111,7 +110,7 @@ class SimulationLogic:
                     self.pending_arrivals.put((trip.end_date, trip))
                     break
                 else:
-                    # print "Resolving arrival for \t\t", printTrip(trip)
+                    # print "Resolving arrival for \t\t", printToisson.ppf(.3,mu)rip(trip)
                     self.resolve_arrival(trip)
                     # print "If dock shortage, new trip is", printTrip(trip)
 
