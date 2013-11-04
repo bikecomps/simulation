@@ -183,6 +183,37 @@ class Lambda(Base):
     def __repr__(self):
         return 'start station id: %s, end station id: %s, hour: %s, day of week: %s, value: %.2f' % (self.start_station_id, self.end_station_id, self.hour, self.day_of_week, self.value)
 
+
+class GaussianDistr(Base):
+    '''
+    Separate table to store parameters for poisson
+    distributions used to model the number of bike
+    arrivals between every pair of stations
+    at a specific hour in a given day of the week. 
+    '''
+    __tablename__ = 'gaussian_distrs'
+    id = Column(Integer, Sequence('gaussian_id_seq'), primary_key=True)
+
+    start_station_id = Column(Integer, ForeignKey('stations.id'))
+    start_station = relationship('Station', foreign_keys=[start_station_id],
+                                 backref=backref('gaussian_start'))
+
+    end_station_id = Column(Integer, ForeignKey('stations.id'))
+    end_station = relationship('Station', foreign_keys=[end_station_id], 
+                               backref=backref('gaussian_end'))
+
+    mean = Column(Float)
+    std = Column(Float)
+
+
+    def __init__(self, start_station_id, end_station_id, mean, std):
+        self.start_station_id = start_station_id
+        self.end_station_id = end_station_id
+        self.mean = mean
+        self.std = std
+
+
+
 def main():
     # Defaults to using psycopg2 drivers
     # We don't want to commit all of our passwords/usernames so we need to import them.
