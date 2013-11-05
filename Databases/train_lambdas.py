@@ -58,22 +58,17 @@ def train(session, start_d, end_d):
 
 
 def train_mus(connection, start_date, end_date):
-    num_hours = 24
-    num_days = 7
+    '''
+    Creates gaussian distr statistics based on day. 
+    Simple mapping of station_from to station_to -> mean,stdev
+    '''
     with connection.begin() as trans:
         trip_select = select([Trip]).\
             where(Trip.start_date >= start_date).\
             where(Trip.end_date < end_date)
         trip_list = connection.execute(trip_select)
                  
-        station_pair_map = {}
         trip_map = {}
-
-        #for start_station in station_list:
-        #    for end_station in station_list:
-        #        trip_times.append(
-
-
         for trip in trip_list:
             all_trip_times = trip_map.get((trip.start_station_id, trip.end_station_id), [])
             trip_time = (trip.end_date - trip.start_date).total_seconds()
@@ -85,14 +80,12 @@ def train_mus(connection, start_date, end_date):
         station_list = connection.execute(station_select).fetchall()
 
         insert_list = []
-        #print trip_map
         for station_one in station_list:
             for station_two in station_list:
                 if (station_one.id, station_two.id) in trip_map:
                     times = trip_map[(station_one.id, station_two.id)]
                     average_time = numpy.average(times)
                     stdv_time = numpy.std(times)
-                    #station_pair_map[(station_one.id, station_two.id)] = [average_time, stdv_time]
                     insert_list.append({
                         "start_station_id":station_one.id, 
                         "end_station_id":station_two.id,
@@ -101,6 +94,7 @@ def train_mus(connection, start_date, end_date):
                         )
 
         connection.execute(GaussianDistr.insert(), insert_list)
+
 def main():
     s = utility.getDBSession()
     conn = utility.getDBConnection()
