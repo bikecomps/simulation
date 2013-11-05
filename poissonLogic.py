@@ -57,5 +57,43 @@ class PoissonLogic(SimulationLogic):
         num_trips = poisson.ppf(probability,lambda_poisson)
         return datetime.timedelta(minutes=norm.ppf(probability,mu_normal))
 
-    def resolve_departure(self, trip):
-        pass
+    def resolve_sad_arrival(self, trip):
+        '''
+        Changes trip.end_station_id to the id of the station nearest to it and updates trip.end_date accordingly. Puts the updated trip into pending_arrivals.
+        '''
+        arrive_station_id = trip.end_station_id
+        # SELECT station2_id from station_distances WHERE station1_id=arrive_station_id order by distance limit 1;
+        # returns a StationDistance object in which station2_id is the station nearest to arrive_station_id
+        nearest_distance = self.session.query(data_model.StationDistance)\
+                                    .filter(data_model.StationDistance.station1_id = arrive_station_id)\
+                                    .order_by(data_model.StationDistance.distance)[0]
+        nearest_station_id = nearest_distance.station2_id
+        trip.end_station_id = nearest_station_id
+        extra_time = self.get_trip_duration(arrive_station_id, nearest_station_id)
+        trip.end_date = trip.end_date + extra_time
+        self.pending_arrivals.put(trip.end_date,trip)
+
+
+
+    def resolve_sad_departure(self, trip):
+        '''
+        Currently changes trip.start_station_id to the id of the station nearest to it. Updates both trip.start_date and trip.end_date using get_trip_duration(), puts the updated trip into pending_departures. 
+        '''
+        depart_station_id = trip.start_station_id
+        # SELECT station2_id from station_distances WHERE station1_id=depart_station_id order by distance limit 1;
+        # returns a StationDistance object in which station2_id is the station nearest to arrive_station
+        nearest_distance = self.session.query(data_model.StationDistance)\
+                                    .filter(data_model.StationDistance.station1_id = depart_station_id)\
+                                    .order_by(data_model.StationDistance.distance)[0]
+        nearest_station_id = nearest_distance.station2_id
+        trip.start_station_id = nearest_station_id
+        # Calculation for extra_time assumes that the user spends as much time walking to the nearest station as they would biking, which might be a bad assumption
+        extra_time = self.get_trip_duration(depart_station_id, nearest_station_id)
+        # Should trip.start_date not change? Should we include a way to note that this trip started out as a failure?
+        trip.start_date = trip.start_date + extra_time
+        new_trip_duration = self.get_trip_duration(nearest_station_id,trip.end_station_id)
+        trip.end_date = trip.start_date + trip.end_date
+        self.pending_departures(trip.start_date, trip)
+
+
+
