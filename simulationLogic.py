@@ -1,6 +1,7 @@
 '''
     simulationLogic.py
 '''
+import Databases.utility
 import data_model
 import Queue
 import random
@@ -14,7 +15,9 @@ ARRIVAL_TYPE = 1
 
 class SimulationLogic:
 
-    def __init__(self):
+    def __init__(self, session):
+        # For database connectivity
+        self.session = session
         # self.time is a datetime, representing the current time in the simulator.
         self.time = None
         # {stID : station's bike count at self.time}
@@ -38,11 +41,6 @@ class SimulationLogic:
         self.dock_shortages = []
         self.bike_shortages = []
         self.trip_list = []
-        # Might need to move all this to simulator eventually
-        engine_path = 'postgresql://%s:%s@localhost/%s' % (hidden.DB_USERNAME, hidden.DB_PASSWORD, hidden.DB_NAME)
-        engine = create_engine(engine_path, echo=False)
-        Session = sessionmaker(bind=engine)
-        self.session = Session()
         self.stations = {}
         self.initialize_stations(start_time)
         for s in self.stations:

@@ -4,11 +4,17 @@
     Questions we still have about distributions:
     - Do we have to specify standard deviation and whatever the poisson equivalent is? (Perhaps we use scipy's rvs function but I haven't figured it out yet.)
 '''
-
+import Databases.utility as utils
+import data_model
 from scipy.stats import poisson
-from scipy.stats import norm
+import random
+from simulationLogic import SimulationLogic
+import datetime
 
 class PoissonLogic(SimulationLogic):
+
+    def __init__(self, session):
+        SimulationLogic.__init__(self, session)
 
     def generate_new_trips(self, start_time):
         # Note that Monday is day 0 and Sunday is day 6. Is this the same for data_model?
@@ -34,10 +40,10 @@ class PoissonLogic(SimulationLogic):
         '''Return the number of trips between 2 stations at a given time, sampled from poisson distribution'''
         # Get the proper lambda from the database
         lambda_poisson = self.session.query(data_model.Lambda)\
-                                .filter(data_model.Lambda.start_station_id = start_station_id)\
-                                .filter(data_model.Lambda.end_station_id = end_station_id)\
-                                .filter(data_model.Lambda.hour = lambda_hour)\
-                                .filter(data_model.Lambda.day_of_week = lambda_day_of_week)
+                                .filter(data_model.Lambda.start_station_id == start_station_id)\
+                                .filter(data_model.Lambda.end_station_id == end_station_id)\
+                                .filter(data_model.Lambda.hour == lambda_hour)\
+                                .filter(data_model.Lambda.day_of_week == lambda_day_of_week)
         # Choose a random probability. We will get the number of trips that happen with that probability using the inverse cumulative distribution for poisson.
         probability = random.random()
         while probability == 0:
@@ -45,17 +51,19 @@ class PoissonLogic(SimulationLogic):
         num_trips = poisson.ppf(probability,lambda_poisson)
         return num_trips
 
-    def get_trip_duration(self, start_station_id, end_station_id, ):
+    def get_trip_duration(self, start_station_id, end_station_id):
         '''Get timedelta of a trip between 2 stations, sampled from normal distribution'''
         # Get the proper mu from the database
-        # mu_normal = self.session.query(data_model.Mu)\
-                        # .filter(???)
-        mu_normal = 5
-        probability = random.random()
-        while probability == 0:
-            probability = random.random()
-        num_trips = poisson.ppf(probability,lambda_poisson)
-        return datetime.timedelta(minutes=norm.ppf(probability,mu_normal))
+        gaussian_distr = self.session.query(data_model.GaussianDistr)\
+                         .filter(data_model.GaussianDistr.start_station_id == start_station_id)\
+                         .filter(data_model.GaussianDistr.end_station_id == end_station_id)\
+                         .first()
+        if gaussian_distr != None:
+            trip_length = random.gauss(gaussian_distr.mean,  gaussian_distr.std)
+        else:
+# What do we do?
+            trip_length = -5
+        return datetime.timedelta(seconds=trip_length)
 
     def resolve_sad_arrival(self, trip):
         '''
@@ -65,7 +73,7 @@ class PoissonLogic(SimulationLogic):
         # SELECT station2_id from station_distances WHERE station1_id=arrive_station_id order by distance limit 1;
         # returns a StationDistance object in which station2_id is the station nearest to arrive_station_id
         nearest_distance = self.session.query(data_model.StationDistance)\
-                                    .filter(data_model.StationDistance.station1_id = arrive_station_id)\
+                                    .filter(data_model.StationDistance.station1_id == arrive_station_id)\
                                     .order_by(data_model.StationDistance.distance)[0]
         nearest_station_id = nearest_distance.station2_id
         trip.end_station_id = nearest_station_id
@@ -83,7 +91,7 @@ class PoissonLogic(SimulationLogic):
         # SELECT station2_id from station_distances WHERE station1_id=depart_station_id order by distance limit 1;
         # returns a StationDistance object in which station2_id is the station nearest to arrive_station
         nearest_distance = self.session.query(data_model.StationDistance)\
-                                    .filter(data_model.StationDistance.station1_id = depart_station_id)\
+                                    .filter(data_model.StationDistance.station1_id == depart_station_id)\
                                     .order_by(data_model.StationDistance.distance)[0]
         nearest_station_id = nearest_distance.station2_id
         trip.start_station_id = nearest_station_id
@@ -96,4 +104,11 @@ class PoissonLogic(SimulationLogic):
         self.pending_departures(trip.start_date, trip)
 
 
+def main():
+    connector = utils.Connector()
+    session = connector.getDBSession()
+    p = PoissonLogic(session)
+    print p.get_trip_duration(31100, 31101)
 
+if __name__ == '__main__':
+    main()
