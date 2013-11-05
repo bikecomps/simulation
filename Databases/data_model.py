@@ -56,6 +56,24 @@ class Station(Base):
     def __repr__(self):
         return 'station id: %s, station name: %s, capacity: %s' % (self.id, self.name, self.capacity)
 
+class StationDistance(Base):
+    '''
+    Separate table which stores Manhattan distances between stations.
+    '''
+    __tablename__ = 'station_distances'
+    station1_id = Column(Integer)
+    station2_id = Column(Integer)
+    distance = Column(Float)
+
+    def __init__(self, s1, s2, dist):
+        self.station1_id = s1
+        self.station2_id = s2
+        self.distance = dist
+
+    def __repr__(self):
+        return 'station1 id: %s, station2 id: %s, distance: %s' % (self.station1_id, self.station2_id, self.distance)
+
+
 class Intersection(Base):
     '''
     Simple Intersection class stored in the intersections table.
@@ -183,6 +201,12 @@ class Lambda(Base):
     def __repr__(self):
         return 'start station id: %s, end station id: %s, hour: %s, day of week: %s, value: %.2f' % (self.start_station_id, self.end_station_id, self.hour, self.day_of_week, self.value)
 
+    def getDict(self):
+        return {"start_station_id" : self.start_station_id,
+                "end_station_id" : self.end_station_id,
+                "hour" : self.hour,
+                "day_of_week" : self.day_of_week,
+                "value" : self.value}
 
 class GaussianDistr(Base):
     '''
@@ -211,8 +235,6 @@ class GaussianDistr(Base):
         self.end_station_id = end_station_id
         self.mean = mean
         self.std = std
-
-
 
 def main():
     # Defaults to using psycopg2 drivers
