@@ -10,6 +10,7 @@ from utility import Connector
 from datetime import datetime
 from sqlalchemy import update
 from sqlalchemy.ext.declarative import declarative_base
+import numpy
 
 Base = declarative_base()
 
@@ -84,8 +85,14 @@ def train_gaussian(connector, start_date, end_date):
     '''
     Creates gaussian distr statistics based on day. 
     Simple mapping of station_from to station_to -> mean,stdev
+
+    For now I didn't include stations where we don't have any trip data.
+    I figured that was safer than having them both be 0, it's an easy 
+    fix that I'd be happy to discuss.
     '''
     session = connector.getDBSession()
+    session.query(GaussianDistr).delete()
+
     trip_map = {}
     for trip in session.query(Trip) \
             .filter(Trip.start_date.between(start_date, end_date)):
@@ -99,13 +106,14 @@ def train_gaussian(connector, start_date, end_date):
     for (station_one, station_two), times in trip_map.iteritems():
         average_time = numpy.average(times)
         stdv_time = numpy.std(times)
-        gd = GaussianDistr(station_one, statione_two, average_time, stdv_time)
+        gd = GaussianDistr(station_one, station_two, average_time, stdv_time)
         session.add(gd)
 
         count += 1
         if count % 1000 == 0:
             session.flush()
             session.commit()
+            print "Flushing group %s" % count
 
     session.flush()
     session.commit()
@@ -113,7 +121,7 @@ def train_gaussian(connector, start_date, end_date):
 
 def main():
     c = Connector()
-    train_gaussian(c, "2012-1-1", "2012-1-2")
+    train_gaussian(c, "2012-1-1", "2012-1-30")
     #train_poisson(c, "2012-1-1", "2012-1-2")
 
 if __name__ == "__main__":

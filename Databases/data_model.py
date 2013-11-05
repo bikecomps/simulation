@@ -61,6 +61,7 @@ class StationDistance(Base):
     Separate table which stores Manhattan distances between stations.
     '''
     __tablename__ = 'station_distances'
+    id = Column(Integer, Sequence('inter_id_seq'), primary_key=True)
     station1_id = Column(Integer)
     station2_id = Column(Integer)
     distance = Column(Float)
