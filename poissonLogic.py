@@ -57,5 +57,39 @@ class PoissonLogic(SimulationLogic):
         num_trips = poisson.ppf(probability,lambda_poisson)
         return datetime.timedelta(minutes=norm.ppf(probability,mu_normal))
 
-    def resolve_departure(self, trip):
-        pass
+    def resolve_sad_arrival(self, trip):
+        '''
+        Changes trip.end_station_id to the id of the station nearest to it and updates trip.end_date accordingly. Puts the updated trip into pending_arrivals.
+        '''
+        depart_station_id = trip.end_station_id
+        # SELECT station2_id from station_distances WHERE station1_id=depart_station_id order by distance limit 1;
+        # returns a StationDistance object in which station2_id is the station nearest to depart_station_id
+        nearest_distance = self.session.query(data_model.StationDistance)\
+                                    .filter(data_model.StationDistance.station1_id = depart_station_id)\
+                                    .order_by(data_model.StationDistance.distance)[0]
+        nearest_station_id = nearest_distance.station2_id
+        trip.end_station_id = nearest_station_id
+        extra_time = self.get_trip_duration(depart_station_id)
+        trip.end_date = trip.end_date + extra_time
+        self.pending_arrivals.put(trip.end_date,trip)
+
+
+
+    def resolve_sad_departure(self, trip):
+        '''
+        Incomplete. Currently changes trip.start_station_id to the id of the station nearest to it.
+        TO-DO:
+            -update both trip.end_date and trip.start_date (should we use the timedelta from get_trip_duration for updating the start time?)
+            -put this trip in the appropriate "pending trips" list.
+        '''
+        arrive_station_id = trip.start_station_id
+        # SELECT station2_id from station_distances WHERE station1_id=depart_station_id order by distance limit 1;
+        # returns a StationDistance object in which station2_id is the station nearest to arrive_station
+        nearest_distance = self.session.query(data_model.StationDistance)\
+                                    .filter(data_model.StationDistance.station1_id = depart_station_id)\
+                                    .order_by(data_model.StationDistance.distance)[0]
+        nearest_station_id = nearest_distance.station2_id
+        trip.start_station_id = nearest_station_id
+
+
+
