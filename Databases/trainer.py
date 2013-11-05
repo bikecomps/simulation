@@ -58,16 +58,21 @@ def train_poisson(conn, start_d, end_d):
     # faster to delete all rows in the table?
     session.query(Lambda).delete()
 
-    to_insert = []
+    count = 0
     for (s_id, e_id) in stationsd:
         counts = stationsd[(s_id, e_id)]
         for day in range(t_days):
-            for hour in range(t_hours):                
+            for hour in range(t_hours):               
                 l = Lambda(s_id, e_id, hour+1, day+1, counts[day][hour]/float(numdays))
-                to_insert.append(l.getDict())
+                session.add(l)
+                count += 1
 
-    session.execute(Lambda.insert, to_insert)
-
+                if count % 1000 == 0:
+                    session.flush()
+                    session.commit()
+                
+    # flush for last time
+    session.flush()
     session.commit()
 
     print "Number of trips used in training: %d" % tripnum

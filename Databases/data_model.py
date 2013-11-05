@@ -183,6 +183,13 @@ class Lambda(Base):
     def __repr__(self):
         return 'start station id: %s, end station id: %s, hour: %s, day of week: %s, value: %.2f' % (self.start_station_id, self.end_station_id, self.hour, self.day_of_week, self.value)
 
+    def getDict(self):
+        return {"start_station_id" : self.start_station_id,
+                "end_station_id" : self.end_station_id,
+                "hour" : self.hour,
+                "day_of_week" : self.day_of_week,
+                "value" : self.value}
+
 def main():
     # Defaults to using psycopg2 drivers
     # We don't want to commit all of our passwords/usernames so we need to import them.

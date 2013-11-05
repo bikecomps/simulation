@@ -9,6 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 import os
+import sys
 
 class Connector:
     def __init__(self, echo=False):
