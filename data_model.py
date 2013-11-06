@@ -27,7 +27,7 @@ test_orm=# select * from stations;
 (1 row)
 '''
 
-import hidden
+from utility import Connector
 from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, ForeignKey, Sequence
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
@@ -61,9 +61,8 @@ class StationDistance(Base):
     Separate table which stores Manhattan distances between stations.
     '''
     __tablename__ = 'station_distances'
-    id = Column(Integer, Sequence('inter_id_seq'), primary_key=True)
-    station1_id = Column(Integer)
-    station2_id = Column(Integer)
+    station1_id = Column(Integer, primary_key=True)
+    station2_id = Column(Integer, primary_key=True)
     distance = Column(Float)
 
     def __init__(self, s1, s2, dist):
@@ -238,11 +237,9 @@ class GaussianDistr(Base):
         self.std = std
 
 def main():
-    # Defaults to using psycopg2 drivers
-    # We don't want to commit all of our passwords/usernames so we need to import them.
-    # I'll email you all the appropriate hidden document if you want to run this file
-    engine_path = 'postgresql://%s:%s@localhost/%s' % (hidden.DB_USERNAME, hidden.DB_PASSWORD, hidden.DB_NAME)
-    engine = create_engine(engine_path, echo=True)    
+    c = Connector(echo=True)
+    engine = c.getDBEngine()
+
     # Create all tables if we haven't already
     Base.metadata.create_all(engine)
 

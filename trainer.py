@@ -56,7 +56,7 @@ def train_poisson(conn, start_d, end_d):
 
         tripnum += 1
     
-    # faster to delete all rows in the table?
+    # faster to delete all rows in the table
     session.query(Lambda).delete()
 
     count = 0
@@ -68,7 +68,7 @@ def train_poisson(conn, start_d, end_d):
                 session.add(l)
                 count += 1
 
-                if count % 1000 == 0:
+                if count % cap == 0:
                     session.flush()
                     session.commit()
                 
@@ -121,8 +121,8 @@ def train_gaussian(connector, start_date, end_date):
 
 def main():
     c = Connector()
-    train_gaussian(c, "2012-1-1", "2012-1-30")
-    #train_poisson(c, "2012-1-1", "2012-1-2")
+    # train_gaussian(c, "2012-1-1", "2012-1-30")
+    # train_poisson(c, "2012-1-1", "2012-1-30")
 
 if __name__ == "__main__":
     main()

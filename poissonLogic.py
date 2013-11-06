@@ -4,7 +4,7 @@
     Questions we still have about distributions:
     - Do we have to specify standard deviation and whatever the poisson equivalent is? (Perhaps we use scipy's rvs function but I haven't figured it out yet.)
 '''
-import Databases.utility as utils
+from utility import Connector
 import data_model
 from scipy.stats import poisson
 import random
@@ -105,7 +105,7 @@ class PoissonLogic(SimulationLogic):
 
 
 def main():
-    connector = utils.Connector()
+    connector = Connector()
     session = connector.getDBSession()
     p = PoissonLogic(session)
     print p.get_trip_duration(31100, 31101)

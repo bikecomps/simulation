@@ -1,7 +1,7 @@
 '''
     simulationLogic.py
 '''
-import Databases.utility
+from utility import Connector
 import data_model
 import Queue
 import random
