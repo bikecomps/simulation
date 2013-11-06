@@ -131,7 +131,16 @@ class Trip(Base):
     bike_id = Column(String(100))
     member_type = Column(Enum(u'Casual', u'Registered', name='member_type'), 
                          default=u'Registered')
-    trip_type = Column(Enum(u'Training', u'Testing', u'Produced', name='trip_type'), 
+    # Capital Bike share trips are divided into trips as follows:
+    # Not sure how we should do this
+    trip_type = Column(Enum(  u'Training_Group_1'
+                            , u'Training_Group_2'
+                            , u'Training_Group_3'
+                            , u'Testing_Group_1'
+                            , u'Testing_Group_2'
+                            , u'Testing_Group_3'
+                            , u'Produced'
+                            , name='trip_type'), 
                        default=u'Produced')
 
     start_date = Column(DateTime)
