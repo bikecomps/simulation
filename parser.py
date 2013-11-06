@@ -22,7 +22,7 @@ import csv
 import re
 import sys
 import hidden
-import utility
+from utility import Connector
 from data_model import *
 import datetime
 
@@ -141,7 +141,8 @@ def main():
                      headers, 
                      data)
     else:
-        session = utility.getDBSession()
+        c = Connector()
+        session = c.getDBSession()
         
         if sys.argv[1] == '-s':
             default_neigh = Neighborhood(-1)

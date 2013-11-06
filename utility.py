@@ -27,8 +27,3 @@ class Connector:
     def getDBEngine(self):
         return self.engine
 
-# include whatever here
-currpath = os.getcwd()
-dirs = ['Databases']
-for d in dirs:
-    sys.path.append(os.path.join(currpath, d))
