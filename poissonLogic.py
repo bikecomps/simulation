@@ -101,7 +101,7 @@ class PoissonLogic(SimulationLogic):
         trip.start_date = trip.start_date + extra_time
         new_trip_duration = self.get_trip_duration(nearest_station_id,trip.end_station_id)
         trip.end_date = trip.start_date + trip.end_date
-        self.pending_departures(trip.start_date, trip)
+        self.pending_departures.put(trip.start_date, trip)
 
 
 def main():
