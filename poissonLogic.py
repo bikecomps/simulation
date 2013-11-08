@@ -7,6 +7,7 @@
 from utility import Connector
 import data_model
 from scipy.stats import poisson
+import numpy
 import random
 from simulationLogic import SimulationLogic
 import datetime
@@ -24,7 +25,7 @@ class PoissonLogic(SimulationLogic):
 
         for start_station_id in self.stations:
             for end_station_id in self.stations:
-                num_trips = self.get_num_trips()
+                num_trips = self.get_num_trips(start_station_id, end_station_id, lambda_hour, lambda_day_of_week)
                 for i in range(num_trips):
                     # Starting time of the trip is randomly chosen within the Lambda's time range, which is hard-coded to be an hour.
                     added_time = datetime.timedelta(0, random.randint(0, 59), 0, 0, random.randint(0, 59), 0, 0)
@@ -42,14 +43,25 @@ class PoissonLogic(SimulationLogic):
         lambda_poisson = self.session.query(data_model.Lambda)\
                                 .filter(data_model.Lambda.start_station_id == start_station_id)\
                                 .filter(data_model.Lambda.end_station_id == end_station_id)\
-                                .filter(data_model.Lambda.hour == lambda_hour)\
-                                .filter(data_model.Lambda.day_of_week == lambda_day_of_week)
+                                .filter(data_model.Lambda.hour == hour)\
+                                .filter(data_model.Lambda.day_of_week == day_of_week).first()
         # Choose a random probability. We will get the number of trips that happen with that probability using the inverse cumulative distribution for poisson.
         probability = random.random()
         while probability == 0:
             probability = random.random()
-        num_trips = poisson.ppf(probability,lambda_poisson)
-        return num_trips
+        if lambda_poisson:
+            print "Lambda value %f, prob %f" % (lambda_poisson.value, probability)
+            num_trips = poisson.ppf(probability,lambda_poisson.value)
+        else:
+            #TODO: Figure out what we do when we don't have training data/lambda = 0 -> undefined
+            num_trips = -1
+            print "Nothing matched the lambda query"
+        if numpy.isnan(num_trips):
+            #TODO: Same as above
+            print "Evaluated to NaN"
+            num_trips = -1
+        print "Num trips: ", num_trips
+        return int(num_trips)
 
     def get_trip_duration(self, start_station_id, end_station_id):
         '''Get timedelta of a trip between 2 stations, sampled from normal distribution'''

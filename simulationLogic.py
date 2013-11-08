@@ -57,8 +57,8 @@ class SimulationLogic:
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        self.generate_new_trips(timestep)
         self.time += timestep
+        self.generate_new_trips(self.time)
         self.resolve_trips()
 
         
