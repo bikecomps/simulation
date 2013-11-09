@@ -2,6 +2,8 @@
 import csv
 import datetime
 import sys
+import random
+random.seed(23526)
 
 # Our modules
 from simulationLogic import SimulationLogic
@@ -32,9 +34,8 @@ class Simulator:
         Takes in a list of trip objects and writes them out to a csv file
         '''
         with open(file_name, 'w') as f:
-            writer = csv.csvwriter(f)
             for line in results:
-                writer.write(line.to_csv()) 
+                f.write(line.to_csv()+"\n") 
 
 def print_usage():
     print "Simulator Usage: python simulator.py <name of logic> <start_date> <end_date> <output file>"
