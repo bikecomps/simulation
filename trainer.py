@@ -121,8 +121,8 @@ def train_gaussian(connector, start_date, end_date):
 
 def main():
     c = Connector()
-    # train_gaussian(c, "2012-1-1", "2012-1-30")
-    # train_poisson(c, "2012-1-1", "2012-1-30")
+    train_gaussian(c, "2012-1-1", "2013-1-1")
+    train_poisson(c, "2012-1-1", "2013-1-1")
 
 if __name__ == "__main__":
     main()

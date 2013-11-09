@@ -43,8 +43,8 @@ class SimulationLogic:
         self.trip_list = []
         self.stations = {}
         self.initialize_stations(start_time)
-        for s in self.stations:
-            print s, self.stations[s]
+        #for s in self.stations:
+        #    print s, self.stations[s]
 
     def initialize_stations(self, start_time):
         '''Sets initial bike count for each station.'''

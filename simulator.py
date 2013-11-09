@@ -16,10 +16,10 @@ class Simulator:
         self.sim_logic.initialize(start_time)
 
         cur_time = start_time
-        #for time in range(start_time, end_time, timestep):
         while cur_time < end_time:
             self.sim_logic.update(timestep)
             cur_time += timestep
+            print "Finished time step ", cur_time
 
         results = self.sim_logic.flush()
         self.sim_logic.clean_up()
@@ -37,7 +37,7 @@ class Simulator:
                 writer.write(line.to_csv()) 
 
 def print_usage():
-    print "Simulator Usage: python simulator.py <name of logic> <start_date> <end_date>"
+    print "Simulator Usage: python simulator.py <name of logic> <start_date> <end_date> <output file>"
 
 def main():
     logic_options = {
@@ -45,12 +45,13 @@ def main():
         "PoissonLogic" : PoissonLogic
     }
 
-    if len(sys.argv) < 4 or sys.argv[1] not in logic_options:
+    if len(sys.argv) < 5 or sys.argv[1] not in logic_options:
         print_usage()
         return
    
     raw_start_date = sys.argv[2]
     raw_end_date = sys.argv[3]
+    file_name = sys.argv[4]
     
     start_date = datetime.datetime.strptime(raw_start_date, '%Y-%m-%d')
     end_date = datetime.datetime.strptime(raw_end_date, '%Y-%m-%d')
