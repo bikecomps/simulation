@@ -146,11 +146,11 @@ class Trip(Base):
     end_station = relationship('Station', foreign_keys=[end_station_id], 
                                backref=backref('trips_in'))
 
-    def __init__(self, bike_id, member_type, trip_type, start_date, end_date,
+    def __init__(self, bike_id, member_type, trip_type_id, start_date, end_date,
                  start_station_id, end_station_id):
         self.bike_id = bike_id
         self.member_type = member_type
-        self.trip_type = trip_type
+        self.trip_type_id = trip_type_id
         self.start_date = start_date
         self.end_date = end_date
         self.start_station_id = start_station_id
