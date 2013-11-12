@@ -26,7 +26,7 @@ test_orm=# select * from stations;
   1 | Fifth and Union |        5 |               1
 (1 row)
 '''
-
+import datetime
 from utility import Connector
 from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, ForeignKey, Sequence
 from sqlalchemy.ext.declarative import declarative_base
@@ -130,17 +130,10 @@ class Trip(Base):
     bike_id = Column(String(100))
     member_type = Column(Enum(u'Casual', u'Registered', name='member_type'), 
                          default=u'Registered')
-    # Capital Bike share trips are divided into trips as follows:
-    # Not sure how we should do this
-    trip_type = Column(Enum(  u'Training_Group_1'
-                            , u'Training_Group_2'
-                            , u'Training_Group_3'
-                            , u'Testing_Group_1'
-                            , u'Testing_Group_2'
-                            , u'Testing_Group_3'
-                            , u'Produced'
-                            , name='trip_type'), 
-                       default=u'Produced')
+
+    trip_type_id = Column(Integer, ForeignKey('trip_types.id'))
+    trip_type = relationship('TripType', foreign_keys=[trip_type_id],
+                                 backref=backref('trips'))
 
     start_date = Column(DateTime)
     end_date = Column(DateTime)
@@ -162,6 +155,9 @@ class Trip(Base):
         self.end_date = end_date
         self.start_station_id = start_station_id
         self.end_station_id = end_station_id
+
+    def duration(self):
+        return self.end_date - self.start_date
 
     def __repr__(self):
         return 'bike id:%s, member type:%s, trip type:%s, start date:%s, end date:%s, start station id:%s, end station id:%s' % (self.bike_id, self.member_type, self.trip_type, self.start_date, self.end_date, self.start_station_id, self.end_station_id)
@@ -244,6 +240,28 @@ class GaussianDistr(Base):
         self.end_station_id = end_station_id
         self.mean = mean
         self.std = std
+
+    def __repr__(self):
+        return 'start_station_id:%s, end_station_id:%s, mean:%s, std:%s' % (self.start_station_id, self.end_station_id, self.mean, self.std)
+
+class TripType(Base):
+    '''
+    Records meta-data about the type of trip,
+    should put w/e else we think could be useful in this class
+    '''
+    __tablename__ = 'trip_types'
+    id = Column(Integer, Sequence('trip_type_id_seq'), primary_key=True)
+    type = Column(Enum(u'Training', u'Testing', u'Produced', name='trip_type'), 
+             default=u'Produced')
+
+    produced_on = Column(DateTime)
+
+    def __init__(self, type):
+        self.type = type
+        self.produced_on = datetime.datetime.now() 
+
+    def __repr__(self):
+        return 'type: %r, produced_on %r' % (self.type, self.produced_on)
 
 def main():
     c = Connector(echo=True)
