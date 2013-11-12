@@ -37,8 +37,7 @@ class PoissonLogic(SimulationLogic):
         # such that they're accessible from any part of the logic
         lambda_hour = self.time.hour
         lambda_day_of_week = self.time.weekday()
-        # What's going on here?...
-        lambda_start_time = self.time.replace(hour=lambda_hour)
+
         self.lambda_distrs = self.get_lambdas(lambda_hour, lambda_day_of_week)
 
         # Technically we don't need to grab these every times but if we get more advanced

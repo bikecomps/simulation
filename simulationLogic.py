@@ -7,9 +7,7 @@ import Queue
 import random
 import datetime
 # # Might need to move this to simulator eventually
-import hidden
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+
 DEPARTURE_TYPE = 0
 ARRIVAL_TYPE = 1
 
