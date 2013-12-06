@@ -275,13 +275,6 @@ class NeighborhoodAttr(Base):
     '''
     __tablename__ = 'neighb_attrs'
 
-    '''
-    __table_args__ = (
-        UniqueConstraint('neighborhood_id', 'attr_type_id')
-    )
-    '''
-
-    #id = Column(Integer, Sequence('neighb_attr_id_seq'), primary_key=True)
     # For now, we'll assume that we can make everything a float
     value = Column(Float, nullable=False)
 
