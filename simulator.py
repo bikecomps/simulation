@@ -6,6 +6,7 @@ import random
 random.seed(23526)
 
 # Our modules
+from data_model import Trip
 from simulationLogic import SimulationLogic
 from poissonLogic import PoissonLogic
 from utility import Connector
@@ -34,8 +35,9 @@ class Simulator:
         Takes in a list of trip objects and writes them out to a csv file
         '''
         with open(file_name, 'w') as f:
+            f.write(Trip.csv_header() + "\n")
             for line in results:
-                f.write(line.to_csv()+"\n")
+                f.write(line.to_csv() + "\n")
 
     # Return string to write to console, std out
     def write_stdout(self, results):

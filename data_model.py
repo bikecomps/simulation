@@ -95,11 +95,11 @@ class Intersection(Base):
 class Neighborhood(Base):
     __tablename__ = 'neighborhoods'
     id = Column(Integer, Sequence('neigh_id_seq'), primary_key=True)
-    population = Column(Integer)
-    # Presumably some other data?
+    # FIPS code uniquely identifies census tracts
+    FIPS_code = Column(String(15))
     
-    def __init__(self, population):
-        self.population = population
+    def __init__(self, FIPS_code):
+        self.FIPS_code = FIPS_code
 
 class RoadSegment(Base):
     __tablename__ = 'road_segments'
@@ -161,6 +161,10 @@ class Trip(Base):
 
     def __repr__(self):
         return 'bike id:%s, member type:%s, trip type:%s, start date:%s, end date:%s, start station id:%s, end station id:%s' % (self.bike_id, self.member_type, self.trip_type, self.start_date, self.end_date, self.start_station_id, self.end_station_id)
+
+    @staticmethod
+    def csv_header():
+        return 'bike_id, member_type, trip_type, start_date, end_date, start_station_id, end_station_id'
 
     def to_csv(self):
         return '%s,%s,%s,%s,%s,%s,%s' % (self.bike_id, self.member_type, self.trip_type, self.start_date, self.end_date, self.start_station_id, self.end_station_id)
@@ -251,17 +255,67 @@ class TripType(Base):
     '''
     __tablename__ = 'trip_types'
     id = Column(Integer, Sequence('trip_type_id_seq'), primary_key=True)
-    type = Column(Enum(u'Training', u'Testing', u'Produced', name='trip_type'), 
+    trip_type = Column(Enum(u'Training', u'Testing', u'Produced', name='trip_type'), 
              default=u'Produced')
 
     produced_on = Column(DateTime)
 
-    def __init__(self, type):
-        self.type = type
+    def __init__(self, trip_type):
+        self.trip_type = trip_type
         self.produced_on = datetime.datetime.now() 
 
     def __repr__(self):
         return 'type: %r, produced_on %r' % (self.type, self.produced_on)
+
+class NeighborhoodAttr(Base):
+    '''
+    For storing various census based (or other type) of data. 
+    The descriptor of what type it is (i.e. population, avg. income) will
+    be stored with AttributeType objects.
+    '''
+    __tablename__ = 'neighb_attrs'
+
+    '''
+    __table_args__ = (
+        UniqueConstraint('neighborhood_id', 'attr_type_id')
+    )
+    '''
+
+    #id = Column(Integer, Sequence('neighb_attr_id_seq'), primary_key=True)
+    # For now, we'll assume that we can make everything a float
+    value = Column(Float, nullable=False)
+
+    neighborhood_id = Column(Integer, ForeignKey('neighborhoods.id'),
+                        primary_key=True)
+    neighborhood = relationship('Neighborhood', foreign_keys=[neighborhood_id],
+               backref=backref('attrs'))
+
+    attr_type_id = Column(Integer, ForeignKey('attr_types.id'),
+                        primary_key=True)
+    attr_type = relationship('AttributeType', foreign_keys=[attr_type_id], 
+               backref=backref('attrs'))
+
+
+    
+    def __init__(self, value, attr_type, neighborhood_id):
+        self.value = value
+        self.attr_type = attr_type
+        self.neighborhood_id = neighborhood_id
+        
+    def __repr__(self):
+        return 'Type: %r, Value: %r' % (self.attr_type, self.value)
+
+class AttributeType(Base):
+
+    __tablename__ = 'attr_types'
+    id = Column(Integer, Sequence('attr_types_id_seq'), primary_key=True)
+    descriptor = Column(String(100), nullable=False)
+
+    def __init__(self, descriptor):
+        self.descriptor = descriptor
+
+    def __repr__(self):
+        return 'Attribute type: %r' % self.descriptor
 
 def main():
     c = Connector(echo=True)
