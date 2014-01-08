@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import tornado.ioloop
 from tornado.web import RequestHandler, Application
 
@@ -7,6 +9,7 @@ from utility import Connector
 from simulator import Simulator 
 
 import datetime
+import os
 
 logic_options = {
     "SimulationLogic" : SimulationLogic,
@@ -20,11 +23,11 @@ class RawTripsHandler(RequestHandler):
 
     http://localhost/raw?logic=PoissonLogic&start=2012-1-1&end=2013-1-1
 
-    The default logic simulator is 'SimulationLogic'
+    The default logic simulator is 'PoissonLogic'
     """
     def get(self):
         try:
-            logic_name = self.get_argument("logic", "SimulationLogic")
+            logic_name = self.get_argument("logic", "PoissonLogic")
             start_date = datetime.datetime.strptime(self.get_argument("start"),
                                                     "%Y-%m-%d")
             end_date = datetime.datetime.strptime(self.get_argument("end"),
@@ -53,5 +56,5 @@ if __name__ == "__main__":
         (r"/raw", RawTripsHandler)
     ], **settings)
     
-    application.listen(80)
+    application.listen(3000)
     tornado.ioloop.IOLoop.instance().start()
