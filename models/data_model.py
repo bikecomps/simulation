@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 '''
 Basic demo of SQL-Alchemy ORM. Can be found on:
 
@@ -26,11 +28,13 @@ test_orm=# select * from stations;
   1 | Fifth and Union |        5 |               1
 (1 row)
 '''
+
 import datetime
-from utility import Connector
 from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, ForeignKey, Sequence
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
+
+from ..utils import Connector
 
 Base = declarative_base()
 

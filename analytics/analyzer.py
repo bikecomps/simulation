@@ -1,15 +1,18 @@
+#! /usr/bin/env python
 '''
 Holds Analyzer class used to analyze results from, currently, a csv
 representing trip objects.
 
 Future: Grab from database?
 '''
-import csv
+
 import csv
 import datetime
 import json
-from utility import Connector
-from data_model import Trip, Station
+
+from ..utils import Connector
+from ..models import Trip, Station
+
 import numpy
 
 

@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 # System modules
 import csv
 import datetime
@@ -8,7 +10,8 @@ random.seed(23526)
 # Our modules
 from simulationLogic import SimulationLogic
 from poissonLogic import PoissonLogic
-from utility import Connector
+
+from ..utils import Connector
 
 class Simulator:
     def __init__(self, sim_logic):

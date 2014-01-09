@@ -1,12 +1,13 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 '''
 Used to train parameters for the distributions used to model
 bike activity (number of departures/arrivals and trip times)
 between every pair of stations.
 '''
 
-from data_model import *
-from utility import Connector
+from ..models import *
+from ..utils import Connector
+
 from datetime import datetime
 from sqlalchemy import update
 from sqlalchemy.ext.declarative import declarative_base

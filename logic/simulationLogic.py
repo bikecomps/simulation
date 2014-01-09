@@ -1,8 +1,9 @@
 '''
     simulationLogic.py
 '''
-from utility import Connector
-import data_model
+from ..utils import Connector
+from ..models import *
+
 import Queue
 import random
 import datetime
@@ -46,7 +47,7 @@ class SimulationLogic:
 
     def initialize_stations(self, start_time):
         '''Sets initial bike count for each station.'''
-        queried_stations = self.session.query(data_model.Station)
+        queried_stations = self.session.query(Station)
         for s in queried_stations:
             # For now, generates a random count that is less than or equal to the station's capacity.
             count = random.randint(0,s.capacity)
@@ -70,7 +71,7 @@ class SimulationLogic:
                 start_time = self.time + datetime.timedelta(minutes=random.randint(0, timestep.total_seconds()/60))
                 # Nobody takes longer than 2 hours to bike anywhere, duh!
                 end_time = start_time + datetime.timedelta(minutes=random.randint(0, 120))
-                new_trip = data_model.Trip(str(random.randint(1,500)), "Casual", "Produced", start_time, end_time, station, end_station_ID)
+                new_trip = Trip(str(random.randint(1,500)), "Casual", "Produced", start_time, end_time, station, end_station_ID)
 
                 self.pending_departures.put((start_time, new_trip))
 

@@ -3,7 +3,7 @@
 A class for comparing the trips our simulator generates to real trips.
 '''
 
-from utility import Connector
+from ..utils import Connector
 
 class Evaluator:
 	def __init__(self):

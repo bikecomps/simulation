@@ -21,10 +21,10 @@ from bs4 import BeautifulSoup
 import csv
 import re
 import sys
-import hidden
-from utility import Connector
-from data_model import *
 import datetime
+
+from ..utils import Connector
+from ..models import *
 
 CSV_WRITER = False
 

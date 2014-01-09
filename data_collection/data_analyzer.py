@@ -1,7 +1,11 @@
+#! /usr/bin/env python
+
 import re
 import sys
 import numpy
+
 #[now, station_id, num_bikes, num_empties]
+
 def read(filename):
     '''
     Read and return file
