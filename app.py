@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import tornado.ioloop
 from tornado.web import RequestHandler, Application
 
@@ -7,16 +9,25 @@ from utility import Connector
 from simulator import Simulator 
 
 import datetime
+import os
 
 logic_options = {
     "SimulationLogic" : SimulationLogic,
     "PoissonLogic" : PoissonLogic
 }
 
-class SummaryStatsHandler(RequestHandler):
+class RawTripsHandler(RequestHandler):
+    """
+    To generate trips from Jan. 1, 2012 to Jan. 2, 2013 using
+    the PoissonLogic simulator, use:
+
+    http://localhost/raw?logic=PoissonLogic&start=2012-1-1&end=2013-1-1
+
+    The default logic simulator is 'PoissonLogic'
+    """
     def get(self):
         try:
-            logic_name = self.get_argument("logic", "SimulationLogic")
+            logic_name = self.get_argument("logic", "PoissonLogic")
             start_date = datetime.datetime.strptime(self.get_argument("start"),
                                                     "%Y-%m-%d")
             end_date = datetime.datetime.strptime(self.get_argument("end"),
@@ -30,10 +41,20 @@ class SummaryStatsHandler(RequestHandler):
             self.write("An error occured!<br/>")
             self.write("Simulator usage: /simulator?logic=<some logic>&start=<start date>&end=<end date>")
 
-application = Application([
-    (r"/simulator", SummaryStatsHandler)
-])
+class IndexHandler(RequestHandler):
+    def get(self):
+        self.render("index.html")
 
 if __name__ == "__main__":
-    application.listen(80)
+    dirname = os.path.dirname(__file__)
+    settings = {
+        "static_path" : os.path.join(dirname, "static"),
+        "template_path" : os.path.join(dirname, "template")
+    }
+    application = Application([
+        (r"/", IndexHandler),
+        (r"/raw", RawTripsHandler)
+    ], **settings)
+    
+    application.listen(3000)
     tornado.ioloop.IOLoop.instance().start()

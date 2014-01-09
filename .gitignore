@@ -2,3 +2,4 @@
 hidden.py
 bike_counts.csv
 *.pyc
+nohup.out
