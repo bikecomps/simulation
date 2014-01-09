@@ -10,7 +10,8 @@ Running Files
 We've modularized our entire directory. 
 In order to run any program you'd
 have to use this syntax: `python -m <sub-dir>.<file-name>`. For example,
-if you want to run `views/app.py`, use `python -m views.app`.
+if you want to run `views/app.py`, invoke `python -m views.app` from
+the `simulation` base directory.
 
 Style Guide
 -----------
