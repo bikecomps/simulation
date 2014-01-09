@@ -8,9 +8,11 @@ import csv
 import csv
 import datetime
 import json
+import numpy
+import sys
+
 from utility import Connector
 from data_model import Trip, Station
-import numpy
 
 
 class Analyzer:
@@ -144,7 +146,7 @@ class Analyzer:
 def main():
     s = Connector().getDBSession()
     builder = Analyzer(s)
-    trips = builder.read_and_parse('output.csv')
+    trips = builder.read_and_parse(sys.argv[1])
     #builder.get_summary_stats(trips)
     print builder.get_station_stats(trips)
 

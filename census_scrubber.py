@@ -21,7 +21,6 @@ FIPS code structure:
 6 digits - Census Tract
 4 digits - Census Block
 '''
-CREATED_TABLE_SUMMARY = 'summary.txt'
 
 # Ignoring if lat/long on a border
 API_URL = 'http://data.fcc.gov/api/block/%i/find?format=%s&latitude=%s&longitude=%s&showall=false'
@@ -61,8 +60,8 @@ def request_census_block(lat, lon, year=2010, form=JSON):
 
 def create_known_neighborhoods(session):
     '''
-    For now we'll just print out the FIPS for each station
-    eventually put it back into the DB in a new column (neighborhood?)
+    Creates and adds neighborhoods based on the locations of intersections
+    already loaded into the DB.
     '''
     intersections = session.query(Intersection)
     visited_FIPS = set()
@@ -71,7 +70,6 @@ def create_known_neighborhoods(session):
         census_json = request_census_block(inter_x.lat, inter_x.lon) 
         FIPS_code = census_json["Block"]["FIPS"]
 
-        neighb = None
         # Create the neighborhood 
         if FIPS_code not in visited_FIPS:
             visited_FIPS.add(FIPS_code)
@@ -82,26 +80,53 @@ def create_known_neighborhoods(session):
             neighb = session.query(Neighborhood).filter(Neighborhood.FIPS_code==FIPS_code).first()
 
         # Add the current intersection to the neighborhood
-        inter_x.neighborhood_id = neighb.id
+        inter_x.neighborhood = neighb
        
     session.commit()
 
 def get_census_data(session, attr_name, table_code, val_formula):
+    '''
+    Grabs DC-Tract level data for the table associated with the table_code.
+    It then adds the data to the DB with the given attr_name and values
+    for all known neighborhoods based on the val_formula. The val_formula 
+    should be comprised of headers for the table as variables in a tradtional
+    math formula (respect all orders of operations!)
+    '''
     header_re = re.compile(CENSUS_HEADER_FORMAT)
-    try:
-        # (State, Summary Level, State, Table Code)
-        request_url = CENSUS_URL % (DC_CODE, TRACT_DETAIL, DC_CODE, table_code)
+    val_formula = val_formula.strip()
 
-        census_csv = requests.get(request_url).text
-        census_data = [line.split(',') for line in census_csv.split('\n')]
-        headers = census_data[0]
+    try:
+        # Doesn't need to be efficient -> no more than 50 elements
+        state_codes = []
+        # Grab FIPS code so we can grab all of the files
+        for code in session.query(Neighborhood.FIPS_code):
+            state = code[0][0:2]
+            if state not in state_codes:
+                state_codes.append(state)
+
+        census_data = []
+        headers = []
+
+        first_state = True
+        for state in state_codes:
+            # (State, Summary Level, State, Table Code)
+            request_url = CENSUS_URL % (DC_CODE, TRACT_DETAIL, DC_CODE, table_code)
+
+            census_csv = requests.get(request_url).text
+            state_census_data = [line.split(',') for line in census_csv.split('\n')]
+
+            if first_state:
+                first_state = False
+                headers = state_census_data[0]
+
+            # Remove the first (headers) and last (empty str) from data
+            census_data += state_census_data[1:-1]
 
         # Do stuff
         new_type = AttributeType(attr_name)
-        session.add(new_type)
+        #session.add(new_type)
 
-        # Go from 1 past headers, ignore '' after splitting on 'n'
-        for line_idx in xrange(1, len(census_data) - 1):
+        for line_idx in xrange(len(census_data) - 1):
             line = census_data[line_idx]
             row_val_formula = header_re.sub(partial(map_header, headers=headers, row=line), val_formula)
             val = eval(row_val_formula)
@@ -116,16 +141,19 @@ def get_census_data(session, attr_name, table_code, val_formula):
             # If it's a known neighborhood, add the attribute
             if neighb:
                 new_attr = NeighborhoodAttr(val, new_type, neighb.id)
-                session.add(new_attr)
-        session.commit()
-        creation_summary = "Sucessfully created attribute %s from table %s using formula %s." % (attr_name, table_code, val_formula)
+                #session.add(new_attr)
+        #session.commit()
+        creation_summary = "\nSuccessfully created attribute '{name}' from table '{code}' using formula '{form}': {name},{code},{form}"\
+            .format(name=attr_name, code=table_code, form=val_formula)
         return creation_summary
     except:
         print "An exception occured, refer to the output file for more info"
         #formatted_error = "Error %s" % traceback.format_exception(*sys.exc_info())
-        creation_summary = "Unable to create attribute %s from table %s using formula %s.\n Error Code:\n%s" \
-                         % (attr_name, table_code, val_formula, traceback.format_exception(*sys.exc_info()))
+        creation_summary = "\nUnable to create attribute '{name}' from table '{code}' using formula '{form}': {name},{code},{form}.\n\
+            Error Code:\n{err}"\
+            .format(name=attr_name, code=table_code, form=val_formula, err=traceback.format_exception(*sys.exc_info()))
 
+        print creation_summary
         return creation_summary
        
 
@@ -140,11 +168,16 @@ def read_tables_from_file(session, in_filename, out_filename):
 
     with open(out_filename, 'a') as out: 
         for new_attr in new_attrs:
-            table_out = get_census_data(session, *new_attrs)
+            table_out = get_census_data(session, *new_attr)
             out.write(table_out)
-    
+
+def test(*args):
+    print args
 
 def read_tables_from_terminal(session, out_filename, headers_filename):
+    '''
+    Interactive method to add new attributes to the DB.
+    '''
     # Grab the header
     header_file = open(headers_filename, 'r')
     master_header_map = json.loads(header_file.read())
@@ -153,6 +186,7 @@ def read_tables_from_terminal(session, out_filename, headers_filename):
     with open(out_filename, 'a') as out: 
         create_new = 'y'
         while create_new == 'y':
+            print_tables(master_header_map)
             table_code = raw_input("From what census table do you want to create the new attribute? ")
             header_key = master_header_map[table_code]
             print "Header Label:" 
@@ -174,8 +208,19 @@ def read_tables_from_terminal(session, out_filename, headers_filename):
             
             create_new = raw_input("Would you like to create another attribute?(y/n) ")
 
+def print_tables(headers):
+    '''
+    Prints table codes alongside their descriptors
+    '''
+    print "Tables (table_code: descriptor)"
+    for table_code, table_info in sorted(headers.items()):
+        table_descriptor = table_info["name"]
+        print "%s: %s" % (table_code, table_descriptor)
 
 def map_header(match, headers, row):
+    '''
+    Small helper to make text formulas work seemlessly
+    '''
     val = row[headers.index(match.group(0))]
     # Handle case when it's either a float or an integer
     return str(float(val))
@@ -187,10 +232,14 @@ def pretty_print_json(json_file):
 def main():
     session = Connector().getDBSession()
     #create_known_neighborhoods(session)
-    read_tables_from_terminal(session, 'attr_summary.csv', 'labels.json')
+    #read_tables_from_terminal(session, 'attr_summary.csv', 'labels.json')
 
     #census_json = request_census_block(100, 100)
     #pretty_print_json(census_json)
+    #get_census_data(session, '1', 'H1', 'H1 + H2')#attr_name, table_code, val_formula):
+    read_tables_from_file(session, 'tables_to_add.csv','attr_summary.csv')
+
+
 
 
 if __name__ == '__main__':

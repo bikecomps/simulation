@@ -11,6 +11,7 @@ from datetime import datetime
 from sqlalchemy import update
 from sqlalchemy.ext.declarative import declarative_base
 import numpy
+from pybrain.datasets import SupervisedDataSet
 
 Base = declarative_base()
 
@@ -118,11 +119,61 @@ def train_gaussian(connector, start_date, end_date):
     session.flush()
     session.commit()
 
+def train_poisson_nn(conn, start_date, end_date):
+    session = conn.getDBSession() 
+   
+    stations = session.query(Station) 
+    station_dir = {}
+    # We only care about neighborhoods that have stations in them
+    neighbs = set()
+    for station_1 in stations:
+        for station_2 in stations:
+            for day in xrange(6):
+                for hour in xrange(24):
+                    station_dir[(station_1, station_2)] = 0
+        station_neighb = station_1.intersection.neighborhood
+
+        if  station_neighb not in neighbs:
+            neighbs.add(station_neighb)
+  
+    # Now create the dataset! Yay! 
+    for neighb in neighbs:
+        attrs = neighb.attrs
+        num_attrs = len(attrs)
+        print neighb.FIPS_code, attrs
+
+    #for station_1, station_2 in stations.iterkeys():
+
+    #data_set = SupervisedDataSet(
+def train_hour(station_1, station_2, dow, hour):
+    '''
+    Outputs a MU per hour
+    '''
+    pass
+
+def get_pairwise_counts(conn, start_d, end_d):
+    # get session and engine
+    session = conn.getDBSession()
+    engine = conn.getDBEngine()
+
+    # cap the amount of results gotten; save memory
+    cap = 10000
+
+    t_hours = 24
+    t_days = 7
+    stationsd = {}
+
+    stations = session.query(Station).yield_per(cap)
+    for s1 in stations:
+        for s2 in stations:
+            stationsd[(s1.id, s2.id)] = [[0]*t_hours for i in range(t_days)]
 
 def main():
     c = Connector()
-    train_gaussian(c, "2012-1-1", "2013-6-1")
+    #train_gaussian(c, "2012-1-1", "2013-6-1")
     # train_poisson(c, "2012-1-1", "2013-1-1")
+    train_poisson_nn(c, 's','s')
+    #get_pairwise_counts(c, "2013-1-1", "2013-1-2")
 
 if __name__ == "__main__":
     main()

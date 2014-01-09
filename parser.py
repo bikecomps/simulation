@@ -9,7 +9,7 @@ Before inserting trips into database, make sure to insert
 ALL stations because of foreign key constraints on
 the start and end stations of every trip.
 
-Usage: python parser.py -t | -ot | -s filename
+Usage: python parser.py -t | -to | -s filename
 
 Options:
         -t: file is a trips file (capitalbikeshare) with post 2011 format
