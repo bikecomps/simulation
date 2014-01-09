@@ -1,10 +1,14 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 '''
 Here, we put functions that we think could
 be re-usable and useful. 
 '''
 
-import hidden
+try:
+    import hidden
+except ImportError, e:
+    exit("hidden.py must be in the same directory as utility.py")
+    
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 import os

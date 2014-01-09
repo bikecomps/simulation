@@ -1,11 +1,13 @@
+#! /usr/bin/env python
 import requests
 import traceback
 import json
 import re
 import sys
+
 from functools import partial
-from data_model import *
-from utility import Connector
+from ..models import *
+from ..utils import Connector
 
 
 '''

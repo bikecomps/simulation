@@ -3,10 +3,9 @@
 import tornado.ioloop
 from tornado.web import RequestHandler, Application
 
-from simulationLogic import SimulationLogic
-from poissonLogic import PoissonLogic
-from utility import Connector
-from simulator import Simulator 
+from ..logic import *
+
+from ..utils import Connector
 
 import datetime
 import os
@@ -18,10 +17,10 @@ logic_options = {
 
 class RawTripsHandler(RequestHandler):
     """
-    To generate trips from Jan. 1, 2012 to Jan. 2, 2013 using
+    To generate trips from Jan. 1, 2012 to Jan. 2, 2012 using
     the PoissonLogic simulator, use:
 
-    http://localhost/raw?logic=PoissonLogic&start=2012-1-1&end=2013-1-1
+    http://localhost/raw?logic=PoissonLogic&start=2012-1-1&end=2012-1-2
 
     The default logic simulator is 'PoissonLogic'
     """
@@ -39,7 +38,7 @@ class RawTripsHandler(RequestHandler):
             self.write(simulator.write_stdout(results))
         except:
             self.write("An error occured!<br/>")
-            self.write("Simulator usage: /simulator?logic=<some logic>&start=<start date>&end=<end date>")
+            self.write("Simulator usage: /raw?logic=<some logic>&start=<start date>&end=<end date>")
 
 class IndexHandler(RequestHandler):
     def get(self):

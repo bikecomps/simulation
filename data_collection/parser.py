@@ -9,7 +9,7 @@ Before inserting trips into database, make sure to insert
 ALL stations because of foreign key constraints on
 the start and end stations of every trip.
 
-Usage: python parser.py -t | -ot | -s filename
+Usage: python parser.py -t | -to | -s filename
 
 Options:
         -t: file is a trips file (capitalbikeshare) with post 2011 format
@@ -21,10 +21,10 @@ from bs4 import BeautifulSoup
 import csv
 import re
 import sys
-import hidden
-import utility
-from data_model import *
 import datetime
+
+from ..utils import Connector
+from ..models import *
 
 CSV_WRITER = False
 
@@ -141,7 +141,8 @@ def main():
                      headers, 
                      data)
     else:
-        session = utility.getDBSession()
+        c = Connector()
+        session = c.getDBSession()
         
         if sys.argv[1] == '-s':
             default_neigh = Neighborhood(-1)

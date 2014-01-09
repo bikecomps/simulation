@@ -1,8 +1,12 @@
-from data_model import *
+#! /usr/bin/env python
+
+from ..models import *
+from ..utils import Connector
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from utility import Connector
+
 
 def get_data_for_station_pair(session, station_one, station_two, date_one, date_two):
     values = session.query(Trip).filter(Trip.start_station_id==station_one) \

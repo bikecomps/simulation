@@ -1,11 +1,14 @@
+#! /usr/bin/env python
+
 '''
     poissonLogic.py
 
     Questions we still have about distributions:
     - Do we have to specify standard deviation and whatever the poisson equivalent is? (Perhaps we use scipy's rvs function but I haven't figured it out yet.)
 '''
-from utility import Connector
-import data_model
+from ..utils import Connector
+from ..models import *
+
 from scipy.stats import poisson
 import numpy
 import random
@@ -23,11 +26,11 @@ class PoissonLogic(SimulationLogic):
         # Right now we're just saving the first closest station, 
         # easily modifiable to keep a list of closest stations
         self.nearest_stations = {}
-        station_list = self.session.query(data_model.Station) 
+        station_list = self.session.query(Station) 
         for station in station_list:
-            nearest_distance = self.session.query(data_model.StationDistance)\
-                    .filter(data_model.StationDistance.station1_id == station.id)\
-                    .order_by(data_model.StationDistance.distance).first()
+            nearest_distance = self.session.query(StationDistance)\
+                    .filter(StationDistance.station1_id == station.id)\
+                    .order_by(StationDistance.distance).first()
             self.nearest_stations[station.id] = nearest_distance
 
     def update(self, timestep):
@@ -52,7 +55,7 @@ class PoissonLogic(SimulationLogic):
 
 
     def generate_new_trips(self, start_time):
-        # Note that Monday is day 0 and Sunday is day 6. Is this the same for data_model?
+        # Note that Monday is day 0 and Sunday is day 6. Is this the same for models?
         station_count = 0
         for start_station_id in self.stations:
             station_count += 1
@@ -69,7 +72,7 @@ class PoissonLogic(SimulationLogic):
                         trip_start_time = start_time + added_time
                         trip_duration = self.get_trip_duration(gauss)
                         trip_end_time = trip_start_time + trip_duration
-                        new_trip = data_model.Trip(str(random.randint(1,500)), "Casual", "Produced", \
+                        new_trip = Trip(str(random.randint(1,500)), "Casual", "Produced", \
                                 trip_start_time, trip_end_time, start_station_id, end_station_id)
                         self.pending_departures.put((start_time, new_trip))
 
@@ -94,7 +97,7 @@ class PoissonLogic(SimulationLogic):
         """
         Caches gaussian distribution values into a dictionary.
         """
-        gaussian_distr = self.session.query(data_model.GaussianDistr)
+        gaussian_distr = self.session.query(GaussianDistr)
 
         distr_dict = {}
         for gauss in gaussian_distr:
@@ -105,9 +108,9 @@ class PoissonLogic(SimulationLogic):
         """
         Caches lambdas into a dictionary for the given hour and day_of_week.
         """
-        lambda_poisson = self.session.query(data_model.Lambda)\
-                .filter(data_model.Lambda.hour == hour)\
-                .filter(data_model.Lambda.day_of_week == day_of_week)
+        lambda_poisson = self.session.query(Lambda)\
+                .filter(Lambda.hour == hour)\
+                .filter(Lambda.day_of_week == day_of_week)
         # (station_id_1,  station_id_2) -> lambda
         distr_dict = {}
 
@@ -154,9 +157,9 @@ class PoissonLogic(SimulationLogic):
         depart_station_id = trip.start_station_id
         # SELECT station2_id from station_distances WHERE station1_id=depart_station_id order by distance limit 1;
         # returns a StationDistance object in which station2_id is the station nearest to arrive_station
-        nearest_distance = self.session.query(data_model.StationDistance)\
-                                    .filter(data_model.StationDistance.station1_id == depart_station_id)\
-                                    .order_by(data_model.StationDistance.distance)[0]
+        nearest_distance = self.session.query(StationDistance)\
+                                    .filter(StationDistance.station1_id == depart_station_id)\
+                                    .order_by(StationDistance.distance)[0]
         nearest_station_id = nearest_distance.station2_id
         trip.start_station_id = nearest_station_id
         """
