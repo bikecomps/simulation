@@ -23,8 +23,8 @@ import re
 import sys
 import datetime
 
-from ..utils import Connector
-from ..models import *
+from utils import Connector
+from models import *
 
 CSV_WRITER = False
 

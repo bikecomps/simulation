@@ -6,8 +6,8 @@ import re
 import sys
 
 from functools import partial
-from ..models import *
-from ..utils import Connector
+from models import *
+from utils import Connector
 
 
 '''

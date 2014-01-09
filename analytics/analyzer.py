@@ -9,19 +9,12 @@ Future: Grab from database?
 import csv
 import datetime
 import json
-<<<<<<< HEAD:analyzer.py
 import numpy
 import sys
 
-from utility import Connector
-from data_model import Trip, Station
-=======
 
-from ..utils import Connector
-from ..models import Trip, Station
-
-import numpy
->>>>>>> 5232a8c23db57aedd7e42c47603627e46767bd39:analytics/analyzer.py
+from utils import Connector
+from models import Trip, Station
 
 
 class Analyzer:

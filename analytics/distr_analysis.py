@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
-from ..models import *
-from ..utils import Connector
+from models import *
+from utils import Connector
 
 import matplotlib
 matplotlib.use('Agg')
