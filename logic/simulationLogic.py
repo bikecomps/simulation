@@ -1,8 +1,8 @@
 '''
     simulationLogic.py
 '''
-from ..utils import Connector
-from ..models import *
+from utils import Connector
+from models import *
 
 import Queue
 import random

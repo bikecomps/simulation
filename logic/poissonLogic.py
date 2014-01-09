@@ -6,8 +6,8 @@
     Questions we still have about distributions:
     - Do we have to specify standard deviation and whatever the poisson equivalent is? (Perhaps we use scipy's rvs function but I haven't figured it out yet.)
 '''
-from ..utils import Connector
-from ..models import *
+from utils import Connector
+from models import *
 
 from scipy.stats import poisson
 import numpy

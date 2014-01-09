@@ -5,8 +5,8 @@ bike activity (number of departures/arrivals and trip times)
 between every pair of stations.
 '''
 
-from ..models import *
-from ..utils import Connector
+from models import *
+from utils import Connector
 
 from datetime import datetime
 from sqlalchemy import update

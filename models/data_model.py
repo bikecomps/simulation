@@ -34,7 +34,7 @@ from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, St
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
 
-from ..utils import Connector
+from utils import Connector
 
 Base = declarative_base()
 

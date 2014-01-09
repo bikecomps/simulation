@@ -3,9 +3,8 @@
 import tornado.ioloop
 from tornado.web import RequestHandler, Application
 
-from ..logic import *
-
-from ..utils import Connector
+from logic import *
+from utils import Connector
 
 import datetime
 import os
@@ -35,10 +34,10 @@ class RawTripsHandler(RequestHandler):
             logic = logic_options[logic_name](session)
             simulator = Simulator(logic)
             results = simulator.run(start_date, end_date)
-            self.write(simulator.write_stdout(results))
-        except:
-            self.write("An error occured!<br/>")
-            self.write("Simulator usage: /raw?logic=<some logic>&start=<start date>&end=<end date>")
+            self.write(simulator.write_stdout(results).replace("\n", "<br/>\n"))
+        except Exception as inst:
+            print "usage: /raw?logic=PoissonLogic&start=<start-date>&end=<end-date>"
+            print inst
 
 class IndexHandler(RequestHandler):
     def get(self):
