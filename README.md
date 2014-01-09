@@ -7,7 +7,8 @@ The goal of this project is to:
 
 Running Files
 -------------
-Since we've modularized our directory, in order to run any program you'd
+We've modularized our entire directory. 
+In order to run any program you'd
 have to use this syntax: `python -m <sub-dir>.<file-name>`. For example,
 if you want to run `views/app.py`, use `python -m views.app`.
 
@@ -17,12 +18,12 @@ Here's a tentative style guide we should try to follow when creating
 new files, directories and when writing code. This guide closely follows
 PEP8 (The Official Style Guide for Python Code). Feel free to modify it.
 
-## File and Directory Naming Conventions
+#### File and Directory Naming Conventions
 
 * File/Directory/Module names should have short, all-lowercase names. 
   Underscores can be used in such names if it improves readability.
 
-## Code Naming Conventions
+#### Code Naming Conventions
 
 * CamelCase should be applied to class names.
 
