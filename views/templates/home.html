@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block css_and_scripts %}
+
+<!--Google Maps API v3-->
+<style>
+  html, body, #map-canvas {
+  height: 500px;
+  margin: 0px;
+  padding: 0px
+  }
+</style>
+
+<style>
+  #slider-range .ui-slider-range { background: #77aaff; }
+  #slider-range .ui-slider-handle { background: #ddddff; }
+  #slider-range .ui-slider-handle { hover: { background:;}
+</style>
+
+<!-- jQuery Slider script -->
+<link href="/static/css/ui-lightness/jquery-ui-1.10.3.custom.css" rel="stylesheet">
+<link rel="stylesheet" href="/static/development-bundle/themes/base/jquery.ui.all.css">
+<script src="/static/development-bundle/ui/jquery.ui.core.js"></script>
+<script src="/static/development-bundle/ui/jquery.ui.widget.js"></script>
+<script src="/static/development-bundle/ui/jquery.ui.mouse.js"></script>
+<script src="/static/development-bundle/ui/jquery.ui.slider.js"></script>
+<script src="/static/js/jquery-ui-1.10.3.custom.js"></script>
+<link rel="stylesheet" href="/static/development-bundle/demos/demos.css">
+<script>
+  $(function() {
+    sliderSetup();
+  });
+</script>
+
+<!-- Google Maps script -->    
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+<script src="/static/js/bikeshare-googlemaps.js"></script>
+    
+{% end %}
+
+{% block content %}
+
+<div class="row">  
+  <div class="large-10 columns">
+    <div class="panel">
+      <p>TIMELINE</p>
+      <label for="amount">Time range:</label>
+      <input type="text" id="amount" style="border:0; color#9900ff; font-weight:bold;" />
+      <div id="slider-range"></div>
+    </div>
+    <div id="map-canvas">
+    </div>
+  </div>
+</div>
+
+
+<script src="/static/js/foundation.min.js"></script>
+
+<script>
+  $(document).foundation();
+</script>
+
+{% end %}

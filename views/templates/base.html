@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<!--[if IE 8]>  <html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html>
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>{{title}}</title>
+  
+  <link rel="stylesheet" href="/static/css/foundation.css">
+  <link rel="stylesheet" href="/static/css/bikeshare-custom.css">
+  
+  <script type="text/javascript" src="/static/js/bikeshare-custom.js">
+    <!--Modernizr.js-->
+    <script src="/static/js/vendor/custom.modernizr.js"></script>
+    <script src="/static/development-bundle/jquery-1.9.1.js"></script>
+    {% block css_and_scripts %}{% end %}
+  </head>
+  
+  <body>
+    <nav class="top-bar" data-top-bar>
+      <ul class="title-area">
+        <li class="name">
+	      <h1><a href="/"><img src="/static/img/cbLogo-sm.png" /></a></h1>
+        </li>
+      </ul>
+      
+      <section class="top-bar-section">
+        <!-- Left Nav Section -->
+        <ul class="left">
+          <li><a href="/">Home</a></li>
+	      <li><a href="/stats">Summary Stats</a></li>
+	      <li><a href="/raw">Raw Trips</a></li>
+        </ul>
+        
+        <!-- Right Nav Section -->
+        <ul class="right">
+	      <li><a href="/about">About</a></li>
+        </ul>      
+      </section>
+    </nav>
+    
+    <br />
+    
+    <div id="content">
+      {% block content %}{% end %}
+    </div>
+    <footer>
+      <p>
+        Created with love by the 
+        <a target="_blank" href="/about">BikeShare Comps Group</a>
+        &nbsp;&copy; 2013
+      </p>
+    </footer>
+    
+    <script src="/static/js/foundation.min.js"></script>
+    
+    <script>
+      $(document).foundation();
+    </script>
+    
+  </body>
+</html>
