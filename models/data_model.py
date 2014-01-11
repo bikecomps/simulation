@@ -30,7 +30,7 @@ test_orm=# select * from stations;
 '''
 
 import datetime
-from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, ForeignKey, Sequence
+from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, ForeignKey, Sequence, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
 
@@ -320,6 +320,20 @@ def main():
 
     # Create all tables if we haven't already
     Base.metadata.create_all(engine)
+
+    # Lambda Indexes
+    lambda_index = Index('lambda_day_hour_index', Lambda.day_of_week, Lambda.hour)
+    lambda_day_index = Index('lambda_day_index', Lambda.day_of_week)
+    lambda_hour_index = Index('lambda_hour_index', Lambda.hour)
+    lambda_non_zero_index = Index('lambda_non_zero_index', Lambda.value.isnot(0)) 
+
+    #TODO CREATE INDEX ON NON NULLS?
+    # Created indexes, doesn't need to be created again
+    #lambda_index.create(engine)
+    #lambda_day_index.create(engine)
+    #lambda_hour_index.create(engine)
+    lambda_non_zero_index.create(engine)
+
 
 if __name__ == '__main__':
     main()
