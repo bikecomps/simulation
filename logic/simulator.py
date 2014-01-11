@@ -9,8 +9,8 @@ random.seed(23526)
 
 # Our modules
 from models import *
-from simulationLogic import SimulationLogic
-from poissonLogic import PoissonLogic
+from simulation_logic import SimulationLogic
+from poisson_logic import PoissonLogic
 from utils import Connector
 
 class Simulator:

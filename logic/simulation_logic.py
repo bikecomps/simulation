@@ -219,7 +219,10 @@ def printTrip(trip):
 
 
 def main():
-    SL = SimulationLogic()
+    conn = Connector()
+    sess = conn.getDBSession()
+
+    SL = SimulationLogic(sess)
     start_time = datetime.datetime(2013, 1, 1, 0, 0, 0)
     SL.initialize(start_time)
     step = datetime.timedelta(minutes=30)
