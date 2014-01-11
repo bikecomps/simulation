@@ -56,7 +56,7 @@ class Simulator:
 
     # Return string to write to console, std out
     def write_stdout(self, results):
-        return "\n".join([line.to_csv() in results])
+        return "\n".join([line.to_csv() for line in results])
 
 def print_usage():
     print "Simulator Usage: python simulator.py <name of logic> <start_date> <end_date> <output file>"
