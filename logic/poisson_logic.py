@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-    poissonLogic.py
+    poisson_logic.py
 
     Questions we still have about distributions:
     - Do we have to specify standard deviation and whatever the poisson equivalent is? (Perhaps we use scipy's rvs function but I haven't figured it out yet.)
@@ -10,7 +10,7 @@ from models import *
 from scipy.stats import poisson
 import numpy
 import random
-from simulationLogic import SimulationLogic
+from simulation_logic import SimulationLogic
 import datetime
 from dateutil import rrule
 from collections import defaultdict

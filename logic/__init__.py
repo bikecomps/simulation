@@ -1,3 +1,3 @@
-from poissonLogic import *
-from simulationLogic import *
+from poisson_logic import *
+from simulation_logic import *
 from simulator import *

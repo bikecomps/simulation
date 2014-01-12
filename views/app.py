@@ -24,6 +24,9 @@ class RawTripsHandler(RequestHandler):
     The default logic simulator is 'PoissonLogic'
     """
     def get(self):
+        self.render("raw.html", title="See Raw Bike Trips generate")
+
+    def post(self):
         try:
             logic_name = self.get_argument("logic", "PoissonLogic")
             start_date = datetime.datetime.strptime(self.get_argument("start"),
@@ -38,20 +41,35 @@ class RawTripsHandler(RequestHandler):
         except Exception as inst:
             print "usage: /raw?logic=PoissonLogic&start=<start-date>&end=<end-date>"
             print inst
-
+    
 class IndexHandler(RequestHandler):
     def get(self):
-        self.render("index.html")
+        self.render("home.html", title="BikeShare Comps")
+
+class AboutHandler(RequestHandler):
+    def get(self):
+        self.render("about.html", title="About Us")
+
+class StatsHandler(RequestHandler):
+    def get(self):
+        self.render("stats.html", title="Summary Stats")
+
+class BaseHandler(RequestHandler):
+    def get(self):
+        self.render("base.html", title="Base File")
 
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
     settings = {
         "static_path" : os.path.join(dirname, "static"),
-        "template_path" : os.path.join(dirname, "template")
+        "template_path" : os.path.join(dirname, "templates")
     }
     application = Application([
         (r"/", IndexHandler),
-        (r"/raw", RawTripsHandler)
+        (r"/raw", RawTripsHandler),
+        (r"/base", BaseHandler),
+        (r"/about", AboutHandler),
+        (r"/stats", StatsHandler)
     ], **settings)
     
     application.listen(3000)
