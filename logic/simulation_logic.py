@@ -4,6 +4,8 @@
 '''
 from utils import Connector
 from models import * 
+from data_collection import data_analyzer
+import bisect
 import Queue
 import random
 import datetime
@@ -44,12 +46,13 @@ class SimulationLogic:
         self.dock_shortages = []
         self.bike_shortages = []
         self.trip_list = []
+        self.dissapointments = []
         self.stations = {}
         self.initialize_stations(start_time)
         #for s in self.stations:
         #    print s, self.stations[s]
 
-    def initialize_stations(self, start_time):
+    def old_initialize_stations(self, start_time):
         '''Sets initial bike count for each station.'''
         queried_stations = self.session.query(data_model.Station)
         for s in queried_stations:
@@ -57,6 +60,44 @@ class SimulationLogic:
             count = random.randint(0,s.capacity)
             self.stations[s.id] = count
         
+    def initialize_stations(self, start_time):
+        '''
+        Loads the starting conditions of the stations from a csv.
+        Grossly hardcoded for now
+        TODO: Make it better
+        '''
+        with open('data_collection/bike_counts.csv') as f:
+            data = f.readlines()
+        station_stats = data_analyzer.parse_data(data)
+        init_conditions = data_analyzer.calc_stats(station_stats)
+        
+        # I happen to know that there are only 2 options so this works for now
+        init_times = sorted(init_conditions.keys())
+
+        # bisect will return the next position on right so if it's 0
+        # then load from the latest time the previous day
+        load_from = bisect.bisect(init_times, start_time.hour)
+        if load_from == 0:
+            load_time = init_times[-1]
+        else:
+            load_time = init_times[load_from - 1]
+
+        # At the moment we'll just load from the closest one. In the future we should 
+        # simulate up until that point
+        for s in self.session.query(data_model.Station):
+            if str(s.id) in init_conditions[load_time]:
+                avg_count = init_conditions[load_time][str(s.id)]['avg_count']
+                std_count = init_conditions[load_time][str(s.id)]['std_count']
+                #TODO Convert to new distribution
+                count = int(random.gauss(avg_count, std_count))
+                if count > s.capacity:
+                    count = s.capacity
+                elif count < 0:
+                    count = 0
+            else:
+                print 'Error initializing stations, unknown station'
+                count = random.randint(0, s.capacity)
+            self.stations[s.id] = count
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''

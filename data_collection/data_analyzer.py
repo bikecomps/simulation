@@ -19,6 +19,7 @@ def print_stats(stats):
     bike counts and emptycounts as subdictionaries.
     Prints summary stats about each station
     '''
+    print "station_id, avg_num_bikes, std_num_bikes, avg_empty_count, std_empty_count"
     for time, time_stats in stats.iteritems():
         print "Time: %s" % time
         for station_name, station_data in time_stats.iteritems():
@@ -29,12 +30,24 @@ def print_stats(stats):
             std_empty_count = numpy.std(station_data.get('num_empties', []))
             
             
-            print "\tStation: %s" % station_name
-            print "\t\tAvg Count: %s" % avg_bike_count
-            print "\t\tStdev count: %s" % std_bike_count
-            print "\t\tAvg Empties: %s" % avg_empty_count
-            print "\t\tStdev empties: %s" % std_empty_count
+            print "%s,%s,%s,%s,%s" % (station_name, avg_bike_count, 
+                           std_bike_count, avg_empty_count, std_empty_count)
 
+def calc_stats(station_stats):
+    stats = {}
+    for time, time_stats in station_stats.iteritems():
+        stats[time] = {}
+        for station_name, station_data in time_stats.iteritems():
+            avg_bike_count = numpy.average(station_data.get('num_bikes', []))
+            std_bike_count = numpy.std(station_data.get('num_bikes', []))
+
+            avg_empty_count = numpy.average(station_data.get('num_empties', []))
+            std_empty_count = numpy.std(station_data.get('num_empties', []))
+            
+            stats[time][station_name] = {'avg_count':avg_bike_count,
+                                         'std_count':avg_empty_count}
+
+    return stats
 
 def parse_data(data):
     '''
@@ -46,12 +59,9 @@ def parse_data(data):
     # Pull the hour at which the data was grabbed
     hour_match = re.compile('\d\d:')
     for line in data:
-        if int(hour_match.findall(line[0])[0][:-1]) > 5:
-            stats = bike_stats.get('Night', {})
-            bike_stats['Night'] = stats
-        else:
-            stats = bike_stats.get('Morning', {})
-            bike_stats['Morning'] = stats
+        hour = int(hour_match.findall(line[0])[0][:-1])
+        stats = bike_stats.get(hour, {})
+        bike_stats[hour] = stats
 
         station_data = stats.get(line[1], {})
         stats[line[1]] = station_data
