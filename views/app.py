@@ -23,10 +23,10 @@ class RawTripsHandler(RequestHandler):
 
     The default logic simulator is 'PoissonLogic'
     """
-    def get(self):
+    def post(self):
         self.render("raw.html", title="See Raw Bike Trips generate")
 
-    def post(self):
+    def get(self):
         try:
             logic_name = self.get_argument("logic", "PoissonLogic")
             start_date = datetime.datetime.strptime(self.get_argument("start"),
@@ -37,7 +37,7 @@ class RawTripsHandler(RequestHandler):
             logic = logic_options[logic_name](session)
             simulator = Simulator(logic)
             results = simulator.run(start_date, end_date)
-            self.write(simulator.write_stdout(results).replace("\n", "<br/>\n"))
+            self.write(simulator.write_stdout(results['trips']).replace("\n", "<br/>\n"))
         except Exception as inst:
             print "usage: /raw?logic=PoissonLogic&start=<start-date>&end=<end-date>"
             print inst

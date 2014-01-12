@@ -33,6 +33,8 @@ class SimulationLogic:
         self.bike_shortages = []
         self.dock_shortages = []
        
+    def getDBSession(self):
+        return self.session
 
     def initialize(self, start_time, end_time):
         '''Sets states of stations at the start_time'''

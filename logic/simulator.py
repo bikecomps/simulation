@@ -14,9 +14,9 @@ from poisson_logic import PoissonLogic
 from utils import Connector
 
 class Simulator:
-    def __init__(self, session, sim_logic):
+    def __init__(self, sim_logic):
         self.sim_logic = sim_logic
-        self.session = session
+        self.session = sim_logic.getDBSession()
 
     def run(self, start_time, end_time, timestep=datetime.timedelta(seconds=3600)):
         self.sim_logic.initialize(start_time, end_time)
@@ -90,7 +90,7 @@ def main():
 
     session = Connector().getDBSession()
     logic = logic(session)
-    simulator = Simulator(session, logic) 
+    simulator = Simulator(logic) 
     results = simulator.run(start_date, end_date)
     for d in results['dissapointments']:
         print d 
