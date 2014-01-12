@@ -92,7 +92,9 @@ def main():
     logic = logic(session)
     simulator = Simulator(session, logic) 
     results = simulator.run(start_date, end_date)
-    simulator.write_out(results, file_name)
+    for d in results['dissapointments']:
+        print d 
+    #simulator.write_out(results, file_name)
     #simulator.save_to_db(results)
     
 

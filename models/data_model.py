@@ -314,6 +314,34 @@ class AttributeType(Base):
     def __repr__(self):
         return 'Attribute type: %r' % self.descriptor
 
+class Dissapointment(Base):
+    __tablename__ = 'dissapointments'
+    id = Column(Integer, Sequence('dissapointments_id_seq'), primary_key=True)
+    # If trip_type is null then it was a dissapointment when a user arrived 
+    # but the station was empty.
+    trip_id = Column(Integer, ForeignKey('trips.id'),nullable=True)
+    trip = relationship('Trip', foreign_keys=[trip_id],
+               backref=backref('dissapointments'))
+
+    station_id = Column(Integer, ForeignKey('stations.id'))
+    station = relationship('Station', foreign_keys=[station_id],
+               backref=backref('dissapointments'))
+
+    time = Column(DateTime)
+
+    def __init__(self, station_id, time, trip_id):
+        self.station_id = station_id
+        self.time = time
+        self.trip_id = trip_id 
+
+    def __repr__(self):
+        if self.trip_id:
+            return 'Dissapointment: Mid-trip at station {s} at time {t} on trip'\
+                    ' {tr}'.format(s=self.station_id, t=self.time, tr=self.trip_id)
+        return 'Dissapointment: Arrival at station {s} at time {t}'\
+                .format(s=self.station_id, t=self.time)
+
+
 def main():
     c = Connector(echo=True)
     engine = c.getDBEngine()
@@ -325,6 +353,7 @@ def main():
     lambda_index = Index('lambda_day_hour_index', Lambda.day_of_week, Lambda.hour)
     lambda_day_index = Index('lambda_day_index', Lambda.day_of_week)
     lambda_hour_index = Index('lambda_hour_index', Lambda.hour)
+    # Not working?
     lambda_non_zero_index = Index('lambda_non_zero_index', Lambda.value.isnot(0)) 
 
     #TODO CREATE INDEX ON NON NULLS?
@@ -332,7 +361,7 @@ def main():
     #lambda_index.create(engine)
     #lambda_day_index.create(engine)
     #lambda_hour_index.create(engine)
-    lambda_non_zero_index.create(engine)
+    #lambda_non_zero_index.create(engine)
 
 
 if __name__ == '__main__':

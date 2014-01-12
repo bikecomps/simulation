@@ -40,16 +40,6 @@ class PoissonLogic(SimulationLogic):
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-
-        # We want to be able to cache off the distributions at each time step 
-        # such that they're accessible from any part of the logic
-        lambda_hour = self.time.hour
-        lambda_day_of_week = self.time.weekday()
-
-        # Technically we don't need to grab these every times but if we get more advanced
-        # distributions presumably we would
-        self.gaussian_distrs = self.load_gaussians()
-
         self.generate_new_trips(self.time)
         self.resolve_trips()
 

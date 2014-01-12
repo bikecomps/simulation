@@ -26,6 +26,7 @@ class SimulationLogic:
         self.pending_arrivals = Queue.PriorityQueue()
         # Contains all resolved trips
         self.trip_list = []
+        self.dissapointments = []
         # List of trips that didn't end at the desired station due to a shortage
         self.bike_shortages = []
         self.dock_shortages = []
@@ -142,6 +143,8 @@ class SimulationLogic:
         '''Decrement station count, put in pending_arrivals queue. If station is empty, put it in the bike_shortages list.'''
         departure_station_ID = trip.start_station_id
         if self.stations[departure_station_ID] == 0:
+            d = Dissapointment(departure_station_ID, trip.start_date, None)
+            self.dissapointments.append(d)
             self.bike_shortages.append(trip)
             self.resolve_sad_departure(trip)
         else:
@@ -156,8 +159,11 @@ class SimulationLogic:
     def resolve_arrival(self, trip):
         '''Increment station count, put in trips list. If desired station is full, put it in the dock_shortages list and try again.'''
         arrival_station_ID = trip.end_station_id
+        # TODO What is going on here? Why is the station capacity capped at 5?
         capacity = 5
         if self.stations[arrival_station_ID] == capacity:
+            d = Dissapointment(arrival_station_ID, trip.end_date, trip.id)
+            self.dissapointments.append(d)
             self.dock_shortages.append(trip)
             self.resolve_sad_arrival(trip)
         else:
@@ -201,12 +207,17 @@ class SimulationLogic:
 
     def flush(self, to_database=False):
         '''Returns list of all trips since initialization, or adds them to the database if to_database is True'''
+        #TODO Not sure we want to have them flush directly to the database
+        # Maybe keep that logic in simulator
+        """
         if to_database:
             for trip in self.trip_list:
                 self.session.add(trip)
             session.commit()
+
         else:
-            return self.trip_list
+        """
+        return {'trips':self.trip_list, 'dissapointments':self.dissapointments}
 
 
     def cleanup(self):
