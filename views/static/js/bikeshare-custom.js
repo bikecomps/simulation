@@ -24,13 +24,14 @@ function processStatsForm() {
     if (!to.length) {
         to = currentDate;
     }
-    
+
     $.ajax({
         type: "POST",
         url: "/stats",
         data: { start: from, end: to },
-        success: function(data) {
-            $("#result").html(data);
+        complete: function(d) {
+            console.log(d);
         }
     });
+
 }

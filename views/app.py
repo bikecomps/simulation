@@ -3,7 +3,7 @@
 import tornado.ioloop
 from tornado.web import RequestHandler, Application
 
-from logic import PoissonLogic
+from logic import PoissonLogic, Simulator
 from utils import Connector
 
 import datetime
