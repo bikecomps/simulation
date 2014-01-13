@@ -28,10 +28,9 @@ function processStatsForm() {
     $.ajax({
         type: "POST",
         url: "/stats",
-        data: { start: from, end: to },
-        complete: function(d) {
-            console.log(d);
-        }
+        data: { start: from, end: to } 
+    }).done(function(data) {
+		console.log(data);
+		$("#results").html(data);
     });
-
 }

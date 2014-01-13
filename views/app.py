@@ -25,6 +25,7 @@ class StatsHandler(RequestHandler):
             simulator = Simulator(logic)
             results = simulator.run(start_date, end_date)
             self.write(simulator.write_stdout(results['trips']).replace("\n", "<br/>\n"))
+            self.finish()
         except Exception as inst:
             print "usage: /raw?logic=PoissonLogic&start=<start-date>&end=<end-date>"
             print inst
