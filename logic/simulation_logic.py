@@ -68,7 +68,7 @@ class SimulationLogic:
         Grossly hardcoded for now
         TODO: Make it better
         '''
-        with open('data_collection/bike_counts.csv') as f:
+        with open('/data/bike_counts.csv') as f:
             data = f.readlines()
         station_stats = data_analyzer.parse_data(data)
         init_conditions = data_analyzer.calc_stats(station_stats)

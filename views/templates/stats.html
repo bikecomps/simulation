@@ -8,7 +8,35 @@
 {% block content %}
   <div class="row">    
     <div class="large-12 columns">
-      This is the summary stats page. Fill me!      
+      <h1>Display Raw Trips</h1>
+      <p>from:</p>
+      <form action="/" method="post">
+	<select name="month">
+	  {% for i in range(len(months)) %}
+	    <option value="{{i}}">{{months[i]}}</option>
+	  {% end %}
+	</select>
+	<select name="day">
+	  {% for i in range(len(days)) %}
+	  <option value="{{i}}">{{days[i]}}</option>
+	  {% end %}
+	</select>
+	<select name="year">
+	  {% for i in range(len(years)) %}
+	  <option value="{{i}}">{{years[i]}}</option>
+	  {% end %}
+	</select>
+      </form>
+      <p>to:</p>
+      <form action="/" method="post">
+	<select name="month">
+	  {% for i in range(len(months)) %}
+	  <option value="{{month}}">{{months[i]}}</option>
+	  {% end %}
+	</select>
+	<input />
+      </form>
+      <button class="button">Generate</button>
     </div>    
   </div>
   <br/><br/>

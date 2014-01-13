@@ -14,17 +14,9 @@ logic_options = {
     "PoissonLogic" : PoissonLogic
 }
 
-class RawTripsHandler(RequestHandler):
-    """
-    To generate trips from Jan. 1, 2012 to Jan. 2, 2012 using
-    the PoissonLogic simulator, use:
-
-    http://localhost/raw?logic=PoissonLogic&start=2012-1-1&end=2012-1-2
-
-    The default logic simulator is 'PoissonLogic'
-    """
+class StatsHandler(RequestHandler):
     def post(self):
-        self.render("raw.html", title="See Raw Bike Trips generate")
+        self.render("stats.html", title="See Raw Bike Trips generate")
 
     def get(self):
         try:
@@ -50,10 +42,6 @@ class AboutHandler(RequestHandler):
     def get(self):
         self.render("about.html", title="About Us")
 
-class StatsHandler(RequestHandler):
-    def get(self):
-        self.render("stats.html", title="Summary Stats")
-
 class BaseHandler(RequestHandler):
     def get(self):
         self.render("base.html", title="Base File")
@@ -66,7 +54,6 @@ if __name__ == "__main__":
     }
     application = Application([
         (r"/", IndexHandler),
-        (r"/raw", RawTripsHandler),
         (r"/base", BaseHandler),
         (r"/about", AboutHandler),
         (r"/stats", StatsHandler)
