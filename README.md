@@ -13,7 +13,7 @@ have to use this syntax: `python -m <sub-dir>.<file-name>`. For example,
 if you want to run `views/app.py`, invoke `python -m views.app` from
 the `simulation` base directory.
 
-Style Guide
+Style Guide 
 -----------
 Here's a tentative style guide we should try to follow when creating
 new files, directories and when writing code. This guide closely follows
