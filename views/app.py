@@ -3,30 +3,25 @@
 import tornado.ioloop
 from tornado.web import RequestHandler, Application
 
-from logic import *
+from logic import PoissonLogic
 from utils import Connector
 
 import datetime
 import os
 
-logic_options = {
-    "SimulationLogic" : SimulationLogic,
-    "PoissonLogic" : PoissonLogic
-}
 
 class StatsHandler(RequestHandler):
-    def post(self):
-        self.render("stats.html", title="See Raw Bike Trips generate")
-
     def get(self):
+        self.render("stats.html", title="Get Summary Stats on Generated Bike Trips")
+
+    def post(self):
         try:
-            logic_name = self.get_argument("logic", "PoissonLogic")
             start_date = datetime.datetime.strptime(self.get_argument("start"),
-                                                    "%Y-%m-%d")
+                                                    "%m-%d-%Y %H:%M")
             end_date = datetime.datetime.strptime(self.get_argument("end"),
-                                                  "%Y-%m-%d")
+                                                  "%m-%d-%Y %H:%M")
             session = Connector().getDBSession()
-            logic = logic_options[logic_name](session)
+            logic = PoissonLogic(session)
             simulator = Simulator(logic)
             results = simulator.run(start_date, end_date)
             self.write(simulator.write_stdout(results['trips']).replace("\n", "<br/>\n"))

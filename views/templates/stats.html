@@ -1,44 +1,59 @@
 {% extends "base.html" %}
 
 {% block css_and_scripts %}
+<link rel="stylesheet" type="text/css" href="/static/css/jquery.datetimepicker.css" />
+<script src="/static/js/jquery.datetimepicker.js"></script>
+<script type="text/javascript">
+  $(function() {
+      $("#from_date, #to_date").datetimepicker({
+          format: "m-d-Y H:i",
+          inline: true
+      });
+  });
+</script>
+<style>
+#from_div {
+  float:left;
+}
+#to_div {
+  margin-left: 50px;
+  float:left;
+}
 
+form button[type="submit"] {
+  margin-top: 20px;
+  float:left; 
+  clear:both;
+}
+
+#results {
+  float:left;
+  clear:both;
+}
 </style>
 {% end %}
 
 {% block content %}
-  <div class="row">    
+<div class="row">    
     <div class="large-12 columns">
-      <h1>Display Raw Trips</h1>
-      <p>from:</p>
-      <form action="/" method="post">
-	<select name="month">
-	  {% for i in range(len(months)) %}
-	    <option value="{{i}}">{{months[i]}}</option>
-	  {% end %}
-	</select>
-	<select name="day">
-	  {% for i in range(len(days)) %}
-	  <option value="{{i}}">{{days[i]}}</option>
-	  {% end %}
-	</select>
-	<select name="year">
-	  {% for i in range(len(years)) %}
-	  <option value="{{i}}">{{years[i]}}</option>
-	  {% end %}
-	</select>
+      <h2>Summary Statistics</h3>
+      <form onsubmit="processStatsForm(); return false;">
+        <div id="from_div">
+          <h4 class="subheader">From:</h4>
+          <input type="text" id="from_date" style="display:none;" />
+        </div>
+        <div id="to_div">
+          <h4 class="subheader">To:</h4>
+          <input type="text" id="to_date" style="display:none;" />
+        </div>
+        <br />
+        <button type="submit" class="button">Generate</button>
       </form>
-      <p>to:</p>
-      <form action="/" method="post">
-	<select name="month">
-	  {% for i in range(len(months)) %}
-	  <option value="{{month}}">{{months[i]}}</option>
-	  {% end %}
-	</select>
-	<input />
-      </form>
-      <button class="button">Generate</button>
+      <div id="results">
+        This is where I put the results.
+      </div>
     </div>    
-  </div>
-  <br/><br/>
+</div>
+<br/><br/>
 {% end %}
 
