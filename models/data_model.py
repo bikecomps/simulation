@@ -166,6 +166,18 @@ class Trip(Base):
     def __repr__(self):
         return 'bike id:%s, member type:%s, trip type:%s, start date:%s, end date:%s, start station id:%s, end station id:%s' % (self.bike_id, self.member_type, self.trip_type, self.start_date, self.end_date, self.start_station_id, self.end_station_id)
 
+    def getDict(self):
+        return {
+            'bike_id' : self.bike_id,
+            'member_type' : self.member_type,
+            'trip_type' : self.trip_type,
+            'start_datetime' : self.start_date,
+            'end_datetime' : self.end_date,
+            'start_station_id' : self.start_station_id,
+            'end_station_id' : self.end_station_id,
+            'duration' : self.duration()
+         }
+
     @staticmethod
     def csv_header():
         return 'bike_id, member_type, trip_type, start_date, end_date, start_station_id, end_station_id'
