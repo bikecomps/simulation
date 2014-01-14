@@ -50,7 +50,7 @@ class SummaryStats:
         session = Connector().getDBSession()
         logic = PoissonLogic(session)
         simulator = Simulator(logic)
-        results = simulator.run(start_date, end_date)
+        results = simulator.run(self.start_date, self.end_date)
 
         self.session = session
         self.trips = results['trips']
@@ -73,14 +73,14 @@ class SummaryStats:
             'end_station_id' : min_trip.end_station_id,
             'start_datetime' : min_trip.start_date,
             'end_datetime' : min_trip.end_date,
-            'duration' : min_trip.duration
+            'duration' : min_trip.duration().total_seconds()
         }
         self.stats['max_duration_trip'] = {
             'start_station_id' : max_trip.start_station_id,
             'end_station_id' : max_trip.end_station_id,
             'start_datetime' : max_trip.start_date,
             'end_datetime' : max_trip.end_date,
-            'duration' : max_trip.duration
+            'duration' : max_trip.duration().total_seconds()
         }
 
     def calculate_per_station_stats(self):
@@ -108,20 +108,11 @@ class SummaryStats:
         self.calculate_per_station_stats()
         self.calculate_per_hour_stats()
         
-    def get_trips(self):
-        return self.dump_json(self.trips)
-
     def get_disappointments(self):
         return self.dump_json(self.disappointments)
 
     def get_stats(self):
         return self.dump_json(self.stats)
-
-    def get_stats_and_trips(self):
-        return self.dump_json({
-            'stats' : self.stats,
-            'trips' : self.trips
-        })
         
     def dump_json(self, to_dump):
         '''
@@ -139,18 +130,19 @@ class SummaryStats:
         if hasattr(obj, 'isoformat'):
             return obj.isoformat()
         else:
-            return TypeError, 'Cannot serialize item %s of type %s' % (repr(obj), type(obj))
+            raise TypeError, 'Cannot serialize item %s of type %s' % (repr(obj), type(obj))
 
 
 def main():
-    start_date = datetime.datetime.strptime('%m-%d-%Y %H:%M',
-                                            '1-1-2012 00:00')
-    end_date = datetime.datetime.strptime('%m-%d-%Y %H:%M',
-                                          '1-2-2012 00:00')
+    start_date = datetime.datetime.strptime('1-1-2012 00:00',
+                                            '%m-%d-%Y %H:%M')
+    end_date = datetime.datetime.strptime('1-2-2012 00:00',
+                                          '%m-%d-%Y %H:%M')
+                                          
 
     sstats = SummaryStats(start_date, end_date)
 
-    print sstats.get_all_stats
+    print sstats.get_stats()
 
 if __name__ == '__main__':
     main()
