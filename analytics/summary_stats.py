@@ -40,8 +40,9 @@ class SummaryStats:
         self.session = None
         self.trips = None
         self.disappointments = None
-
         self.stats = {}
+
+        self.indent = False
         
         self.run_simulation()
         self.calculate_stats()
@@ -118,7 +119,10 @@ class SummaryStats:
         '''
         Utility to dump json in nice way
         '''
-        return json.dumps(to_dump, indent=4, default=self.json_dump_handler)
+        if self.indent:
+            return json.dumps(to_dump, indent=4, default=self.json_dump_handler)
+        else:
+            return json.dumps(to_dump, default=self.json_dump_handler)
     
     def json_dump_handler(self, obj):
         '''
@@ -141,7 +145,7 @@ def main():
                                           
 
     sstats = SummaryStats(start_date, end_date)
-
+    sstats.indent = True
     print sstats.get_stats()
 
 if __name__ == '__main__':
