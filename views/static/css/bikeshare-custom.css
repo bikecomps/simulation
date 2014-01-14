@@ -19,4 +19,25 @@ footer {
 footer p {
     text-align: center;
 }
-    
+
+
+.full-width-wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-height: 600px;
+}
+
+#time-slider {
+    z-index: 99999;
+    width: 540px;
+    position: absolute;
+    left: 87px;
+    top: 63px;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#trigger-button {
+    line-height: 22px;
+    margin-bottom: 0;
+}
