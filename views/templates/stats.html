@@ -10,6 +10,7 @@
       });
   });
 </script>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <style>
 #from_div {
   float: left;
@@ -29,6 +30,47 @@ form button[type="submit"] {
   float: left;
   clear: both;
   display: none;
+}
+
+#results h4 {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: black;
+  padding-bottom: 5px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  clear: both;
+  text-align: center
+}
+
+.chart {
+  background: #b0e0f8;
+  margin: 5px;
+}
+
+.chart rect {
+  stroke: white;
+  fill: steelblue;
+}
+
+.chart text {
+  fill: white;
+}
+
+.chart text.name {
+  fill: #000;
+}
+
+#num_departures_per_station div {
+  height: 500px;
+  overflow:scroll;
+}
+
+#num_arrivals_per_station div {
+  height: 500px;
+  overflow:scroll;
 }
 </style>
 {% end %}
@@ -50,7 +92,114 @@ form button[type="submit"] {
         <button type="submit" class="button">Generate</button>
       </form>
       <div id="results">
-        
+        <h4></h4>
+        <h5>Overall Statistics</h5>
+        <table>
+          <tr>
+            <td>Total Number of Trips Completed</td>
+            <td id="total_num_trips"></td>
+          </tr>
+          <tr>
+            <td>Total Number of Disappointments</td>
+            <td id="total_num_disappointments"></td>
+          </tr>
+          <tr>
+            <td>Average Trip Time</td>
+            <td id="avg_trip_time"></td>
+          </tr>
+          <tr>
+            <td>Standard Deviation of Trip Times</td>
+            <td id="std_trip_time"></td>
+          </tr>
+        </table>
+        <br />
+        <div id="min_duration_trip">
+          <h5>Minimum Duration Trip</h5>
+          <table>
+            <tr>
+              <td>Start Station ID</td>
+              <td class="start_station_id"></td>
+            </tr>
+            <!-- 
+            <tr>
+              <td>Start Station Name</td>
+              <td class="start_station_name"></td>
+            </tr>
+            -->
+            <tr>
+              <td>End Station ID</td>
+              <td class="end_station_id"></td>              
+            </tr>
+            <!-- 
+            <tr>
+              <td>End Station Name</td>
+              <td class="end_station_name"></td>
+            </tr>
+            -->
+            <tr>
+              <td>Duration</td>
+              <td class="duration"></td>
+            </tr>
+            <tr>
+              <td>Trip Start Time</td>
+              <td class="start_datetime"></td>
+            </tr>
+            <tr>
+              <td>Trip End Time</td>
+              <td class="end_datetime"></td>
+            </tr>
+          </table>
+        </div>
+        <br />
+        <div id="max_duration_trip">
+          <h5>Maximum Duration Trip</h5>
+          <table>
+            <tr>
+              <td>Start Station ID</td>
+              <td class="start_station_id"></td>
+            </tr>
+            <!-- 
+            <tr>
+              <td>Start Station Name</td>
+              <td class="start_station_name"></td>
+            </tr>
+            -->
+            <tr>
+              <td>End Station ID</td>
+              <td class="end_station_id"></td>              
+            </tr>
+            <!-- 
+            <tr>
+              <td>End Station Name</td>
+              <td class="end_station_name"></td>
+            </tr>
+            -->
+            <tr>
+              <td>Duration</td>
+              <td class="duration"></td>
+            </tr>
+            <tr>
+              <td>Trip Start Time</td>
+              <td class="start_datetime"></td>
+            </tr>
+            <tr>
+              <td>Trip End Time</td>
+              <td class="end_datetime"></td>
+            </tr>
+          </table>
+        </div>
+        <br />
+        <div id="num_departures_per_station">
+          <h5>Number of Departures per Station</h5>
+          <div>
+          </div>
+        </div>
+        <br />
+        <div id="num_arrivals_per_station">
+          <h5>Number of Arrivals per Station</h5>
+          <div>
+          </div>
+        </div>
       </div>
     </div>    
 </div>
