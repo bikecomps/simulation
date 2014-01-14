@@ -3,8 +3,7 @@
 import tornado.ioloop
 from tornado.web import RequestHandler, Application
 
-from logic import PoissonLogic, Simulator
-from utils import Connector
+from analytics import SummaryStats
 
 import datetime
 import os
@@ -20,12 +19,11 @@ class StatsHandler(RequestHandler):
                                                     "%m-%d-%Y %H:%M")
             end_date = datetime.datetime.strptime(self.get_argument("end"),
                                                   "%m-%d-%Y %H:%M")
-            session = Connector().getDBSession()
-            logic = PoissonLogic(session)
-            simulator = Simulator(logic)
-            results = simulator.run(start_date, end_date)
-            self.write(simulator.write_stdout(results['trips']).replace("\n", "<br/>\n"))
-            self.finish()
+
+            sstats = SummaryStats(start_date, end_date)
+
+            self.write(sstats.get_stats())
+
         except Exception as inst:
             print "usage: /raw?logic=PoissonLogic&start=<start-date>&end=<end-date>"
             print inst
