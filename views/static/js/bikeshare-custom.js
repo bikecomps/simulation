@@ -170,9 +170,15 @@ function processStatsForm() {
     $.ajax({
         type: "POST",
         url: "/stats",
-        data: { start: from, end: to } 
-    }).done(function(data) {
-        displaySummaryStats(JSON.parse(data), from, to);
-		$("#results").show();
+        data: { start: from, end: to },
+        beforeSend: function() {
+            $("#results").hide();
+            $("#loading").show();
+        },
+        success: function(data) {
+            displaySummaryStats(JSON.parse(data), from, to);
+            $("#loading").hide();
+		    $("#results").show();
+        }
     });
 }
