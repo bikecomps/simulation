@@ -4,15 +4,20 @@ A class for comparing the trips our simulator generates to real trips.
 '''
 
 from utils import Connector
-<<<<<<< HEAD
 from scipy.stats import chisquare
 import datetime
 import sys
-=======
->>>>>>> c8d8d0f87cce897f35a01d89bc1b3ccf9b39061d
 
 class Evaluator:
-    def __init__(self,session,statistic,start_date,end_date,prod_on_start,prod_on_end):
+    '''
+    Running one chi-square test for the entirety of a simulation's results:
+        1) evaluator = Evaluator()
+        2) results = evaluator.run_chi_square(<statistic>)
+        3) chi_sq = results[0]
+        4) p_valu = results[1]
+    Idea from Daniel: Let Evaluator take produced trips as args to save on DB size.
+    '''
+    def __init__(self,session,start_date,end_date,prod_on_start,prod_on_end):
         self.session = session
         self.trips = self.get_trips(start_date,end_date,prod_on_start,prod_on_end)
         self.stations = self.session.query(Station)
@@ -20,12 +25,17 @@ class Evaluator:
         #self.paired_stations = self.setup_paired_stations(self.trips,self.stations)
     
     def get_trips(self,trips_start,trips_end,prod_on_start,prod_on_end):
-    	# Note: Currently using 'Training' trips rather than 'Testing' trips.
-    	trips = session.query(Trip) \
-            .filter(Trip.trip_type.trip_type == 'Produced' or Trip.trip_type.trip_type == 'Training') \
+    	# NOTE: Currently using 'Training' trips rather than 'Testing' trips.
+    	real_trips = session.query(Trip) \
+            .filter(Trip.trip_type.trip_type == 'Training') \
+            .filter(Trip.start_date.between(trip_start_date,trip_end_date)) \
+        
+        prod_trips = session.query(Trip) \
+            .filter(Trip.trip_type.trip_type == 'Produced') \
             .filter(Trip.start_date.between(trip_start_date,trip_end_date)) \
             .filter(Trip.trip_type.produced_on.between(prod_on_start,prod_on_end))
-        return trips
+        
+        return real_trips + prod_trips
     
     def setup_single_stations(self,trips,stations):
         single_stations = {}
@@ -63,68 +73,33 @@ class Evaluator:
                 single_stations[start_station].prod_durations[day][start_hour][1] += trip.duration()
             
         return single_stations
-        
-    def setup_paired_stations(self,trips,stations):
-        paired_stations = {}
-        for start in stations:
-            for end in stations:
-                if (start.id,end.id) not in station_pairs:
-                    station_pairs[(start.id,end.id)] = StationPair(start,end)
-        for trip in trips:
-            start = trip.start_station_id
-            end = trip.end_station_id
-            if (start.id,end.id) not in station_pairs:
-                new_station_pair = StationPair(start,end)
-                new_station_pair.add_trip(trip)
-                paired_stations[(start.id,end.id)] = new_station_pair
-            else:
-                paired_stations[(start.id,end.id)].add_trip(trip)
-        return paired_stations
     
-    def compare_all_departure_numbers(self):
-        print '-'*60, '\nComparing departure numbers for all single stations.\n', '-'*60
+    def compare_all(self,statistic):
+        print '-'*60, '\nComparing %s for all single stations.\n' % statistic, '-'*60
         for station in self.single_stations:
-            print 'Comparing departure numbers for station ', station.id
+            print 'Comparing %s for station ' % statistic, station.id
             for day in range(1,8):
                 for hour in range(24):
-                    difference = station.compare_departure_numbers(day,hour)
-                    print "[Station:%d, Day:%d, Hour:%d] Difference in Departures: %d" \
-                        % (station.id,day,hour,difference)
+                    if statistic == "departures":
+                        difference = station.compare_departure_numbers(day,hour)
+                    
+                    elif statistic == "arrivals":
+                        difference = station.compare_arrival_numbers(day,hour)
+                    
+                    elif statistic == "durations":
+                        difference = station.compare_durations_numbers(day,hour)
+                        
+                    else:
+                        print 'ERROR: Trying to compare unknown statistics.'
+                        difference = 0
+                        
+                    print "[Station:%d, Day:%d, Hour:%d] Difference in %s: %d" \
+                        % (station.id,day,hour,statistic,difference)
     
-    def compare_all_arrival_numbers(self):
-        print '-'*60, '\nComparing arrival numbers for all single stations.\n', '-'*60
-        for station in self.single_stations:
-            print 'Comparing arrival numbers for station ', station.id
-            for day in range(1,8):
-                for hour in range(24):
-                    difference = station.compare_arrival_numbers(day,hour)
-                    print "[Station:%d, Day:%d, Hour:%d] Difference in Arrivals: %d" \
-                        % (station.id,day,hour,difference)
-    
-    def compare_all_avg_trip_times(self):
-        print '-'*60, '\nComparing average durations for all single stations.\n', '-'*60
-        for station in self.single_stations:
-            print 'Comparing average durations for trips starting at station ', station.id
-            for day in range(1,8):
-                for hour in range(24):
-                    difference = station.compare_avg_durations(day,hour)
-                    print "[Station:%d, Day:%d, Hour:%d] Difference in Durations: %d" \
-                        % (station.id,day,hour,difference)
-    
-    def check_expected_freqs(self,statistic):
-        for station in self.single_stations:
-            for day in range(1,8):
-                for hour in range(24):
-                    expected_freq = station.statistic[day][hour] # THIS IS WRONG!
-                    if expected_freq < 5:
-                        print 'ERROR: %s for station $d: %d.' \
-                               % (statistic,station.id,expected_freqs)
-                        #return False
-        #print 'All expected values were greater than 5. Chi-Squared test approved.'
-        #return True
-    
-    def calculate_chi_square(self):
+    def run_chi_square(self,statistic):
         print 'Beginning chi-square test for goodness of fit.'
+        low_observed_freqs = 0
+        low_expected_freqs = 0
         observed = []
         expected = []
         
@@ -132,15 +107,15 @@ class Evaluator:
             print 'Chi-Square: Working on station ', station.id
             for day in range(1,8):
                 for hour in range(24):
-                    if self.statistic == 'departures':
+                    if statistic == 'departures':
                         new_observed = station.prod_departures[day][hour]
                         new_expected = station.real_departures[day][hour]
                     
-                    elif self.statistic == 'arrivals':
+                    elif statistic == 'arrivals':
                         new_observed = station.prod_arrivals[day][hour]
                         new_expected = station.real_arrivals[day][hour]
                     
-                    elif self.statistic == 'durations':
+                    elif statistic == 'durations':
                         new_observed = station.prod_durations[day][hour]
                         new_expected = station.real_durations[day][hour]
                     
@@ -156,26 +131,48 @@ class Evaluator:
                     
                     print "[Station:%d, Day:%d, Hour:%d] Expected %s: %d" \
                         % (station.id,day,hour,statistic,new_expected)
+                        
+                    if new_observed < 5:
+                        low_observed_freqs += 1
+                    if new_expected < 5:
+                        low_expected_freqs += 1
         
+        print 'observed_freqs < 5: ', low_observed_freqs
+        print 'expected_freqs < 5: ', low_expected_freqs
         return chisquare(observed,expected)
     
-    # Outdated, from when focus was on pairwise stats.
-    def compare_trip_numbers(self,station_pair):
-        num_real_trips = len(station_pair.real_trips)
-        num_prod_trips = len(station_pair.prod_trips)
-        return num_real_trips - num_prod_trips
+    #def setup_paired_stations(self,trips,stations):
+    #    paired_stations = {}
+    #    for start in stations:
+    #        for end in stations:
+    #            if (start.id,end.id) not in station_pairs:
+    #                station_pairs[(start.id,end.id)] = StationPair(start,end)
+    #    for trip in trips:
+    #        start = trip.start_station_id
+    #        end = trip.end_station_id
+    #        if (start.id,end.id) not in station_pairs:
+    #            new_station_pair = StationPair(start,end)
+    #            new_station_pair.add_trip(trip)
+    #            paired_stations[(start.id,end.id)] = new_station_pair
+    #        else:
+    #            paired_stations[(start.id,end.id)].add_trip(trip)
+    #    return paired_stations
     
-    # Outdated, from when focus was on pairwise stats.    
-    def compare_trip_times(self,station_pair):
-        total_real_time = 0
-        total_prod_time = 0
-        for trip in station_pair.real_trips:
-            total_real_time += trip.duration()
-        for trip in station_pair.prod_trips:
-            total_prod_time += trip.duration()
-        avg_real_time = total_real_time / len(station_pair.real_trips)
-        avg_prod_time = total_prod_time / len(station_pair.prod_trips)
-        return avg_real_time - avg_prod_time
+    #def compare_trip_numbers(self,station_pair):
+    #    num_real_trips = len(station_pair.real_trips)
+    #    num_prod_trips = len(station_pair.prod_trips)
+    #    return num_real_trips - num_prod_trips
+    
+    #def compare_trip_times(self,station_pair):
+    #    total_real_time = 0
+    #    total_prod_time = 0
+    #    for trip in station_pair.real_trips:
+    #        total_real_time += trip.duration()
+    #    for trip in station_pair.prod_trips:
+    #        total_prod_time += trip.duration()
+    #    avg_real_time = total_real_time / len(station_pair.real_trips)
+    #    avg_prod_time = total_prod_time / len(station_pair.prod_trips)
+    #    return avg_real_time - avg_prod_time
  
 class SingleStation:
     def __init__(self,id):
@@ -204,29 +201,29 @@ class SingleStation:
             prod_avg = self.prod_durations[day][hour][1] / float(self.prod_durations[day][hour][0])
             return real_avg - prod_avg
             
-class StationPair:
-    def __init__(self,start_station,end_station):
-        self.start_station = start_station
-        self.end_station = end_station
-        self.real_trips = []
-        self.prod_trips = []
-    
-    def add_trip(self,trip):
-        if trip.trip_type == 'Testing':
-            self.real_trips.append(trip)
-        elif trip.trip_type == 'Produced':
-            self.prod_trips.append(trip)
-        else:
-            print "Error: station_pair trips must be of type 'Testing' or 'Produced'."
+# class StationPair:
+#     def __init__(self,start_station,end_station):
+#         self.start_station = start_station
+#         self.end_station = end_station
+#         self.real_trips = []
+#         self.prod_trips = []
+#     
+#     def add_trip(self,trip):
+#         if trip.trip_type == 'Testing':
+#             self.real_trips.append(trip)
+#         elif trip.trip_type == 'Produced':
+#             self.prod_trips.append(trip)
+#         else:
+#             print "Error: station_pair trips must be of type 'Testing' or 'Produced'."
 
 def print_usage():
     print '\nUSAGE'
-    print '--> python evaluator.py <statistic> <start_date> <end_date> <prod_on_start> <prod_on_end>'
+    print '--> python evaluator.py <start_date> <end_date> <prod_on_start> <prod_on_end>'
     print "--> Valid statistics are 'departures', 'arrivals', and 'durations'."
     print "--> Format dates as '%Y-%m-%d'.\n"
             
 def main():
-    statistics = ['departures', 'arrivals','durations']
+    statistics = ['departures','arrivals','durations']
     
     if len(sys.argv) == 1:
         # defaults
@@ -235,34 +232,26 @@ def main():
         statistic = 'departures'
         start_date = datetime.datetime.strptime("2012-6-1", '%Y-%m-%d')
         end_date = datetime.datetime.strptime("2012-6-2", '%Y-%m-%d')
-        prod_on_start = datetime.datetime.now() - datetime.timedelta(days=1)
-        prod_on_end = datetime.datetime.now() # Should this be .utcnow()?
+        prod_on_start = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        prod_on_end = datetime.datetime.utcnow()
     
     else:
-        if len(sys.argv) < 6 or sys.argv[1] not in statistics:
+        if len(sys.argv) < 5 or sys.argv[1] not in statistics:
             print_usage()
             return
         
-        statistic = sys.argv[1]
-        start_date = datetime.datetime.strptime(sys.argv[2], '%Y-%m-%d')
-        end_date = datetime.datetime.strptime(sys.argv[3], '%Y-%m-%d')
-        prod_on_start = datetime.datetime.strptime(sys.argv[4], '%Y-%m-%d')
-        prod_on_end = datetime.datetime.strptime(sys.argv[5], '%Y-%m-%d')
+        start_date = datetime.datetime.strptime(sys.argv[1], '%Y-%m-%d')
+        end_date = datetime.datetime.strptime(sys.argv[2], '%Y-%m-%d')
+        prod_on_start = datetime.datetime.strptime(sys.argv[3], '%Y-%m-%d')
+        prod_on_end = datetime.datetime.strptime(sys.argv[4], '%Y-%m-%d')
     
-	#session = Connector().getDBSession()
-    #evaluator = Evaluator(session,statistic,start_date,end_date,prod_on_start,prod_on_end)
-    #evaluator.calculate_chi_square()
-    
-    #for pair in evaluator.station_pairs:
-        #NOTE: Encapsulate the section below into a method in Evaluator.
-        #NOTE: It could be helpful to note particularly high or low differences.
-        #num_diff = evaluator.compare_trip_numbers(pair)
-        #if num_diff > 0:
-        #    print 'pair %s generated %d fewer trips than reality.' % (pair, num_diff)
-        #elif num_diff < 0:
-        #    print 'pair %s generated %d more trips than reality.' % (pair, num_diff)
-        #else:
-        #    print 'pair %s generated the real number of trips!' % pair
+	session = Connector().getDBSession()
+    evaluator = Evaluator(session,start_date,end_date,prod_on_start,prod_on_end)
+    result = evaluator.run_chi_square()
+    chi_sq = result[0]
+    p_valu = result[1]
+    print 'chi square = ', chi_sq
+    print 'p value = ', p_valu
             
 if __name__ == '__main__':
     main()
