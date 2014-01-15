@@ -55,6 +55,7 @@ class SimulationLogic:
         #for s in self.station_counts:
         #    print s, self.station_counts[s]
 
+
     def old_initialize_stations(self, start_time):
         '''Sets initial bike count for each station.'''
         queried_stations = self.session.query(data_model.Station)
