@@ -19,19 +19,6 @@ class SimulationLogic:
     def __init__(self, session):
         # For database connectivity
         self.session = session
-        # self.time is a datetime, representing the current time in the simulator.
-        self.time = None
-        # {stID : station's bike count at self.time}
-        self.station_counts = {}
-        # Pending departures/arrivals includes tuples (endTime, trip)
-        self.pending_departures = Queue.PriorityQueue()
-        self.pending_arrivals = Queue.PriorityQueue()
-        # Contains all resolved trips
-        self.trip_list = []
-	self.disappointment_list = []
-        # List of trips that didn't end at the desired station due to a shortage
-        self.bike_shortages = []
-        self.dock_shortages = []
        
     def getDBSession(self):
         return self.session
@@ -45,15 +32,11 @@ class SimulationLogic:
         # Stations should eventually be gotten from the database
         self.pending_departures = Queue.PriorityQueue()
         self.pending_arrivals = Queue.PriorityQueue()
-        self.dock_shortages = []
-        self.bike_shortages = []
+        self.disappointment_list = []
         self.trip_list = []
-        self.dissapointments = []
         self.station_counts = {}
 	self.stations = {}
         self.initialize_stations(start_time)
-        #for s in self.station_counts:
-        #    print s, self.station_counts[s]
 
 
     def old_initialize_stations(self, start_time):
@@ -159,13 +142,12 @@ class SimulationLogic:
             
         
     def resolve_departure(self, trip):
-        '''Decrement station count, put in pending_arrivals queue. If station is empty, put it in the bike_shortages list.'''
+        '''Decrement station count, put in pending_arrivals queue. If station is empty, put it in the disappointments list.'''
         departure_station_ID = trip.start_station_id
         if self.station_counts[departure_station_ID] == 0:
-            new_disappointment = Dissapointment(departure_station_ID, trip.start_date, None)
+            new_disappointment = Dissapointment(departure_station_ID, trip.start_date, trip_id=None)
             self.session.add(new_disappointment)
             self.disappointment_list.append(new_disappointment)
-            self.bike_shortages.append(trip)
             self.resolve_sad_departure(trip)
         else:
             self.station_counts[departure_station_ID] -= 1
@@ -178,15 +160,12 @@ class SimulationLogic:
 
 
     def resolve_arrival(self, trip):
-        '''Increment station count, put in trips list. If desired station is full, put it in the dock_shortages list and try again.'''
+        '''Increment station count, put in trips list. If desired station is full, add a disappointment, set a new end station, and try again.'''
         arrival_station_ID = trip.end_station_id
-        # TODO What is going on here? Why is the station capacity capped at 5?
         capacity = self.stations[arrival_station_ID].capacity
         if self.station_counts[arrival_station_ID] == capacity:
-            self.dock_shortages.append(trip)
-            new_disappointment = data_model.Dissapointment(arrival_station_ID, trip.end_date, trip_id=None)
+            new_disappointment = Dissapointment(arrival_station_ID, trip.end_date, trip_id=None)
             trip.disappointments.append(new_disappointment)
-            # Add to master list for printing purposes
             self.disappointment_list.append(new_disappointment)
             self.resolve_sad_arrival(trip)
         else:
@@ -228,30 +207,14 @@ class SimulationLogic:
         return (eventType, trip)
 
 
-    def flush(self, to_database=False):
+    def flush(self):
         '''Returns list of all trips since initialization, or adds them to the database if to_database is True'''
-        #TODO Not sure we want to have them flush directly to the database
-        # Maybe keep that logic in simulator
-        """
-        if to_database:
-            for trip in self.trip_list:
-                self.session.add(trip)
-            session.commit()
-
-        else:
-        """
         return {'trips':self.trip_list,'disappointments':self.disappointment_list}
         
 
 
     def cleanup(self):
         pass
-
-
-# FOR TESTING
-def printTrip(trip):
-    return str(trip.start_station_id) + "-->" + str(trip.end_station_id) + ": " + str(trip.start_date) + " --> " + str(trip.end_date)
-
 
 def main():
     conn = Connector()
@@ -264,9 +227,6 @@ def main():
     SL.update(step)
     SL.update(step)
     trips = SL.flush()
-    # print "ALL TRIPS:"
-    # for trip in trips:
-    #     print printTrip(trip)
        
 
 if __name__ == "__main__":

@@ -82,7 +82,6 @@ class PoissonLogic(SimulationLogic):
             probability = random.random()
         num_trips = poisson.ppf(probability, lam.value)
         if numpy.isnan(num_trips):
-            #TODO: Should we do something here?
             num_trips = -1
         return int(num_trips)
 
