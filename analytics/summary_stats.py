@@ -8,7 +8,7 @@ stats about the bike trips:
 - Average of Trip Times
 - Standard Deviation of Trip Times
 - Total Number of Trips Completed
-- Total Number of Dissapointments
+- Total Number of Disappointments
 
 - Departures per Station
     station id => no. departures from station with that station id
@@ -55,7 +55,7 @@ class SummaryStats:
 
         self.session = session
         self.trips = results['trips']
-        self.disappointments = results['dissapointments']
+        self.disappointments = results['disappointments']
 
     def calculate_overall_stats(self):
         trips_and_times = [(trip.duration().total_seconds(), trip) for trip in self.trips]
@@ -102,7 +102,7 @@ class SummaryStats:
 
 
     def calculate_per_hour_stats(self):
-        list_counts = [[0,0]]*24
+        list_counts = [[0,0] for i in range(24)]
 
         for trip in self.trips:
             start_hour = trip.start_date.hour
@@ -113,10 +113,10 @@ class SummaryStats:
 
         # put in suitable form for group chart
         counts = [{
-            "Hour": h,
+            "Hour": i,
             "Number of Departures" : list_counts[i][0],
             "Number of Arrivals" : list_counts[i][1]
-        } for i in range(list_counts)]
+        } for i in range(len(list_counts))]
 
         self.stats['num_trips_per_hour'] = counts
 

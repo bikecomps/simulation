@@ -45,8 +45,10 @@ function groupBarPlot(htmlIdName, data) {
             .scale(y)
             .orient("left")
             .tickFormat(d3.format(".2s"));
-    
-    var svg = d3.select($("#" + htmlIdName + " div")[0]).append("svg")
+
+    var div = $("#" + htmlIdName + " div");
+    div.empty();
+    var svg = d3.select(div[0]).append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
             .append("g")
@@ -129,8 +131,10 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
     
     yRangeBand = bar_height + 2 * gap;
     y = function(i) { return yRangeBand * i; };
-    
-    chart = d3.select($("#" + htmlIdName + " div")[0])
+
+    var div = $("#" + htmlIdName + " div");
+    div.empty();
+    chart = d3.select(div[0])
         .append('svg')
         .attr('class', 'chart')
         .attr('width', left_width + width + 40 + extra_width)

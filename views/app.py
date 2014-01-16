@@ -14,18 +14,13 @@ class StatsHandler(RequestHandler):
         self.render("stats.html", title="Get Summary Stats on Generated Bike Trips")
 
     def post(self):
-        try:
-            start_date = datetime.datetime.strptime(self.get_argument("start"),
-                                                    "%m-%d-%Y %H:%M")
-            end_date = datetime.datetime.strptime(self.get_argument("end"),
-                                                  "%m-%d-%Y %H:%M")
-
-            sstats = SummaryStats(start_date, end_date)
-            self.write(sstats.get_stats())
-
-        except Exception as inst:
-            print "usage: /raw?logic=PoissonLogic&start=<start-date>&end=<end-date>"
-            print inst
+        start_date = datetime.datetime.strptime(self.get_argument("start"),
+                                                "%m-%d-%Y %H:%M")
+        end_date = datetime.datetime.strptime(self.get_argument("end"),
+                                              "%m-%d-%Y %H:%M")
+        
+        sstats = SummaryStats(start_date, end_date)
+        self.write(sstats.get_stats())        
     
 class IndexHandler(RequestHandler):
     def get(self):
