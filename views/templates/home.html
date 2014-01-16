@@ -5,7 +5,7 @@
 <!--Google Maps API v3-->
 <style>
   html, body, #map-canvas {
-  height: 500px;
+  height: 600px;
   margin: 0px;
   padding: 0px
   }
@@ -39,17 +39,49 @@
 {% end %}
 
 {% block content %}
+<div class="panel" id="time-slider">
+    <div class="large-10 columns">
+        <div class="row">
+            <div class="small-4 columns">
+                <label class="inline">Simulate the traffic of</label>
+            </div>
+            <div class="small-3 columns">
+                <select>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+                <option value="7">Sunday</option>
+                </select> 
+            </div>
+            <div class="small-2 columns">
+                <label for="amount" class="right inline">Time:</label>
+            </div>
+            <div class="small-3 columns">
+                <input type="text" id="amount" style="border:0; color#9900ff; font-weight:bold;" />
+            </div>
+        </div>
+        <div class="row"><div id="slider-range"></div></div>
+    </div>
+    <div class="large-2 columns">
+        <a href="#" class="button" id="trigger-button">Go!</a>
+    </div>
+</div>
+
+<div class="full-width-wrapper">
+  <div id="map-canvas">
+  </div>
+</div>
+
+
 
 <div class="row">  
-  <div style="width: 100%;" class="columns">
-    <div class="panel">
-      <p>TIMELINE</p>
-      <label for="amount">Time range:</label>
-      <input type="text" id="amount" style="border:0; color#9900ff; font-weight:bold;" />
-      <div id="slider-range"></div>
-    </div>
-    <div id="map-canvas">
-    </div>
+  <div class="columns">
+    <!-- * Don't panic. Taking out the slider for testing purposes. - ahnjo
+    
+    -->
   </div>
 </div>
 
