@@ -102,7 +102,23 @@ class SummaryStats:
 
 
     def calculate_per_hour_stats(self):
-        pass
+        list_counts = [[0,0]]*24
+
+        for trip in self.trips:
+            start_hour = trip.start_date.hour
+            list_counts[start_hour][0] += 1
+            
+            end_hour = trip.end_date.hour
+            list_counts[end_hour][1] += 1
+
+        # put in suitable form for group chart
+        counts = [{
+            "Hour": h,
+            "Number of Departures" : list_counts[i][0],
+            "Number of Arrivals" : list_counts[i][1]
+        } for i in range(list_counts)]
+
+        self.stats['num_trips_per_hour'] = counts
 
     def calculate_stats(self):
         self.calculate_overall_stats()
