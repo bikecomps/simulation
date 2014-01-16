@@ -105,17 +105,10 @@ def main():
     logic = logic(session)
     simulator = Simulator(logic) 
     results = simulator.run(start_date, end_date)
-<<<<<<< HEAD
-    for d in results['disappointments']:
-        print d 
-    #simulator.write_out(results, file_name)
-    #simulator.save_to_db(results)
-=======
     print "trips:", len(results['trips'])
     print "disappointments:", len(results['disappointments'])
     # simulator.write_out(results, file_name)
     # simulator.save_to_db(results['trips'])
->>>>>>> 994bc0969eb9fba2d444c234ee00f6171b9af7ba
     
 
 if __name__ == '__main__':

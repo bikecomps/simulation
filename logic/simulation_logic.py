@@ -53,7 +53,7 @@ class SimulationLogic:
         self.initialize_stations(start_time)
 
 
-        def initialize_stations(self, start_time):
+    def initialize_stations(self, start_time):
         '''
         Loads the starting conditions of the stations from a csv.
         Grossly hardcoded for now
@@ -87,7 +87,6 @@ class SimulationLogic:
         
     def generate_new_trips(self, timestep):
         '''Generates trips COMPLETELY RANDOMLY WOOO'''
-            
         for station in self.station_counts:
             num_trips = random.randint(0,self.station_counts[station])
             for i in range(num_trips):
@@ -136,7 +135,7 @@ class SimulationLogic:
         departure_station_ID = trip.start_station_id
 
         if self.station_counts[departure_station_ID] == 0:
-            new_disappointment = Dissapointment(departure_station_ID, trip.start_date, trip_id=None)
+            new_disappointment = Disappointment(departure_station_ID, trip.start_date, trip_id=None)
             self.session.add(new_disappointment)
             self.disappointment_list.append(new_disappointment)
             self.resolve_sad_departure(trip)
@@ -156,7 +155,7 @@ class SimulationLogic:
 
         capacity = self.stations[arrival_station_ID].capacity
         if self.station_counts[arrival_station_ID] == capacity:
-            new_disappointment = Dissapointment(arrival_station_ID, trip.end_date, trip_id=None)
+            new_disappointment = Disappointment(arrival_station_ID, trip.end_date, trip_id=None)
             trip.disappointments.append(new_disappointment)
             self.disappointment_list.append(new_disappointment)
             self.resolve_sad_arrival(trip)
