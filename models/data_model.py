@@ -159,6 +159,7 @@ class Trip(Base):
         self.end_date = end_date
         self.start_station_id = start_station_id
         self.end_station_id = end_station_id
+        self.disappointments = []
 
     def duration(self):
         return self.end_date - self.start_date

@@ -27,15 +27,15 @@ class PoissonLogic(SimulationLogic):
         self.gaussian_distrs = self.load_gaussians()
         
 
-        # Right now we're just saving the first closest station, 
-        # easily modifiable to keep a list of closest stations
-        self.nearest_stations = {}
+        # Retrieve StationDistance objects representing the five closest
+        # stations for each stations.
+        self.nearest_station_dists = {}
         station_list = self.session.query(data_model.Station) 
         for station in station_list:
-            nearest_distance = self.session.query(data_model.StationDistance)\
+            nearest_distances = self.session.query(data_model.StationDistance)\
                     .filter(data_model.StationDistance.station1_id == station.id)\
-                    .order_by(data_model.StationDistance.distance).first()
-            self.nearest_stations[station.id] = nearest_distance
+                    .order_by(data_model.StationDistance.distance)[:5]
+            self.nearest_station_dists[station.id] = nearest_distances
 
 
     def update(self, timestep):
@@ -46,18 +46,18 @@ class PoissonLogic(SimulationLogic):
         # Increment after we run for the current timestep?
         self.time += timestep
 
+
     def generate_new_trips(self, start_time):
         # Note that Monday is day 0 and Sunday is day 6. Is this the same for data_model?
         station_count = 0
-        for start_station_id in self.stations:
+        for start_station_id in self.station_counts:
             station_count += 1
-            for end_station_id in self.stations:
+            for end_station_id in self.station_counts:
                 lam = self.get_lambda(start_time.weekday(), start_time.hour,\
                          start_station_id, end_station_id)
                 gauss = self.gaussian_distrs.get((start_station_id, end_station_id), None)
-
-                # Else?
                 # Check for invalid queries
+                # print lam, gauss
                 if lam and gauss:
                     num_trips = self.get_num_trips(lam)
                     for i in range(num_trips):
@@ -66,7 +66,7 @@ class PoissonLogic(SimulationLogic):
                         trip_start_time = start_time + added_time
                         trip_duration = self.get_trip_duration(gauss)
                         trip_end_time = trip_start_time + trip_duration
-                        new_trip = data_model.Trip(str(random.randint(1,500)), "Casual", "Produced", \
+                        new_trip = data_model.Trip(str(random.randint(1,500)), "Casual", 2, \
                                 trip_start_time, trip_end_time, start_station_id, end_station_id)
                         self.pending_departures.put((start_time, new_trip))
 
@@ -82,7 +82,6 @@ class PoissonLogic(SimulationLogic):
             probability = random.random()
         num_trips = poisson.ppf(probability, lam.value)
         if numpy.isnan(num_trips):
-            #TODO: Should we do something here?
             num_trips = -1
         return int(num_trips)
 
@@ -155,49 +154,36 @@ class PoissonLogic(SimulationLogic):
         return datetime.timedelta(seconds=trip_length)
 
 
-    '''
-    ISSUE: If there is a disappointment, the trip is rerouted to the nearest station. That sounds good in theory but what happens if two stations are full and they happen to be the closest stations to each other? Infinite loops! We need to figure out a better system for what happens here clearly.
 
-    Right now... I'm going to do nothing
-    '''
+    def resolve_sad_departure(self, trip):
+        '''
+        Currently does nothing. Used to do this: changes trip.start_station_id to the id of the station nearest to it. Updates both trip.start_date and trip.end_date using get_trip_duration(), puts the updated trip into pending_departures. 
+        '''
+        pass
 
+
+    '''
+    ISSUE: If there is a disappointment, the trip is rerouted to the nearest station. That sounds good in theory but what happens if two stations are full and they happen to be the closest stations to each other? Potentially resolved...
+
+    '''
     def resolve_sad_arrival(self, trip):
         '''
         Changes trip.end_station_id to the id of the station nearest to it and updates trip.end_date accordingly. Puts the updated trip into pending_arrivals.
         '''
-        nearest_station = self.nearest_stations.get(trip.end_station_id)
-        gauss = self.gaussian_distrs.get((trip.end_station_id, nearest_station.station2_id), None)
+        station_list_index = 0
+        nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
+        visited_stations = [disappointment.station_id for disappointment in trip.disappointments]
+        while nearest_station in visited_stations:
+            station_list_index+=1
+            nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
+        
+        gauss = self.gaussian_distrs.get((trip.end_station_id, nearest_station), None)
         if gauss:
+            trip.end_station_id = nearest_station
             trip_duration = self.get_trip_duration(gauss)
-            # Do we really want to do this? Do we not want to convert this into 2 trips?
             trip.end_date += trip_duration
-            return
             self.pending_arrivals.put((trip.end_date, trip))
 
-
-    def resolve_sad_departure(self, trip):
-        '''
-        Currently changes trip.start_station_id to the id of the station nearest to it. Updates both trip.start_date and trip.end_date using get_trip_duration(), puts the updated trip into pending_departures. 
-        '''
-        """
-        depart_station_id = trip.start_station_id
-        # SELECT station2_id from station_distances WHERE station1_id=depart_station_id order by distance limit 1;
-        # returns a StationDistance object in which station2_id is the station nearest to arrive_station
-        nearest_distance = self.session.query(data_model.StationDistance)\
-                                    .filter(data_model.StationDistance.station1_id == depart_station_id)\
-                                    .order_by(data_model.StationDistance.distance)[0]
-        nearest_station_id = nearest_distance.station2_id
-        trip.start_station_id = nearest_station_id
-        """
-
-        nearest_station = self.nearest_stations.get(trip.start_station_id)
-        gauss = self.gaussian_distrs.get((trip.end_station_id, nearest_station.station2_id), None)
-        if gauss:
-            trip_duration = self.get_trip_duration(gauss)
-            # Do we really want to do this? Do we not want to convert this into 2 trips?
-            trip.end_date += trip_duration
-            return
-            self.pending_departures.put((trip.start_date, trip))
 
     def clean_up(self):
         pass

@@ -19,19 +19,6 @@ class SimulationLogic:
     def __init__(self, session):
         # For database connectivity
         self.session = session
-        # self.time is a datetime, representing the current time in the simulator.
-        self.time = None
-        # {stID : station's bike count at self.time}
-        self.stations = {}
-        # Pending departures/arrivals includes tuples (endTime, trip)
-        self.pending_departures = Queue.PriorityQueue()
-        self.pending_arrivals = Queue.PriorityQueue()
-        # Contains all resolved trips
-        self.trip_list = []
-        self.dissapointments = []
-        # List of trips that didn't end at the desired station due to a shortage
-        self.bike_shortages = []
-        self.dock_shortages = []
        
     def getDBSession(self):
         return self.session
@@ -45,14 +32,11 @@ class SimulationLogic:
         # Stations should eventually be gotten from the database
         self.pending_departures = Queue.PriorityQueue()
         self.pending_arrivals = Queue.PriorityQueue()
-        self.dock_shortages = []
-        self.bike_shortages = []
+        self.disappointment_list = []
         self.trip_list = []
-        self.dissapointments = []
-        self.stations = {}
+        self.station_counts = {}
+	self.stations = {}
         self.initialize_stations(start_time)
-        #for s in self.stations:
-        #    print s, self.stations[s]
 
 
     def old_initialize_stations(self, start_time):
@@ -61,8 +45,8 @@ class SimulationLogic:
         for s in queried_stations:
             # For now, generates a random count that is less than or equal to the station's capacity.
             count = random.randint(0,s.capacity)
-            self.stations[s.id] = count
-        
+            self.station_counts[s.id] = count
+            self.stations[s.id] = s
     def initialize_stations(self, start_time):
         '''
         Loads the starting conditions of the stations from a csv.
@@ -100,7 +84,9 @@ class SimulationLogic:
             else:
                 print 'Error initializing stations, unknown station'
                 count = random.randint(0, s.capacity)
-            self.stations[s.id] = count
+ 
+            self.station_counts[s.id] = count
+            self.stations[s.id] = s
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
@@ -112,10 +98,10 @@ class SimulationLogic:
     def generate_new_trips(self, timestep):
         '''Generates trips COMPLETELY RANDOMLY WOOO'''
             
-        for station in self.stations:
-            num_trips = random.randint(0,self.stations[station])
+        for station in self.station_counts:
+            num_trips = random.randint(0,self.station_counts[station])
             for i in range(num_trips):
-                end_station_ID = random.choice(self.stations.keys())
+                end_station_ID = random.choice(self.station_counts.keys())
                 start_time = self.time + datetime.timedelta(minutes=random.randint(0, timestep.total_seconds()/60))
                 # Nobody takes longer than 2 hours to bike anywhere, duh!
                 end_time = start_time + datetime.timedelta(minutes=random.randint(0, 120))
@@ -124,15 +110,6 @@ class SimulationLogic:
                 self.pending_departures.put((start_time, new_trip))
 
                 # print "GENERATED", printTrip(new_trip)
-
-        # # TESTING
-        # printedQueue = Queue.PriorityQueue()
-        # print "PENDING TRIPS at time %s:" % str(self.time)
-        # for i in range(self.pending_arrivals.qsize()):
-        #     pq_trip = self.pending_arrivals.get()
-        #     print pq_trip
-        #     printedQueue.put(pq_trip)
-        # self.pending_arrivals = printedQueue
 
 
     def resolve_trips(self):
@@ -155,7 +132,7 @@ class SimulationLogic:
                     self.pending_arrivals.put((trip.end_date, trip))
                     break
                 else:
-                    # print "Resolving arrival for \t\t", printToisson.ppf(.3,mu)rip(trip)
+                    # print "Resolving arrival for \t\t", printPoisson.ppf(.3,mu)rip(trip)
                     self.resolve_arrival(trip)
                     # print "If dock shortage, new trip is", printTrip(trip)
 
@@ -163,36 +140,17 @@ class SimulationLogic:
             eventType = eventTuple[0]
             trip = eventTuple[1]
             
-        # #TESTING
-        # print "PENDING DEPARTURES at time %s:" % str(self.time)
-        # printedQueue = Queue.PriorityQueue()
-        # for i in range(self.pending_departures.qsize()):
-        #     pq_trip = self.pending_departures.get()
-        #     print printTrip(pq_trip[1])
-        #     printedQueue.put(pq_trip)
-        # self.pending_departures = printedQueue
-        # print "PENDING ARRIVALS at time %s:" % str(self.time)
-        # printedQueue = Queue.PriorityQueue()
-        # for i in range(self.pending_arrivals.qsize()):
-        #     pq_trip = self.pending_arrivals.get()
-        #     print printTrip(pq_trip[1])
-        #     printedQueue.put(pq_trip)
-        # self.pending_arrivals = printedQueue
-        # print "RESOLVED TRIPS at time %s:" % str(self.time)
-        # for i in self.trip_list:
-        #     print printTrip(i)
-
-
+        
     def resolve_departure(self, trip):
-        '''Decrement station count, put in pending_arrivals queue. If station is empty, put it in the bike_shortages list.'''
+        '''Decrement station count, put in pending_arrivals queue. If station is empty, put it in the disappointments list.'''
         departure_station_ID = trip.start_station_id
-        if self.stations[departure_station_ID] == 0:
-            d = Dissapointment(departure_station_ID, trip.start_date, None)
-            self.dissapointments.append(d)
-            self.bike_shortages.append(trip)
+        if self.station_counts[departure_station_ID] == 0:
+            new_disappointment = Dissapointment(departure_station_ID, trip.start_date, trip_id=None)
+            self.session.add(new_disappointment)
+            self.disappointment_list.append(new_disappointment)
             self.resolve_sad_departure(trip)
         else:
-            self.stations[departure_station_ID] -= 1
+            self.station_counts[departure_station_ID] -= 1
             self.pending_arrivals.put((trip.end_date, trip))
 
             
@@ -200,25 +158,25 @@ class SimulationLogic:
         '''When you want a bike but the station is empty'''
         pass
 
+
     def resolve_arrival(self, trip):
-        '''Increment station count, put in trips list. If desired station is full, put it in the dock_shortages list and try again.'''
+        '''Increment station count, put in trips list. If desired station is full, add a disappointment, set a new end station, and try again.'''
         arrival_station_ID = trip.end_station_id
-        # TODO What is going on here? Why is the station capacity capped at 5?
-        capacity = 5
-        if self.stations[arrival_station_ID] == capacity:
-            d = Dissapointment(arrival_station_ID, trip.end_date, trip.id)
-            self.dissapointments.append(d)
-            self.dock_shortages.append(trip)
+        capacity = self.stations[arrival_station_ID].capacity
+        if self.station_counts[arrival_station_ID] == capacity:
+            new_disappointment = Dissapointment(arrival_station_ID, trip.end_date, trip_id=None)
+            trip.disappointments.append(new_disappointment)
+            self.disappointment_list.append(new_disappointment)
             self.resolve_sad_arrival(trip)
         else:
-            self.stations[arrival_station_ID] += 1
+            self.station_counts[arrival_station_ID] += 1
             self.trip_list.append(trip)
 
 
     def resolve_sad_arrival(self, trip):
         '''When you want to drop off a bike but the station is full'''
         # Randomly choose another station to try to park at, at a random time (< 2hrs) from now.
-        trip.end_station_id = random.choice(self.stations.keys())
+        trip.end_station_id = random.choice(self.station_counts.keys())
         trip.end_date += datetime.timedelta(minutes=random.randint(1, 120))
         self.pending_arrivals.put((trip.end_date, trip))
 
@@ -249,29 +207,14 @@ class SimulationLogic:
         return (eventType, trip)
 
 
-    def flush(self, to_database=False):
+    def flush(self):
         '''Returns list of all trips since initialization, or adds them to the database if to_database is True'''
-        #TODO Not sure we want to have them flush directly to the database
-        # Maybe keep that logic in simulator
-        """
-        if to_database:
-            for trip in self.trip_list:
-                self.session.add(trip)
-            session.commit()
-
-        else:
-        """
-        return {'trips':self.trip_list, 'dissapointments':self.dissapointments}
+        return {'trips':self.trip_list,'disappointments':self.disappointment_list}
+        
 
 
     def cleanup(self):
         pass
-
-
-# FOR TESTING
-def printTrip(trip):
-    return str(trip.start_station_id) + "-->" + str(trip.end_station_id) + ": " + str(trip.start_date) + " --> " + str(trip.end_date)
-
 
 def main():
     conn = Connector()
@@ -284,9 +227,6 @@ def main():
     SL.update(step)
     SL.update(step)
     trips = SL.flush()
-    # print "ALL TRIPS:"
-    # for trip in trips:
-    #     print printTrip(trip)
        
 
 if __name__ == "__main__":

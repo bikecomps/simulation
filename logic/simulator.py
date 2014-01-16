@@ -40,7 +40,7 @@ class Simulator:
         with open(file_name, 'w') as f:
             f.write(Trip.csv_header() + "\n")
             for line in results:
-                f.write(line.to_csv() + "\n")
+                f.write(line + "\n")
 
     def save_to_db(self, trips):
         '''
@@ -51,7 +51,8 @@ class Simulator:
         for trip in trips:
             trip.trip_type = trip_type
             self.session.add(trip)
-        self.session.commit() 
+        self.session.flush()
+        # self.session.commit() 
 
 
     # Return string to write to console, std out
@@ -66,36 +67,46 @@ def main():
         "SimulationLogic" : SimulationLogic,
         "PoissonLogic" : PoissonLogic
     }
-
+    
     # For testing
     if len(sys.argv) == 1:
         # defaults
-        raw_start_date = "2012-6-1"
-        raw_end_date = "2012-6-2"
+        raw_start_date = "2012-6-1 08:00:00"
+        raw_end_date = "2012-6-1 13:00:00"
         file_name = "/tmp/test.csv"
         logic = PoissonLogic
+        start_date = datetime.datetime.strptime(raw_start_date, '%Y-%m-%d %H:%M:%S')
+        end_date = datetime.datetime.strptime(raw_end_date, '%Y-%m-%d %H:%M:%S')
     else:
         if len(sys.argv) < 5 or sys.argv[1] not in logic_options:
             print_usage()
             return
-       
-        raw_start_date = sys.argv[2]
-        raw_end_date = sys.argv[3]
-        file_name = sys.argv[4]
+        elif len(sys.argv) == 7:
+            raw_start_date = sys.argv[2] + " " + sys.argv[3]
+            raw_end_date = sys.argv[4] + " " + sys.argv[5]
+            start_date = datetime.datetime.strptime(raw_start_date, '%Y-%m-%d %H:%M:%S')
+            end_date = datetime.datetime.strptime(raw_end_date, '%Y-%m-%d %H:%M:%S')
+            file_name = sys.argv[6]
+        elif len(sys.argv) == 5:
+            raw_start_date = sys.argv[2]
+            raw_end_date = sys.argv[3]
+            start_date = datetime.datetime.strptime(raw_start_date, '%Y-%m-%d')
+            end_date = datetime.datetime.strptime(raw_end_date, '%Y-%m-%d') 
+            file_name = sys.argv[4]
+        else:
+            print_usage()
+            return 
     
         logic = logic_options[sys.argv[1]]
-
-    start_date = datetime.datetime.strptime(raw_start_date, '%Y-%m-%d')
-    end_date = datetime.datetime.strptime(raw_end_date, '%Y-%m-%d')
 
     session = Connector().getDBSession()
     logic = logic(session)
     simulator = Simulator(logic) 
     results = simulator.run(start_date, end_date)
-    for d in results['dissapointments']:
-        print d 
-    #simulator.write_out(results, file_name)
-    #simulator.save_to_db(results)
+    print "trips:", len(results['trips'])
+    print "disappointments:", len(results['disappointments'])
+    # simulator.write_out(results, file_name)
+    # simulator.save_to_db(results['trips'])
     
 
 if __name__ == '__main__':
