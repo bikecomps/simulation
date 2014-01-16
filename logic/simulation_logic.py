@@ -6,6 +6,7 @@ from utils import Connector
 from models import * 
 from data_collection import data_analyzer
 import bisect
+import numpy
 import Queue
 import random
 import datetime
@@ -28,7 +29,7 @@ class SimulationLogic:
         self.pending_arrivals = Queue.PriorityQueue()
         # Contains all resolved trips
         self.trip_list = []
-        self.dissapointments = []
+        self.disappointments = []
         # List of trips that didn't end at the desired station due to a shortage
         self.bike_shortages = []
         self.dock_shortages = []
@@ -48,49 +49,27 @@ class SimulationLogic:
         self.dock_shortages = []
         self.bike_shortages = []
         self.trip_list = []
-        self.dissapointments = []
+        self.disappointments = []
         self.stations = {}
         self.initialize_stations(start_time)
         #for s in self.stations:
         #    print s, self.stations[s]
 
-    def old_initialize_stations(self, start_time):
-        '''Sets initial bike count for each station.'''
-        queried_stations = self.session.query(data_model.Station)
-        for s in queried_stations:
-            # For now, generates a random count that is less than or equal to the station's capacity.
-            count = random.randint(0,s.capacity)
-            self.stations[s.id] = count
         
     def initialize_stations(self, start_time):
         '''
         Loads the starting conditions of the stations from a csv.
         Grossly hardcoded for now
-        TODO: Make it better
         '''
-        with open('/data/bike_counts.csv') as f:
-            data = f.readlines()
-        station_stats = data_analyzer.parse_data(data)
-        init_conditions = data_analyzer.calc_stats(station_stats)
-        
-        # I happen to know that there are only 2 options so this works for now
-        init_times = sorted(init_conditions.keys())
 
-        # bisect will return the next position on right so if it's 0
-        # then load from the latest time the previous day
-        load_from = bisect.bisect(init_times, start_time.hour)
-        if load_from == 0:
-            load_time = init_times[-1]
-        else:
-            load_time = init_times[load_from - 1]
-
-        # At the moment we'll just load from the closest one. In the future we should 
-        # simulate up until that point
-        for s in self.session.query(data_model.Station):
-            if str(s.id) in init_conditions[load_time]:
-                avg_count = init_conditions[load_time][str(s.id)]['avg_count']
-                std_count = init_conditions[load_time][str(s.id)]['std_count']
-                #TODO Convert to new distribution
+        #TODO Figure out which ones to grab (not all)
+        for s in self.session.query(Station):
+            bike_counts = list(self.session.query(StationStatus.bike_count)\
+                    .filter(StationStatus.station_id == s.id))
+            avg_count = numpy.average(bike_counts)
+            std_count = numpy.std(bike_counts)
+            #TODO Convert to new distribution
+            if len(bike_counts) > 0:
                 count = int(random.gauss(avg_count, std_count))
                 if count > s.capacity:
                     count = s.capacity
@@ -100,7 +79,7 @@ class SimulationLogic:
                 print 'Error initializing stations, unknown station'
                 count = random.randint(0, s.capacity)
             self.stations[s.id] = count
-
+        
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
         self.time += timestep
@@ -186,8 +165,8 @@ class SimulationLogic:
         '''Decrement station count, put in pending_arrivals queue. If station is empty, put it in the bike_shortages list.'''
         departure_station_ID = trip.start_station_id
         if self.stations[departure_station_ID] == 0:
-            d = Dissapointment(departure_station_ID, trip.start_date, None)
-            self.dissapointments.append(d)
+            d = Disappointment(departure_station_ID, trip.start_date, None)
+            self.disappointments.append(d)
             self.bike_shortages.append(trip)
             self.resolve_sad_departure(trip)
         else:
@@ -205,8 +184,8 @@ class SimulationLogic:
         # TODO What is going on here? Why is the station capacity capped at 5?
         capacity = 5
         if self.stations[arrival_station_ID] == capacity:
-            d = Dissapointment(arrival_station_ID, trip.end_date, trip.id)
-            self.dissapointments.append(d)
+            d = Disappointment(arrival_station_ID, trip.end_date, trip.id)
+            self.disappointments.append(d)
             self.dock_shortages.append(trip)
             self.resolve_sad_arrival(trip)
         else:
@@ -250,18 +229,7 @@ class SimulationLogic:
 
     def flush(self, to_database=False):
         '''Returns list of all trips since initialization, or adds them to the database if to_database is True'''
-        #TODO Not sure we want to have them flush directly to the database
-        # Maybe keep that logic in simulator
-        """
-        if to_database:
-            for trip in self.trip_list:
-                self.session.add(trip)
-            session.commit()
-
-        else:
-        """
-        return {'trips':self.trip_list, 'dissapointments':self.dissapointments}
-
+        return {'trips':self.trip_list, 'disappointments':self.disappointments}
 
     def cleanup(self):
         pass

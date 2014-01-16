@@ -42,15 +42,17 @@ class Simulator:
             for line in results:
                 f.write(line.to_csv() + "\n")
 
-    def save_to_db(self, trips):
+    def save_to_db(self, trips, disappointments):
         '''
-        Saves produced trips to the db.
+        Saves produced trips and associated disappointments to the db.
         '''
         trip_type = TripType('Produced')
         self.session.add(trip_type)
         for trip in trips:
             trip.trip_type = trip_type
             self.session.add(trip)
+        for d in disappointments:
+            self.session.add(d)
         self.session.commit() 
 
 
@@ -92,7 +94,7 @@ def main():
     logic = logic(session)
     simulator = Simulator(logic) 
     results = simulator.run(start_date, end_date)
-    for d in results['dissapointments']:
+    for d in results['disappointments']:
         print d 
     #simulator.write_out(results, file_name)
     #simulator.save_to_db(results)

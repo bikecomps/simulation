@@ -314,18 +314,44 @@ class AttributeType(Base):
     def __repr__(self):
         return 'Attribute type: %r' % self.descriptor
 
-class Dissapointment(Base):
-    __tablename__ = 'dissapointments'
-    id = Column(Integer, Sequence('dissapointments_id_seq'), primary_key=True)
-    # If trip_type is null then it was a dissapointment when a user arrived 
-    # but the station was empty.
-    trip_id = Column(Integer, ForeignKey('trips.id'),nullable=True)
-    trip = relationship('Trip', foreign_keys=[trip_id],
-               backref=backref('dissapointments'))
+class StationStatus(Base):
+    __tablename__ = 'station_statuses'
+    id = Column(Integer, Sequence('station_statuses_id_seq'), primary_key=True)
 
     station_id = Column(Integer, ForeignKey('stations.id'))
     station = relationship('Station', foreign_keys=[station_id],
-               backref=backref('dissapointments'))
+               backref=backref('statuses'))
+
+    time = Column(DateTime)
+
+    # Seems unncessary to keep both.. but they don't always match up
+    bike_count = Column(Integer)
+    empty_docks = Column(Integer)
+
+    def __init__(self, station_id, time, bike_count, empties):
+        self.station_id = station_id
+        self.time = time
+        self.bike_count = bike_count
+        self.empty_docks = empties
+
+    def __repr__(self):
+        return 'Station status: s_id={s} time={t} count={c} empty={e}'\
+                .format(s=self.station_id, t=self.time, c=self.bike_count, 
+                        e=self.empty_docks)
+
+
+class Disappointment(Base):
+    __tablename__ = 'disappointments'
+    id = Column(Integer, Sequence('disappointments_id_seq'), primary_key=True)
+    # If trip_type is null then it was a disappointment when a user arrived 
+    # but the station was empty.
+    trip_id = Column(Integer, ForeignKey('trips.id'),nullable=True)
+    trip = relationship('Trip', foreign_keys=[trip_id],
+               backref=backref('disappointments'))
+
+    station_id = Column(Integer, ForeignKey('stations.id'))
+    station = relationship('Station', foreign_keys=[station_id],
+               backref=backref('disappointments'))
 
     time = Column(DateTime)
 
@@ -336,9 +362,9 @@ class Dissapointment(Base):
 
     def __repr__(self):
         if self.trip_id:
-            return 'Dissapointment: Mid-trip at station {s} at time {t} on trip'\
+            return 'Disappointment: Mid-trip at station {s} at time {t} on trip'\
                     ' {tr}'.format(s=self.station_id, t=self.time, tr=self.trip_id)
-        return 'Dissapointment: Arrival at station {s} at time {t}'\
+        return 'Disappointment: Arrival at station {s} at time {t}'\
                 .format(s=self.station_id, t=self.time)
 
 

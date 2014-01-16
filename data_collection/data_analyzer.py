@@ -3,8 +3,9 @@
 import re
 import sys
 import numpy
-
-#[now, station_id, num_bikes, num_empties]
+from datetime import datetime
+from models import *
+from utils import Connector
 
 def read(filename):
     '''
@@ -49,6 +50,23 @@ def calc_stats(station_stats):
 
     return stats
 
+
+def load_csv_to_db(session, csv):
+    data = [line.split(',') for line in csv]
+    stations = {s.id for s in session.query(Station)}
+    for line in data:
+        time = datetime.datetime.strptime(line[0], '%Y-%m-%d %H:%M:%S.%f')
+        s_id = int(line[1])
+        bike_count = int(line[2])
+        empty_count = int(line[3])
+        if s_id in stations:
+            ss = StationStatus(s_id, time, bike_count, empty_count)
+            session.add(ss)
+        else:
+            print "Error, no station ", s_id
+    
+    session.commit() 
+
 def parse_data(data):
     '''
     Parses from file, returning it as a multilayered dict.
@@ -59,9 +77,10 @@ def parse_data(data):
     # Pull the hour at which the data was grabbed
     hour_match = re.compile('\d\d:')
     for line in data:
-        hour = int(hour_match.findall(line[0])[0][:-1])
-        stats = bike_stats.get(hour, {})
-        bike_stats[hour] = stats
+        #hour = int(hour_match.findall(line[0])[0][:-1])
+        time = line[0]
+        stats = bike_stats.get(time, {})
+        bike_stats[time] = stats
 
         station_data = stats.get(line[1], {})
         stats[line[1]] = station_data
@@ -78,8 +97,10 @@ def parse_data(data):
         
 def main():
     data = read(sys.argv[1])
-    stats = parse_data(data)
-    print_stats(stats)
+    #stats = parse_data(data)
+    #print_stats(stats)
+    session = Connector().getDBSession()
+    load_csv_to_db(session, data)
 
 if __name__ == '__main__':
     main()
