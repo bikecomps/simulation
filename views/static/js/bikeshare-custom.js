@@ -14,7 +14,7 @@ function sliderSetup() {
 }
 
 function toHours(d)  {
-    return (d/60.0).toFixed(2) + " hours";
+    return (d/3600.0).toFixed(2) + " hours";
 }
 
 function formatDate(dateStr) {
