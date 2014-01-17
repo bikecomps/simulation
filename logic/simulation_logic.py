@@ -98,8 +98,6 @@ class SimulationLogic:
 
                 self.pending_departures.put((start_time, new_trip))
 
-                # print "GENERATED", printTrip(new_trip)
-
 
     def resolve_trips(self):
         '''Resolves departures & arrivals within the current time interval'''
