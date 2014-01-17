@@ -234,6 +234,39 @@ class Lambda(Base):
                 "day_of_week" : self.day_of_week,
                 "value" : self.value}
 
+class Gamma(Base):
+    '''
+    Table stores gamma distributions for each pairwise station.
+    Important: Based on seconds!
+    '''
+    __tablename__ = 'gamma_distrs'
+    id = Column(Integer, Sequence('gamma_id_seq'), primary_key=True)
+
+    start_station_id = Column(Integer, ForeignKey('stations.id'))
+    start_station = relationship('Station', foreign_keys=[start_station_id],
+                                 backref=backref('gamma_start'))
+
+    end_station_id = Column(Integer, ForeignKey('stations.id'))
+    end_station = relationship('Station', foreign_keys=[end_station_id], 
+                               backref=backref('gamma_end'))
+
+    # Also known as k
+    shape = Column(Float)
+    # Also known as theta
+    scale = Column(Float)
+
+    def __init__(self, s_id, e_id, sh, sc):
+        self.start_station_id = s_id
+        self.end_station_id = e_id
+        self.shape = sh
+        self.scale = sc
+
+    def __repr__(self):
+        return 'Gamma distr: s_id={s_id}, e_id={e_id}, shape={sh}, scale={sc}'\
+                .format(s_id=self.start_station_id, e_id=self.end_station_id,
+                        sh=self.shape, sc=self.scale)
+
+
 class GaussianDistr(Base):
     '''
     Separate table to store parameters for poisson

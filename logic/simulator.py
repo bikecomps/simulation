@@ -73,8 +73,8 @@ def main():
     # For testing
     if len(sys.argv) == 1:
         # defaults
-        raw_start_date = "2012-6-1 08:00:00"
-        raw_end_date = "2012-6-1 13:00:00"
+        raw_start_date = "2012-6-1 00:00:00"
+        raw_end_date = "2012-6-2 00:00:00"
         file_name = "/tmp/test.csv"
         logic = PoissonLogic
         start_date = datetime.datetime.strptime(raw_start_date, '%Y-%m-%d %H:%M:%S')

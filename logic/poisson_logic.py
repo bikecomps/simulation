@@ -83,7 +83,7 @@ class PoissonLogic(SimulationLogic):
         num_trips = poisson.ppf(probability, lam.value)
         if numpy.isnan(num_trips):
             num_trips = -1
-        return int(num_trips)
+        return int(round(num_trips))
 
 
     def load_gaussians(self):
