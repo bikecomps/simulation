@@ -140,7 +140,7 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
         .attr('width', left_width + width + 40 + extra_width)
         .attr('height', (bar_height + gap * 2) * (labels.length + 1))
         .append("g")
-        .attr("transform", "translate(10, 20)");
+        .attr("transform", "translate(10, 20)")
     
     chart.selectAll("line")
         .data(x.ticks(d3.max(counts)))
@@ -192,6 +192,8 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
 
 }
 
+
+
 function plotKeysVals(htmlIdName, map) {
     var ids = Object.keys(map);
     var counts = new Array(ids.length);
@@ -217,10 +219,10 @@ function displaySummaryStats(data, from, to) {
     // set 'min_duration_trip' 
     var minTrip = data["min_duration_trip"];
     var minTripHtml = $("#min_duration_trip");
-    minTripHtml.find(".start_station_id")
-        .text(minTrip["start_station_id"]);
-    minTripHtml.find(".end_station_id")
-        .text(minTrip["end_station_id"]);
+    minTripHtml.find(".start_station_name")
+        .text(minTrip["start_station_name"]);
+    minTripHtml.find(".end_station_name")
+        .text(minTrip["end_station_name"]);
     minTripHtml.find(".duration")
         .text(toHours(minTrip["duration"]));
     minTripHtml.find(".start_datetime")
@@ -231,10 +233,10 @@ function displaySummaryStats(data, from, to) {
     // set 'max_duration_trip' 
     var maxTrip = data["max_duration_trip"];
     var maxTripHtml = $("#max_duration_trip");
-    maxTripHtml.find(".start_station_id")
-        .text(maxTrip["start_station_id"]);
-    maxTripHtml.find(".end_station_id")
-        .text(maxTrip["end_station_id"]);
+    maxTripHtml.find(".start_station_name")
+        .text(maxTrip["start_station_name"]);
+    maxTripHtml.find(".end_station_name")
+        .text(maxTrip["end_station_name"]);
     maxTripHtml.find(".duration")
         .text(toHours(maxTrip["duration"]));
     maxTripHtml.find(".start_datetime")
