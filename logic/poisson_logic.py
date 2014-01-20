@@ -47,7 +47,6 @@ class PoissonLogic(SimulationLogic):
         # Increment after we run for the current timestep?
         self.time += timestep
 
-
     def generate_new_trips(self, start_time):
         # Note that Monday is day 0 and Sunday is day 6. Is this the same for data_model?
         station_count = 0
@@ -68,7 +67,7 @@ class PoissonLogic(SimulationLogic):
                         trip_start_time = start_time + added_time
                         #trip_duration = self.get_trip_duration(gauss)
                         trip_duration = self.get_trip_duration(gamma)
-                        trip_end_time = trip_start_time + trip_duration
+			trip_end_time = trip_start_time + trip_duration
                         new_trip = data_model.Trip(str(random.randint(1,500)), "Casual", 2, \
                                 trip_start_time, trip_end_time, start_station_id, end_station_id)
                         self.pending_departures.put((start_time, new_trip))
@@ -196,6 +195,6 @@ def main():
     session = connector.getDBSession()
     p = PoissonLogic(session)
     print p.get_trip_duration(31100, 31101)
-
+    print durs
 if __name__ == '__main__':
     main()

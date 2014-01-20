@@ -41,6 +41,7 @@ class SummaryStats:
         self.trips = None
         self.disappointments = None
         self.stats = {}
+	self.station_name_dict = {}
 
         self.indent = False
         
@@ -66,19 +67,19 @@ class SummaryStats:
         self.stats['total_num_disappointments'] = len(self.disappointments)
         self.stats['avg_trip_time'] = numpy.average(trip_times)
         self.stats['std_trip_time'] = numpy.std(trip_times)        
-
         min_trip = min(trips_and_times)[1]
         max_trip = max(trips_and_times)[1]
+        
         self.stats['min_duration_trip'] = {
-            'start_station_id' : min_trip.start_station_id,
-            'end_station_id' : min_trip.end_station_id,
+            'start_station_name' : self.station_name_dict[min_trip.start_station_id].encode('ascii', 'ignore'),
+            'end_station_name' : self.station_name_dict[min_trip.end_station_id].encode('ascii', 'ignore'),
             'start_datetime' : min_trip.start_date,
             'end_datetime' : min_trip.end_date,
             'duration' : min_trip.duration().total_seconds()
         }
         self.stats['max_duration_trip'] = {
-            'start_station_id' : max_trip.start_station_id,
-            'end_station_id' : max_trip.end_station_id,
+            'start_station_name' : self.station_name_dict[max_trip.start_station_id].encode('ascii', 'ignore'),
+            'end_station_name' : self.station_name_dict[max_trip.end_station_id].encode('ascii', 'ignore'),
             'start_datetime' : max_trip.start_date,
             'end_datetime' : max_trip.end_date,
             'duration' : max_trip.duration().total_seconds()
@@ -90,12 +91,13 @@ class SummaryStats:
         station_list = self.session.query(Station)
 
         for station in station_list:
-            dep_counts[station.id] = 0
-            arr_counts[station.id] = 0
+            dep_counts[station.name.encode('ascii','ignore')] = 0
+            arr_counts[station.name.encode('ascii','ignore')] = 0
+            self.station_name_dict[station.id] = station.name
 
         for trip in self.trips:
-            dep_counts[trip.start_station_id] += 1
-            arr_counts[trip.end_station_id] += 1
+            dep_counts[self.station_name_dict[trip.start_station_id]] += 1
+            arr_counts[self.station_name_dict[trip.end_station_id]] += 1
 
         self.stats['num_departures_per_station'] = dep_counts
         self.stats['num_arrivals_per_station'] = arr_counts
@@ -121,8 +123,9 @@ class SummaryStats:
         self.stats['num_trips_per_hour'] = counts
 
     def calculate_stats(self):
-        self.calculate_overall_stats()
+        # now important to calculate station stats first so as to populate self.station_name_dict before calculating overall stats
         self.calculate_per_station_stats()
+        self.calculate_overall_stats()
         self.calculate_per_hour_stats()
         
     def get_disappointments(self):
