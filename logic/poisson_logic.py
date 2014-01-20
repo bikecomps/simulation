@@ -166,10 +166,6 @@ class PoissonLogic(SimulationLogic):
         pass
 
 
-    '''
-    ISSUE: If there is a disappointment, the trip is rerouted to the nearest station. That sounds good in theory but what happens if two stations are full and they happen to be the closest stations to each other? Potentially resolved...
-
-    '''
     def resolve_sad_arrival(self, trip):
         '''
         Changes trip.end_station_id to the id of the station nearest to it and updates trip.end_date accordingly. Puts the updated trip into pending_arrivals.

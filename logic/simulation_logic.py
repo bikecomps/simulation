@@ -5,6 +5,7 @@
 from utils import Connector
 from models import * 
 from data_collection import data_analyzer
+import math
 import bisect
 import numpy
 import Queue
@@ -58,8 +59,9 @@ class SimulationLogic:
         Loads the starting conditions of the stations from a csv.
         Grossly hardcoded for now
         '''
+        bike_total = data_analyzer.get_total_num_bikes()
 
-        #TODO Figure out which ones to grab (not all)
+        distributed_bikes = 0
         for s in self.session.query(Station):
             bike_counts = list(self.session.query(StationStatus.bike_count)\
                     .filter(StationStatus.station_id == s.id))
@@ -75,9 +77,46 @@ class SimulationLogic:
             else:
                 print 'Error initializing stations, unknown station'
                 count = random.randint(0, s.capacity)
+            distributed_bikes += count
             self.station_counts[s.id] = count
             self.stations[s.id] = s
         
+        bike_delta = bike_total - distributed_bikes
+
+        # We need to distribute integer numbers (either pos or neg) so we need 
+        # to sleect the correct function to distribute the greatest value from 0
+        round_func = math.ceil
+        if bike_delta < 0:
+            round_func = math.floor
+        
+        # Don't keep trying to reassign bikes to full stations
+        full_stations = set()
+        while bike_delta != 0: 
+            station_bike_prop = {s_id : float(s_count)/distributed_bikes
+                                        for s_id, s_count in 
+                                            self.station_counts.iteritems()
+                                            if s_id not in full_stations}
+            print "Remaining bikes", bike_delta
+            print "Num stations left:", len(station_bike_prop)
+            print "Num full stations:", len(full_stations)
+
+            for s_id, prop in station_bike_prop.iteritems():
+                added_bikes = round_func(prop * bike_delta) 
+                s = self.stations[s_id]
+                if added_bikes + self.station_counts[s.id] >= s.capacity:
+                    # Full station
+                    if added_bikes == 0:
+                        full_stations.add(s.id)
+                    added_bikes = s.capacity - self.station_counts[s.id]
+
+                bike_delta -= added_bikes
+                self.station_counts[s.id] += added_bikes
+
+        for s_id, s in self.stations.iteritems():
+            if s.capacity <= self.station_counts[s_id]:
+                print "Full station ",s_id, s.capacity, self.station_counts[s.id]
+
+
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
         self.time += timestep

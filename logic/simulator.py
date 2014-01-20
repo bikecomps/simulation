@@ -109,6 +109,7 @@ def main():
     print "disappointments:", len(results['disappointments'])
     # simulator.write_out(results, file_name)
     # simulator.save_to_db(results['trips'])
+    session.close()
     
 
 if __name__ == '__main__':
