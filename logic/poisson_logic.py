@@ -53,8 +53,8 @@ class PoissonLogic(SimulationLogic):
         for start_station_id in self.station_counts:
             station_count += 1
             for end_station_id in self.station_counts:
-                lam = self.get_lambda(start_time.weekday(), start_time.hour,\
-                         start_station_id, end_station_id)
+                lam = self.get_lambda(start_time.weekday(), \
+                                      start_station_id, end_station_id)
                 #gauss = self.gaussian_distrs.get((start_station_id, end_station_id), None)
                 gamma = self.duration_distrs.get((start_station_id, end_station_id), None)
                 # Check for invalid queries
@@ -109,37 +109,34 @@ class PoissonLogic(SimulationLogic):
             distr_dict[(gamma.start_station_id, gamma.end_station_id)] = gamma 
         return distr_dict
 
-    def get_lambda(self, day, hour, start_station, end_station):
+    def get_lambda(self, day, start_station, end_station):
         '''
         If there is a lambda, return it. Otherwise return None as we only 
         load non-zero lambdas from the database for performance reasons.
         '''
-        return self.lambda_distrs.get(day, {}).get(hour, {}).get((start_station, end_station), None)
+        return self.lambda_distrs.get(day, {}).get((start_station, end_station), None)
 
     def load_lambdas(self, start_time, end_time):
         '''
-        Caches lambdas into dictionary of day -> hour -> (start_id, end_id) -> lambda
+        Caches lambdas into dictionary of day -> (start_id, end_id) -> lambda
         '''
 
         # kind of gross but makes for easy housekeeping
-        distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+        distr_dict = defaultdict(lambda: defaultdict(float))
 
         # Inclusive
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
-            
-            start_hour = start_time.hour if start_time.weekday() == dow else 0
-            end_hour = end_time.hour if end_time.weekday() == dow else 24
 
             # For now we're only loading in lambdas that have non-zero values. 
             # We'll assume zero value if it's not in the dictionary
             lambda_poisson = self.session.query(data_model.Lambda)\
                     .filter(data_model.Lambda.day_of_week == dow)\
-                    .filter(data_model.Lambda.hour.between(start_hour, end_hour))\
                     .filter(data_model.Lambda.value > 0)
         
             for lam in lambda_poisson:
-                distr_dict[lam.day_of_week][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
+                distr_dict[lam.day_of_week][(lam.start_station_id, lam.end_station_id)] = lam
+
         return distr_dict
 
     def old_get_trip_duration(self, gauss):

@@ -214,7 +214,7 @@ class Lambda(Base):
     end_station = relationship('Station', foreign_keys=[end_station_id], 
                                backref=backref('lambda_end'))
     hour = Column(Integer) # range 0-23
-    day_of_week = Column(Integer) # range 0-6
+    day_of_week = Column(Integer) # range 1-7
     value = Column(Float)
 
     def __init__(self, start_station_id, end_station_id, hour, day, val):
@@ -231,6 +231,40 @@ class Lambda(Base):
         return {"start_station_id" : self.start_station_id,
                 "end_station_id" : self.end_station_id,
                 "hour" : self.hour,
+                "day_of_week" : self.day_of_week,
+                "value" : self.value}
+
+class LambdaPerDay(Base):
+    '''
+    Separate table to store parameters for poisson
+    distributions used to model the number of bike
+    arrivals between every pair of stations
+    in a given day of the week. 
+    '''
+    __tablename__ = 'lambdas'
+    id = Column(Integer, Sequence('lambda_id_seq'), primary_key=True)
+    start_station_id = Column(Integer, ForeignKey('stations.id'))
+    start_station = relationship('Station', foreign_keys=[start_station_id],
+                                 backref=backref('lambda_start'))
+
+    end_station_id = Column(Integer, ForeignKey('stations.id'))
+    end_station = relationship('Station', foreign_keys=[end_station_id], 
+                               backref=backref('lambda_end'))
+    day_of_week = Column(Integer) # range 1-7
+    value = Column(Float)
+
+    def __init__(self, start_station_id, end_station_id, day, val):
+        self.start_station_id = start_station_id
+        self.end_station_id = end_station_id
+        self.day_of_week = day
+        self.value = val
+    
+    def __repr__(self):
+        return 'start station id: %s, end station id: %s, day of week: %s, value: %.2f' % (self.start_station_id, self.end_station_id, self.day_of_week, self.value)
+
+    def getDict(self):
+        return {"start_station_id" : self.start_station_id,
+                "end_station_id" : self.end_station_id,
                 "day_of_week" : self.day_of_week,
                 "value" : self.value}
 
