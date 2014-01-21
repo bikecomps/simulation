@@ -109,7 +109,7 @@ class SummaryStats:
         if self.dummy:
             self.station_name_dict = {0:"Pizza",1:"Kitties",2:"Funky Town",3:"Limbo",4:"Hell"}
             for s in self.station_name_dict:
-                station_list.append(Station(s,self.station_name_dict[s],s))
+                station_list.append(Station(s,self.station_name_dict[s],20,s))
                 dep_counts[self.station_name_dict[s]] = 0
                 arr_counts[self.station_name_dict[s]] = 0
         else:
