@@ -56,6 +56,5 @@ if __name__ == "__main__":
         (r"/about", AboutHandler),
         (r"/stats", StatsHandler)
     ], **settings)
-    
     application.listen(3000)
     tornado.ioloop.IOLoop.instance().start()

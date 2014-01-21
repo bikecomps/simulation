@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 from utils import Connector
-from models import Trip, Station
+from models import *
 
 import csv
 import datetime

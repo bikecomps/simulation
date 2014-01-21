@@ -22,11 +22,9 @@ class PoissonLogic(SimulationLogic):
 
     def initialize(self, start_time, end_time):
         SimulationLogic.initialize(self, start_time, end_time)
-
         self.lambda_distrs = self.load_lambdas(start_time, end_time)
         #self.gaussian_distrs = self.load_gaussians()
         self.duration_distrs = self.load_gammas()
-        
 
         # Retrieve StationDistance objects representing the five closest
         # stations for each stations.

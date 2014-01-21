@@ -34,7 +34,7 @@ import sys
 import random
 
 class SummaryStats:
-    def __init__(self, start_date, end_date, dummy = True):
+    def __init__(self, start_date, end_date, dummy = False):
         self.start_date = start_date
         self.end_date = end_date
 

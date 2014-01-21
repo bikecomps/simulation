@@ -20,7 +20,6 @@ class Simulator:
 
     def run(self, start_time, end_time, timestep=datetime.timedelta(seconds=3600)):
         self.sim_logic.initialize(start_time, end_time)
-
         cur_time = start_time
         while cur_time < end_time:
             self.sim_logic.update(timestep)
