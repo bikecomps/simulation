@@ -31,6 +31,7 @@ import datetime
 import json
 import numpy
 import sys
+import random
 
 class SummaryStats:
     def __init__(self, start_date, end_date, dummy = False):
@@ -106,7 +107,7 @@ class SummaryStats:
         arr_counts = {}
         station_list = []
         if self.dummy:
-            self.station_name_dict = [0:"Pizza",1:"Kitties",2:"Funky Town",3:"Limbo",4:"Hell"]
+            self.station_name_dict = {0:"Pizza",1:"Kitties",2:"Funky Town",3:"Limbo",4:"Hell"}
             for s in self.station_name_dict:
                 station_list.append(Station(s,self.station_name_dict[s],s))
                 dep_counts[self.station_name_dict[s]] = 0
