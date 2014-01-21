@@ -34,7 +34,7 @@ import sys
 import random
 
 class SummaryStats:
-    def __init__(self, start_date, end_date, dummy = False):
+    def __init__(self, start_date, end_date, dummy = True):
         self.start_date = start_date
         self.end_date = end_date
 
@@ -69,7 +69,7 @@ class SummaryStats:
         for i in range(22):
             start_time = datetime.datetime(2012, 1, 5, hour=i, minute=0, second=0, microsecond=0, tzinfo=None)
             end_time = datetime.datetime(2012, 1, 5, hour=i, minute=20, second=0, microsecond=0, tzinfo=None)
-            trip_list.append(Trip(str(random.randint(1,500)),"Casual", 2,start_time,end_time,i%5,5-i%5))
+            trip_list.append(Trip(str(random.randint(1,500)),"Casual", 2,start_time,end_time,i%4,4-i%4))
 
         self.trips = trip_list
         self.disappointments = []
@@ -107,9 +107,9 @@ class SummaryStats:
         arr_counts = {}
         station_list = []
         if self.dummy:
-            self.station_name_dict = {0:"Pizza",1:"Kitties",2:"Funky Town",3:"Limbo",4:"Hell"}
+            self.station_name_dict = {0:"17 & H Street",1:"Federal Circle Metro Station",2:"NW Hall Ave & 17th St",3:"SE 10th St & Minnesota",4:"Hell"}
             for s in self.station_name_dict:
-                station_list.append(Station(s,self.station_name_dict[s],20,s))
+                station_list.append(Station(s,self.station_name_dict[s],20,None))
                 dep_counts[self.station_name_dict[s]] = 0
                 arr_counts[self.station_name_dict[s]] = 0
         else:

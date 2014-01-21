@@ -117,11 +117,11 @@ function groupBarPlot(htmlIdName, data) {
 
 function nonGroupBarPlot(htmlIdName, labels, counts) {
     var chart,
-        width = 1000,
+        width = 750,
         bar_height = 20,
         height = bar_height * labels.length,
         x, y, yRangeBand,
-        left_width = 100,
+        left_width = 250,
         gap = 2,
         extra_width = 100;
     
