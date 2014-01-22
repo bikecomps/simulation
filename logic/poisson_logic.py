@@ -80,7 +80,8 @@ class PoissonLogic(SimulationLogic):
         probability = random.random()
         while probability == 0:
             probability = random.random()
-        num_trips = poisson.ppf(probability, lam.value)
+        # should preferably be a distribution * lam.value
+        num_trips = poisson.ppf(probability, lam.value * 0.1)
         if numpy.isnan(num_trips):
             num_trips = -1
         return int(round(num_trips))
@@ -131,10 +132,9 @@ class PoissonLogic(SimulationLogic):
 
             # For now we're only loading in lambdas that have non-zero values. 
             # We'll assume zero value if it's not in the dictionary
-            lambda_poisson = self.session.query(data_model.Lambda)\
-                    .filter(data_model.Lambda.day_of_week == dow)\
-                    .filter(data_model.Lambda.hour.between(start_hour, end_hour))\
-                    .filter(data_model.Lambda.value > 0)
+            lambda_poisson = self.session.query(data_model.Lambda) \
+                .filter(data_model.Lambda.day_of_week == dow) \
+                .filter(data_model.Lambda.hour.between(start_hour, end_hour))
         
             for lam in lambda_poisson:
                 distr_dict[lam.day_of_week][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
