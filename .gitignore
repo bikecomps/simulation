@@ -4,3 +4,4 @@ bike_counts.csv
 *.pyc
 nohup.out
 *.swp
+misc/*

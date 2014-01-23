@@ -36,7 +36,6 @@ class PoissonLogic(SimulationLogic):
                     .order_by(data_model.StationDistance.distance)[:5]
             self.nearest_station_dists[station.id] = nearest_distances
 
-
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
         self.generate_new_trips(self.time)
