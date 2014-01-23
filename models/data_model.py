@@ -360,19 +360,43 @@ class AttributeType(Base):
     def __repr__(self):
         return 'Attribute type: %r' % self.descriptor
 
-class StationStatus(Base):
-    __tablename__ = 'station_statuses'
-    id = Column(Integer, Sequence('station_statuses_id_seq'), primary_key=True)
+class StatusGroup(Base):
+    '''
+    Save space and make grouping easier for station status groups
+    '''
+    __tablename__ = 'status_groups'
+    id = Column(Integer, Sequence('status_groups_id_seq'), primary_key=True)
+    time = Column(DateTime, unique=True, nullable=False)
 
-    station_id = Column(Integer, ForeignKey('stations.id'))
+    def __init__(self, time):
+        self.time = time
+
+    def __repr__(self):
+        return 'Station status pulled: time %s' % time
+
+
+class StationStatus(Base):
+    '''
+    The results of querying the capital bike share station status API should be
+    stored in this table.
+    '''
+    __tablename__ = 'station_statuses'
+
+    #id = Column(Integer, Sequence('station_statuses_id_seq'), primary_key=True)
+    status_group_id = Column(Integer, ForeignKey('status_groups.id'), 
+                             primary_key=True)
+    status_group = relationship('StatusGroup', foreign_keys=[status_group_id],
+                                backref=backref('statuses'))
+
+    station_id = Column(Integer, ForeignKey('stations.id'), primary_key=True)
     station = relationship('Station', foreign_keys=[station_id],
                backref=backref('statuses'))
 
-    time = Column(DateTime)
+    #time = Column(DateTime)
 
     # Seems unncessary to keep both.. but they don't always match up
-    bike_count = Column(Integer)
-    empty_docks = Column(Integer)
+    bike_count = Column(Integer, nullable=False)
+    empty_docks = Column(Integer, nullable=False)
 
     def __init__(self, station_id, time, bike_count, empties):
         self.station_id = station_id
