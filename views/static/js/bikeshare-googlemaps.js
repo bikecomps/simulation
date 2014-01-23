@@ -25,7 +25,8 @@ function initialize() {
     
     // Draw a logo wherever there is a bike station
   	var stationLogo = '/static/img/cbLogo-16.png';
-    for (station=0; station < locations[station][0].length; station++) {
+    console.log("length="+Object.keys(locations).length);
+    for (station=0; station < Object.keys(locations).length; station++) {
         // console.log(station + ": " + lat[station] + ", " + lng[station]);
         var stationLatLng = new google.maps.LatLng(locations[station][0], locations[station][1]);
         console.log("lat = " + locations[station][0] + "and lon = " + locations[station][1]);
