@@ -24,7 +24,7 @@ function initialize() {
     
     // Draw a logo wherever there is a bike station
   	var stationLogo = '/static/img/cbLogo-16.png';
-    for (station=0; station < lat.length; station++) {
+    for (station=0; station < locations[station][0].length; station++) {
         // console.log(station + ": " + lat[station] + ", " + lng[station]);
         var stationLatLng = new google.maps.LatLng(locations[station][0], locations[station][1]);
         var marker = new google.maps.Marker({
@@ -35,8 +35,8 @@ function initialize() {
     }
     
     // Draw a line between two bike stations
-    addLine(0, 1, '#FF0000');
-    addLine(0, 2, '#00FF00');
+    //addLine(0, 1, '#FF0000');
+    //addLine(0, 2, '#00FF00');
     
     
     // removeLines();
@@ -44,8 +44,8 @@ function initialize() {
 
 function addLine(fromStation, toStation, color) {
     var pathCoords = [
-        new google.maps.LatLng(lat[fromStation], lng[fromStation]),
-        new google.maps.LatLng(lat[toStation], lng[toStation])
+        new google.maps.LatLng(locations[fromStation][0], locations[fromStation][1]),
+        new google.maps.LatLng(locations[toStation][0], locations[toStation][1])
     ];
     var connection = new google.maps.Polyline({
         path: pathCoords,
