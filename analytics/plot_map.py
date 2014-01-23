@@ -7,6 +7,7 @@ import csv
 import datetime
 import numpy
 import sys
+import json
 
 class PlotMap:
     def __init__(self, day, start_hour, end_hour):
@@ -16,7 +17,7 @@ class PlotMap:
         self.end_hour = end_hour
 
         self.session = Connector().getDBSession()
-
+        self.indent = False
         self.intersections = self.get_coordinates()
 
     def get_coordinates(self):
@@ -30,8 +31,19 @@ class PlotMap:
             lon = intersection.lon
             intersections_dict[intersections_counter] = [lat, lon]
             intersections_counter+=1
+        return json.dumps(intersections_dict)
 
-        return intersections_dict
+    def dump_json(self, to_dump):
+        if self.indent:
+            return json.dumps(to_dump, indent=4, default=self.json_dump_handler)
+        else:
+            return json.dumps(to_dump, default=self.json_dump_handler)
+
+    def json_dump_handler(self, obj):
+        if hasattr(obj, 'isoformat'):
+            return obj.isoformat()
+        else:
+            raise TypeError, 'Cannot serialize item %s of type %s' % (repr(obj), type(obj))
 
 def main():
 

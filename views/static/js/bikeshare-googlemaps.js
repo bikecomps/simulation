@@ -9,7 +9,8 @@ var map;
 
 function set_coordinates(val)
 {
-    locations=val
+    j_val = val.replace(/&quot;/g,'"');
+    locations=jQuery.parseJSON(j_val);
 }
 
 function initialize() {
@@ -27,6 +28,7 @@ function initialize() {
     for (station=0; station < locations[station][0].length; station++) {
         // console.log(station + ": " + lat[station] + ", " + lng[station]);
         var stationLatLng = new google.maps.LatLng(locations[station][0], locations[station][1]);
+        console.log("lat = " + locations[station][0] + "and lon = " + locations[station][1]);
         var marker = new google.maps.Marker({
             position: stationLatLng,
             map: map,
