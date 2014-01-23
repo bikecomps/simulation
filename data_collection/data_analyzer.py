@@ -103,16 +103,13 @@ def get_total_num_bikes():
     # Check the days we have  and grab the most count
     # provides a good upperbound on the total number of bikes
 
-    #TODO figure out a better way of doing this
-    #conn = Connector().getDBEngine().connect()
-    #sql_query = 'SELECT MAX(counts.sum) FROM (\
-    #                        SELECT SUM(bike_count)\
-    #                        FROM %s\
-    #                        GROUP BY time) as counts' % StationStatus.__tablename__
+    conn = Connector().getDBEngine().connect()
+    sql_query = 'SELECT MAX(counts.sum) FROM (\
+                            SELECT SUM(bike_count)\
+                            FROM %s\
+                            GROUP BY status_group_id) as counts' % StationStatus.__tablename__
 
-    #max_bike_count = conn.execute(sql_query).first()[0]
-    #TODO fix this!, temp fix for now
-    return 2375
+    max_bike_count = conn.execute(sql_query).first()[0]
     return max_bike_count
         
 def main():

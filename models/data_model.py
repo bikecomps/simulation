@@ -398,9 +398,9 @@ class StationStatus(Base):
     bike_count = Column(Integer, nullable=False)
     empty_docks = Column(Integer, nullable=False)
 
-    def __init__(self, station_id, time, bike_count, empties):
+    def __init__(self, group, station_id, bike_count, empties):
+        self.status_group = group
         self.station_id = station_id
-        self.time = time
         self.bike_count = bike_count
         self.empty_docks = empties
 

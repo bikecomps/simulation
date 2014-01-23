@@ -49,14 +49,15 @@ def parse_and_save_to_db(session, xml):
     stations = {s.id for s in session.query(Station)}
     now = datetime.datetime.now()
     data_soup = BeautifulSoup(xml, 'xml') 
+    sg = StatusGroup(datetime.datetime.now())
+    session.add(sg)
     for station in data_soup.findAll('station'):
         station_id = int(station.terminalName.string)
-        #print type(station_id)
         num_bikes = station.nbBikes.string 
         num_empties = station.nbEmptyDocks.string
         # Otherwise it's just an untracked station which we have no data for so we will ignore it
         if station_id in stations:
-            session.add(StationStatus(station_id, now, num_bikes, num_empties))
+            session.add(StationStatus(sg, station_id, num_bikes, num_empties))
         else:
             print "Error no station ",station_id
 
