@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 import tornado.ioloop
-from tornado.web import RequestHandler, Application
-
-from analytics import SummaryStats
-
 import datetime
 import os
+
+
+from analytics import PlotMap
+from tornado.web import RequestHandler, Application
+from analytics import SummaryStats
 
 
 class StatsHandler(RequestHandler):
@@ -24,7 +25,16 @@ class StatsHandler(RequestHandler):
     
 class IndexHandler(RequestHandler):
     def get(self):
-        self.render("home.html", title="BikeShare Comps")
+        '''
+        Dummy data for Google Maps. Queries Monday 6am-8pm for testing purposes.
+        '''
+        day = 1
+        start_time = datetime.datetime.strptime('06:00',
+                                            '%H:%M')
+        end_time = datetime.datetime.strptime('20:00',
+                                          '%H:%M')
+        intersections = PlotMap(day, start_time, end_time).intersections
+        self.render("home.html", title="BikeShare Comps", locations=intersections)
 
 class AboutHandler(RequestHandler):
     def get(self):
@@ -46,6 +56,5 @@ if __name__ == "__main__":
         (r"/about", AboutHandler),
         (r"/stats", StatsHandler)
     ], **settings)
-    
-    application.listen(1227)
+    application.listen(3000)
     tornado.ioloop.IOLoop.instance().start()

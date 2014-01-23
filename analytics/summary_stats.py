@@ -31,9 +31,10 @@ import datetime
 import json
 import numpy
 import sys
+import random
 
 class SummaryStats:
-    def __init__(self, start_date, end_date):
+    def __init__(self, start_date, end_date, dummy = False):
         self.start_date = start_date
         self.end_date = end_date
 
@@ -41,11 +42,14 @@ class SummaryStats:
         self.trips = None
         self.disappointments = None
         self.stats = {}
-	self.station_name_dict = {}
-
+    	self.station_name_dict = {}
+        self.dummy = dummy
         self.indent = False
-        
-        self.run_simulation()
+
+        if not dummy:
+            self.run_simulation()
+        else:
+            self.get_dummy_simulation()
         self.calculate_stats()
 
     def run_simulation(self):
@@ -57,6 +61,19 @@ class SummaryStats:
         self.session = session
         self.trips = results['trips']
         self.disappointments = results['disappointments']
+
+    def get_dummy_simulation(self):
+        station_ids = [0,1,2,3,4]
+        trip_list = []
+
+        for i in range(22):
+            start_time = datetime.datetime(2012, 1, 5, hour=i, minute=0, second=0, microsecond=0, tzinfo=None)
+            end_time = datetime.datetime(2012, 1, 5, hour=i, minute=20, second=0, microsecond=0, tzinfo=None)
+            trip_list.append(Trip(str(random.randint(1,500)),"Casual", 2,start_time,end_time,i%4,4-i%4))
+
+        self.trips = trip_list
+        self.disappointments = []
+
 
     def calculate_overall_stats(self):
         trips_and_times = [(trip.duration().total_seconds(), trip) for trip in self.trips]
@@ -88,12 +105,20 @@ class SummaryStats:
     def calculate_per_station_stats(self):
         dep_counts = {}
         arr_counts = {}
-        station_list = self.session.query(Station)
+        station_list = []
+        if self.dummy:
+            self.station_name_dict = {0:"17 & H Street",1:"Federal Circle Metro Station",2:"NW Hall Ave & 17th St",3:"SE 10th St & Minnesota",4:"Hell"}
+            for s in self.station_name_dict:
+                station_list.append(Station(s,self.station_name_dict[s],20,None))
+                dep_counts[self.station_name_dict[s]] = 0
+                arr_counts[self.station_name_dict[s]] = 0
+        else:
+            station_list = self.session.query(Station)
 
-        for station in station_list:
-            dep_counts[station.name.encode('ascii','ignore')] = 0
-            arr_counts[station.name.encode('ascii','ignore')] = 0
-            self.station_name_dict[station.id] = station.name
+            for station in station_list:
+                dep_counts[station.name.encode('ascii','ignore')] = 0
+                arr_counts[station.name.encode('ascii','ignore')] = 0
+                self.station_name_dict[station.id] = station.name
 
         for trip in self.trips:
             dep_counts[self.station_name_dict[trip.start_station_id]] += 1
