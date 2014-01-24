@@ -23,7 +23,6 @@ class PoissonLogic(SimulationLogic):
     def initialize(self, start_time, end_time):
         SimulationLogic.initialize(self, start_time, end_time)
         self.lambda_distrs = self.load_lambdas(start_time, end_time)
-        #self.gaussian_distrs = self.load_gaussians()
         self.duration_distrs = self.load_gammas()
 
         # Retrieve StationDistance objects representing the five closest
@@ -33,7 +32,7 @@ class PoissonLogic(SimulationLogic):
         for station in station_list:
             nearest_distances = self.session.query(data_model.StationDistance)\
                     .filter(data_model.StationDistance.station1_id == station.id)\
-                    .order_by(data_model.StationDistance.distance)[:5]
+                    .order_by(data_model.StationDistance.distance)[:8]
             self.nearest_station_dists[station.id] = nearest_distances
 
 
@@ -53,17 +52,14 @@ class PoissonLogic(SimulationLogic):
             for end_station_id in self.station_counts:
                 lam = self.get_lambda(start_time.weekday(), start_time.hour,\
                          start_station_id, end_station_id)
-                #gauss = self.gaussian_distrs.get((start_station_id, end_station_id), None)
                 gamma = self.duration_distrs.get((start_station_id, end_station_id), None)
                 # Check for invalid queries
-                # print lam, gauss
                 if lam and gamma:
                     num_trips = self.get_num_trips(lam)
                     for i in range(num_trips):
                         # Starting time of the trip is randomly chosen within the Lambda's time range, which is hard-coded to be an hour.
                         added_time = datetime.timedelta(0, random.randint(0, 59), 0, 0, random.randint(0, 59), 0, 0)
                         trip_start_time = start_time + added_time
-                        #trip_duration = self.get_trip_duration(gauss)
                         trip_duration = self.get_trip_duration(gamma)
 			trip_end_time = trip_start_time + trip_duration
                         new_trip = data_model.Trip(str(random.randint(1,500)), "Casual", 2, \
@@ -139,14 +135,6 @@ class PoissonLogic(SimulationLogic):
             for lam in lambda_poisson:
                 distr_dict[lam.day_of_week][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
         return distr_dict
-
-    def old_get_trip_duration(self, gauss):
-        '''
-        Samples from a gaussian distribution and returns a timedelta
-        representing a trip length.
-        '''
-        trip_length = random.gauss(gauss.mean, gauss.std)
-        return datetime.timedelta(seconds=trip_length)
 
     def get_trip_duration(self, gamma):
         '''

@@ -4,7 +4,7 @@
 '''
 from utils import Connector
 from models import * 
-from data_collection import data_analyzer
+from sqlalchemy.sql import func
 import math
 import bisect
 import numpy
@@ -54,12 +54,25 @@ class SimulationLogic:
         self.initialize_stations(start_time)
 
 
+
+    def get_total_num_bikes(self):
+        '''
+        Given a way to access the DB grab the max number of bikes at the stations
+        that we've checked so far.
+        '''
+        # Check the days we have  and grab the most count
+        # provides a good upperbound on the total number of bikes
+        max_bike_count= max(self.session.query(func.sum(StationStatus.bike_count))\
+                .group_by(StationStatus.status_group_id).all())[0]
+        return max_bike_count
+     
+
     def initialize_stations(self, start_time):
         '''
         Loads the starting conditions of the stations from a csv.
         Grossly hardcoded for now
         '''
-        bike_total = data_analyzer.get_total_num_bikes()
+        bike_total = self.get_total_num_bikes()
 
         distributed_bikes = 0
         for s in self.session.query(Station):

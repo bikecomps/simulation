@@ -3,6 +3,7 @@
 import re
 import sys
 import numpy
+from sqlalchemy.sql import func
 from datetime import datetime
 from models import *
 from utils import Connector
@@ -94,31 +95,13 @@ def parse_data(data):
         station_data['num_empties'] = empty_counts 
         
     return bike_stats
-
-def get_total_num_bikes():
-    '''
-    Given a way to access the DB grab the max number of bikes at the stations
-    that we've checked so far.
-    '''
-    # Check the days we have  and grab the most count
-    # provides a good upperbound on the total number of bikes
-
-    conn = Connector().getDBEngine().connect()
-    sql_query = 'SELECT MAX(counts.sum) FROM (\
-                            SELECT SUM(bike_count)\
-                            FROM %s\
-                            GROUP BY status_group_id) as counts' % StationStatus.__tablename__
-
-    max_bike_count = conn.execute(sql_query).first()[0]
-    return max_bike_count
-        
+   
 def main():
     #data = read(sys.argv[1])
     #stats = parse_data(data)
     #print_stats(stats)
     #session = Connector().getDBSession()
     #load_csv_to_db(session, data)
-    get_total_num_bikes()
 
 if __name__ == '__main__':
     main()

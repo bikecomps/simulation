@@ -225,7 +225,8 @@ class Lambda(Base):
         self.value = val
     
     def __repr__(self):
-        return 'start station id: %s, end station id: %s, hour: %s, day of week: %s, value: %.2f' % (self.start_station_id, self.end_station_id, self.hour, self.day_of_week, self.value)
+        return 'start station id: %s, end station id: %s, hour: %s, day of week: %s, value: %.2f'\
+                 % (self.start_station_id, self.end_station_id, self.hour, self.day_of_week, self.value)
 
     def getDict(self):
         return {"start_station_id" : self.start_station_id,
@@ -305,7 +306,7 @@ class TripType(Base):
     '''
     __tablename__ = 'trip_types'
     id = Column(Integer, Sequence('trip_type_id_seq'), primary_key=True)
-    trip_type = Column(Enum(u'Training', u'Testing', u'Produced', name='trip_type'), 
+    trip_type = Column(Enum(u'Training', u'Testing', u'Produced', u'Removed', name='trip_type'), 
              default=u'Produced')
 
     produced_on = Column(DateTime)
@@ -315,7 +316,7 @@ class TripType(Base):
         self.produced_on = datetime.datetime.now() 
 
     def __repr__(self):
-        return 'type: %r, produced_on %r' % (self.type, self.produced_on)
+        return 'type: %r, produced_on %r' % (self.trip_type, self.produced_on)
 
 class NeighborhoodAttr(Base):
     '''
