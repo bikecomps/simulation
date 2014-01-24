@@ -4,7 +4,7 @@
 '''
 from utils import Connector
 from models import * 
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, extract
 import math
 import bisect
 import numpy
@@ -73,11 +73,17 @@ class SimulationLogic:
         Grossly hardcoded for now
         '''
         bike_total = self.get_total_num_bikes()
-
+        # Get the closest hour for now
+        start_hour = int(round(start_time.hour + start_time.minute/60.0) )
         distributed_bikes = 0
+
         for s in self.session.query(Station):
+            # The cron_job now has hourly data (more or less)
             bike_counts = list(self.session.query(StationStatus.bike_count)\
-                    .filter(StationStatus.station_id == s.id))
+                    .filter(StationStatus.station_id == s.id)\
+                    .join(StatusGroup, aliased=True)\
+                    .filter(extract('hour', StatusGroup.time) == start_hour))
+            
             avg_count = numpy.average(bike_counts)
             std_count = numpy.std(bike_counts)
             #TODO Convert to new distribution

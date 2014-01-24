@@ -105,7 +105,11 @@ def main():
     simulator = Simulator(logic) 
     results = simulator.run(start_date, end_date)
     print "trips:", len(results['trips'])
-    print "disappointments:", len(results['disappointments'])
+    ds = results['disappointments']
+    print "disappointments:", len(ds)
+    num_ds = len([x for x in ds if x.trip == None])
+    print "Empty diss", num_ds
+    print "Full diss", len(ds) - num_ds
     # simulator.write_out(results, file_name)
     # simulator.save_to_db(results['trips'])
     session.close()

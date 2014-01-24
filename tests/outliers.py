@@ -19,10 +19,6 @@ def calc_outliers(session, s_id):
     '''
     return trip_times
 
-# Many thanks to http://stackoverflow.com/questions/11686720/is-there-a-numpy-builtin-to-reject-outliers-from-a-list 
-#def reject_outliers(data, m=4):
-#    return [x for x in data if abs(data - np.mean(data)) < m * np.std(data)]
-
 def classify_outliers(data, m=3, verbose=False): 
     ''' Just so that we can see more data about rejected outliers '''
     rejected = []
@@ -33,7 +29,8 @@ def classify_outliers(data, m=3, verbose=False):
  
     for t in data:
         trip_time = t.duration().total_seconds()
-        if abs(trip_time - mean) > m * std or t.end_date < t.start_date:
+        # Going to redo, only removing extrememly long trips and not extremely short trips?
+        if trip_time - mean > m * std or t.end_date < t.start_date:
             rejected.append(t)
         else:
             kept.append(t)
@@ -48,11 +45,6 @@ def classify_outliers(data, m=3, verbose=False):
         #for r in rejected:
         #    print "\t",rejected
     return rejected
-
-def reset_trip_type(session, new_trip_type, trip_list):
-    for t in trip_list:
-        trip.trip_type = new_trip_type
-    session.commit()
 
 def main():
     session = Connector().getDBSession()
