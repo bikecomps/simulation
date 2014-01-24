@@ -35,7 +35,6 @@ class PoissonLogic(SimulationLogic):
                     .order_by(data_model.StationDistance.distance)[:8]
             self.nearest_station_dists[station.id] = nearest_distances
 
-
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
         self.generate_new_trips(self.time)
@@ -77,7 +76,7 @@ class PoissonLogic(SimulationLogic):
         while probability == 0:
             probability = random.random()
         # should preferably be a distribution * lam.value
-        num_trips = poisson.ppf(probability, lam.value * 0.1)
+        num_trips = poisson.ppf(probability, lam.value * 0.05)
         if numpy.isnan(num_trips):
             num_trips = -1
         return int(round(num_trips))
