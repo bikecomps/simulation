@@ -166,7 +166,7 @@ class Evaluator:
                    
                     elif statistic == 'arrivals':
                         new_observed = station_obj.prod_arrivals[day-1][hour]
-                        new_expected = station_obj.real_arrivals[day-1][hour] / float(day_counts[day-1])d
+                        new_expected = station_obj.real_arrivals[day-1][hour] / float(day_counts[day-1])
                    
                     elif statistic == 'durations':
                         new_observed = station_obj.prod_durations[day-1][hour]
