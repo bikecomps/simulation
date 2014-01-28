@@ -152,7 +152,6 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
     
     chart.selectAll(".rule")
         .data(x.ticks(d3.max(counts)))
-        .enter().append("text")
         .attr("class", "rule")
         .attr("x", function(d) { return x(d) + left_width; })
         .attr("y", 0)
