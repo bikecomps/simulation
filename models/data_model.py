@@ -235,6 +235,62 @@ class Lambda(Base):
                 "day_of_week" : self.day_of_week,
                 "value" : self.value}
 
+class ExpLambda(Base):
+    '''
+    Separate table to store parameters for exponential
+    distributions used to model the number of bike
+    departures for each station
+    at a specific hour in a given day of the week. 
+    '''
+    __tablename__ = 'exp_lambda_distrs'
+    id = Column(Integer, Sequence('exp_lambda_id_seq'), primary_key=True)
+    station_id = Column(Integer, ForeignKey('stations.id'))
+    station = relationship('Station', foreign_keys=[station_id],
+                                 backref=backref('exp_lambdas'))
+
+    hour = Column(Integer) # range 0-23
+    day_of_week = Column(Integer) # range 0-6
+    rate = Column(Float)
+
+    def __init__(self, station_id, hour, day, val):
+        self.station_id = station_id
+        self.hour = hour
+        self.day_of_week = day
+        self.value = val
+    
+    def __repr__(self):
+        return 'ExpLambda: station id: %s, hour: %s, day of week: %s, value: %.2f'\
+                 % (self.station_id, self.hour, self.day_of_week, self.value)
+
+class DestDistr(Base):
+    '''
+    Separate table to store probability of going from start station to end station 
+    at a specific hour in a given day of the week. 
+    '''
+    __tablename__ = 'dest_distrs'
+    id = Column(Integer, Sequence('dest_distr_id_seq'), primary_key=True)
+    start_station_id = Column(Integer, ForeignKey('stations.id'))
+    start_station = relationship('Station', foreign_keys=[start_station_id],
+                                 backref=backref('dest_distr_start'))
+
+    end_station_id = Column(Integer, ForeignKey('stations.id'))
+    end_station = relationship('Station', foreign_keys=[end_station_id], 
+                               backref=backref('dest_distr_end'))
+    hour = Column(Integer) # range 0-23
+    day_of_week = Column(Integer) # range 0-6
+    prob = Column(Float)
+
+    def __init__(self, start_station_id, end_station_id, hour, day, probability):
+        self.start_station_id = start_station_id
+        self.end_station_id = end_station_id
+        self.hour = hour
+        self.day_of_week = day
+        self.prob = probability
+    
+    def __repr__(self):
+        return 'Destination distribution: start station id: %s, end station id: %s, hour: %s, day of week: %s, prob: %.2f'\
+                 % (self.start_station_id, self.end_station_id, self.hour, self.day_of_week, self.prob)
+
 class Gamma(Base):
     '''
     Table stores gamma distributions for each pairwise station.
