@@ -177,40 +177,6 @@ def train_gammas(session, start_date, end_date):
              
     session.flush()
     session.commit()
-    """
-    for trip in session.query(Trip) \
-            .filter(Trip.start_date.between(start_date, end_date)):
-        all_trip_times = trip_map.get((trip.start_station_id, trip.end_station_id), [])
-        trip_time = (trip.end_date - trip.start_date).total_seconds()
-        # Need to remove trip times of 0 to prevent math domain errors 
-        if trip_time > 0:
-            all_trip_times.append(trip_time)
-        trip_map[(trip.start_station_id, trip.end_station_id)] = all_trip_times
-    
-
-    nans = 0
-    non_nans = 0
-    avg_num_trips = 0
-    count = 0
-    for (start_id, end_id), trip_times in trip_map.iteritems():
-        #print numpy.average(trip_times)
-        avg_num_trips += len(trip_times)
-        count += 1
-        try:
-            shape, loc, scale = gamma.fit(trip_times, floc=0, fscale=1)
-
-            # If shape == 0 then for data x_0, x_1, .. x_i : x_0 = x_1 = x_i
-            # If this is the case I'm just putting an about gaussian distr
-            # about the mean. This can be achieved by shape=scale=sqrt(mean)
-            if numpy.isnan(shape):
-                shape = scale = math.sqrt(float(sum(trip_times)) / len(trip_times))
-        # Should not happen now that I removed 0 trip lengths
-        except ValueError:
-            shape = scale = -1
-
-        g = Gamma(start_id, end_id, shape, scale)
-        session.add(g)
-    """
 
 def train_gaussian(connector, start_date, end_date):
     '''
@@ -249,45 +215,6 @@ def train_gaussian(connector, start_date, end_date):
     session.flush()
     session.commit()
 
-def train_poisson_nn(conn, start_date, end_date):
-    session = conn.getDBSession() 
-   
-    stations = session.query(Station) 
-    station_dir = {}
-    # We only care about neighborhoods that have stations in them
-    neighbs = set()
-    for station_1 in stations:
-        for station_2 in stations:
-            for day in xrange(6):
-                for hour in xrange(24):
-                    station_dir[(station_1, station_2)] = 0
-        station_neighb = station_1.intersection.neighborhood
-
-        if  station_neighb not in neighbs:
-            neighbs.add(station_neighb)
-  
-    # Now create the dataset! Yay! 
-    for neighb in neighbs:
-        attrs = neighb.attrs
-        num_attrs = len(attrs)
-        print neighb.FIPS_code, attrs
-
-    def get_pairwise_counts(conn, start_d, end_d):
-        # get session and engine
-        session = conn.getDBSession()
-        engine = conn.getDBEngine()
-
-        # cap the amount of results gotten; save memory
-        cap = 10000
-
-        t_hours = 24
-        t_days = 7
-        stationsd = {}
-
-        stations = session.query(Station).yield_per(cap)
-        for s1 in stations:
-            for s2 in stations:
-                stationsd[(s1.id, s2.id)] = [[0]*t_hours for i in range(t_days)]
 
 def main():
     c = Connector()

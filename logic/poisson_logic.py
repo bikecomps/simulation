@@ -85,7 +85,7 @@ class PoissonLogic(SimulationLogic):
                         added_time = datetime.timedelta(0, random.randint(0, 59), 0, 0, random.randint(0, 59), 0, 0)
                         trip_start_time = start_time + added_time
                         trip_duration = self.get_trip_duration(gamma)
-			trip_end_time = trip_start_time + trip_duration
+                        trip_end_time = trip_start_time + trip_duration
                         new_trip = data_model.Trip(str(random.randint(1,500)), "Casual", 2, \
                                 trip_start_time, trip_end_time, start_station_id, end_station_id)
                         self.pending_departures.put((start_time, new_trip))
@@ -142,8 +142,9 @@ class PoissonLogic(SimulationLogic):
 
         # kind of gross but makes for easy housekeeping
         distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
-
+        num_added = 0
         # Inclusive
+        print start_time, end_time
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
             
@@ -158,6 +159,10 @@ class PoissonLogic(SimulationLogic):
         
             for lam in lambda_poisson:
                 distr_dict[lam.day_of_week][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
+                num_added += 1
+                if lam.value == 0:
+                    print "Wjat?"
+        print "Loaded %s lambdas" % num_added
         return distr_dict
 
     def get_trip_duration(self, gamma):
@@ -165,6 +170,9 @@ class PoissonLogic(SimulationLogic):
         Samples from a gamma distribution and returns a timedelta representing
         a trip length
         '''
+        #TODO Fix this
+        if gamma.shape <= 0 or gamma.scale <= 0:
+            return datetime.timedelta(seconds=0)
         trip_length = numpy.random.gamma(gamma.shape, gamma.scale)
         return datetime.timedelta(seconds=trip_length)
 
