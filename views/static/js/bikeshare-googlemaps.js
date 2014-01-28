@@ -33,16 +33,15 @@ function initialize() {
 			title: 'This is a station, as you can see.'
         });
 		
-		var infowindow new google.maps.InfoWindow({
+		var infowindow = new google.maps.InfoWindow({
 			content: marker.title
 		});
 		
 		google.maps.event.addListener(marker, 'click', function() {
+			infowindow.setPosition(position: stationLatLng);
 			infowindow.open(map, marker);
 		});	
     }
-
-    google.maps.event.addDomListener(window, 'load', initialize);
 }
 
 function addLine(fromStation, toStation, color) {
