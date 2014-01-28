@@ -115,8 +115,18 @@ function groupBarPlot(htmlIdName, data) {
        
 }
 
+function wrapLabel(labels) {
+	for (var i = 0; i < labels.length; i++) {
+		if (labels[i].length > 30) {
+			labels[i] = labels[i].substring(0,29) + "...";
+		}
+	}
+	return labels;
+}
+
 function nonGroupBarPlot(htmlIdName, labels, counts) {
-    var chart,
+
+	var chart,
         width = 750,
         bar_height = 20,
         height = bar_height * labels.length,
@@ -140,7 +150,7 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
         .attr('width', left_width + width + 40 + extra_width)
         .attr('height', (bar_height + gap * 2) * (labels.length + 1))
         .append("g")
-        .attr("transform", "translate(10, 20)")
+        .attr("transform", "translate(10, 10)")
     
     chart.selectAll("line")
         .data(x.ticks(d3.max(counts)))
@@ -170,12 +180,12 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
         .text(String);
     
     chart.selectAll("text.name")
-        .data(labels)
+        .data(wrapLabel(labels))
         .enter().append("text")
-        .attr("x", left_width / 2)
+        .attr("x", 0)
         .attr("y", function(d, i){ return y(i) + yRangeBand/2; } )
         .attr("dy", ".36em")
-        .attr("text-anchor", "middle")
+        .attr("text-anchor", "start")
         .attr('class', 'name')
         .text(String);
 
@@ -184,10 +194,13 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
 
 
 function plotKeysVals(htmlIdName, map) {
-    var ids = Object.keys(map);
+    console.log(map);
+	var ids = Object.keys(map);
     var counts = new Array(ids.length);
     for (var i = 0; i < ids.length; i++) {
-        counts[i] = map[ids[i]];
+		if (map[ids[i]] != 0) {
+			counts[i] = map[ids[i]];
+		}
     }
     nonGroupBarPlot(htmlIdName, ids, counts);
 }
