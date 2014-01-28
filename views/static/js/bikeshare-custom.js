@@ -150,16 +150,6 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
         .attr("y1", 0)
         .attr("y2", (bar_height + gap * 2) * labels.length);
     
-    chart.selectAll(".rule")
-        .data(x.ticks(d3.max(counts)))
-        .attr("class", "rule")
-        .attr("x", function(d) { return x(d) + left_width; })
-        .attr("y", 0)
-        .attr("dy", -6)
-        .attr("text-anchor", "middle")
-        .attr("font-size", 10)
-        .text(String);
-    
     chart.selectAll("rect")
         .data(counts)
         .enter().append("rect")
