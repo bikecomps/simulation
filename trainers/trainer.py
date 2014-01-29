@@ -8,9 +8,10 @@ between every pair of stations.
 from models import *
 from utils import Connector
 
+from collections import defaultdict
 import math
 from scipy.stats import gamma, kstest
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import update
 from sqlalchemy.ext.declarative import declarative_base
 import numpy
@@ -65,6 +66,143 @@ def train_poisson_new(conn, start_d, end_d):
 
     session.flush()
     session.commit()
+
+
+def train_dest_distrs(session, start_d, end_d):
+    '''
+    Based on past observations distribute bikes depending on where they went previously
+    If no observation for a station given a day/hour, distribute bike randomly across all stations
+    '''
+    start_date = datetime.strptime(start_d, '%Y-%m-%d')
+    end_date = datetime.strptime(end_d, '%Y-%m-%d')
+
+    # For efficiency load stationwise 
+    station_ids = session.query(Station.id).all()
+    num_stations = len(station_ids)
+
+    num_days = float((end_date - start_date).days)
+    if num_days < 0:
+        return False
+    session.query(DestDistr).delete()
+
+    # Probably a better way to do this but it will work for now
+    day_count = [0] * 7
+    cur_date = start_date
+    while cur_date < end_date:
+        day_count[cur_date.weekday()] += 1
+        cur_date += timedelta(days=1)
+
+
+    stations_done = 0
+    for s_id in station_ids:
+
+        num_zero = 0
+        non_zero = 0
+
+        # index by hour, day, end_station -> num trips
+        trip_map = [[defaultdict(int) for h in range(24)] for d in range(7)]
+        for trip in session.query(Trip)\
+                .filter(Trip.start_date.between(start_date, end_date))\
+                .filter(Trip.start_station_id == s_id)\
+                .join(Trip.trip_type, aliased=True)\
+                .filter(TripType.trip_type == 'Training'):
+           
+            trip_map[trip.start_date.weekday()][trip.start_date.hour][trip.end_station_id] += 1
+
+        # Convert above to percentages:
+        for i in range(len(trip_map)):
+            day = trip_map[i]
+            for j in range(len(day)):
+                station_map = day[j]
+                # Total values:
+                total_num_trips = float(sum(station_map.itervalues()))
+                if total_num_trips == 0:
+                    num_zero += 1
+                    # give each station equal probability of being chosen
+                    prob = 1.0 / num_stations
+                    for e_id in station_ids:
+                         session.add(DestDistr(s_id, e_id, i, j, prob))
+                else:
+                    non_zero += 1
+                    for e_id in station_ids:
+                        count = station_map.get(e_id, 0)
+                        prob = count / total_num_trips
+                        session.add(DestDistr(s_id, e_id, i, j, prob))
+        session.commit()
+        session.flush()
+        stations_done += 1
+        if stations_done % 10 == 0:
+            print "Stations done",stations_done
+   
+def train_exp_lambdas(session, start_d, end_d):
+    start_date = datetime.strptime(start_d, '%Y-%m-%d')
+    end_date = datetime.strptime(end_d, '%Y-%m-%d')
+
+    session.query(ExpLambda).delete()
+
+    # For efficiency load stationwise 
+    s_ids = session.query(Station.id).all()
+    num_days = float((end_date - start_date).days)
+    if num_days < 0:
+        return False
+    '''
+    # Probably a better way to do this but it will work for now
+    day_count = [0] * 7
+    cur_date = start_date
+    while cur_date < end_date:
+        day_count[cur_date.weekday()] += 1
+        cur_date += timedelta(days=1)
+
+    for s_id in s_ids:
+        trip_counts = [[0] * 24 for d in range(7)]
+        for trip in session.query(Trip)\
+                .filter(Trip.start_date.between(start_date, end_date))\
+                .filter(Trip.start_station_id == s_id)\
+                .join(Trip.trip_type, aliased=True)\
+                .filter(TripType.trip_type == 'Training'):
+           
+            trip_counts[trip.start_date.weekday()][trip.start_date.hour] += 1
+        for i in range(len(trip_counts)): # i.e. 7
+            d = trip_counts[i]
+            for hour in d:
+                if hour > 0 and day_count[i] / hour < 1:
+                    under_one_lambdas += 1
+                elif hour > 0:
+                    non_zero_lambdas += 1
+                else:
+                    zero_lambdas +=1 
+
+    '''
+    station_count = 0
+    for s_id in s_ids:
+        trip_counts = [0] * 24
+        for trip in session.query(Trip)\
+                .filter(Trip.start_date.between(start_date, end_date))\
+                .filter(Trip.start_station_id == s_id)\
+                .join(Trip.trip_type, aliased=True)\
+                .filter(TripType.trip_type == 'Training'):
+           
+            trip_counts[trip.start_date.hour] += 1
+
+        for i in range(len(trip_counts)):
+            # If hour is 0 then we've never observed a trip. 
+            #We'll give it an average of 1 every 10000 hours (over a year)
+            if trip_counts[i] == 0:
+                rate = 10000
+            else:
+                rate = num_days / trip_counts[i]
+            # Convert from rate in hours to rate in seconds
+            rate *= 3600
+            session.add(ExpLambda(s_id, i, rate))
+        
+        session.commit()
+        session.flush()
+        station_count += 1
+        if station_count % 10 == 0:
+            print "Done with %s stations", station_count
+    # shouldn't be necessary but keep it there for now
+    session.commit()
+    session.flush()
 
 def train_poisson(conn, start_d, end_d):
     '''
@@ -166,7 +304,12 @@ def train_gammas(session, start_date, end_date):
                     shape = scale = math.sqrt(float(sum(trip_times)) / len(trip_times))
              # Should not happen now that I removed 0 trip lengths
             except ValueError:
-                shape = scale = -1
+                print "Error on s_id",s_id,", e_id",end_id,"with trips", trip_times,"resulting in shape, scale",shape,scale
+                shape = scale = .0000001
+
+            if shape < 0 or scale < 0:
+                print "Fit gave negative values on on s_id",s_id,", e_id",end_id,"with trips", trip_times,"resulting in shape, scale",shape,scale
+                shape = scale = .0000001
 
             g = Gamma(s_id, end_id, shape, scale)
             session.add(g)
@@ -218,12 +361,17 @@ def train_gaussian(connector, start_date, end_date):
 
 def main():
     c = Connector()
+    first_data = "2010-09-12"
+    end_data = "2012-12-30"
     # train_gaussian(c, "2012-1-1", "2013-6-1")
     # train_poisson(c, "2012-1-1", "2013-1-1")
     # train_poisson_nn(c, 's','s')
     # get_pairwise_counts(c, "2013-1-1", "2013-1-2")
-    train_gammas(c.getDBSession(), "2010-09-15", "2013-06-30")
-    train_poisson_new(c, "2010-09-15 00:00", "2013-06-30 23:59")
+    #train_gammas(c.getDBSession(), "2010-09-15", "2013-06-30")
+    #train_poisson_new(c, "2010-09-15 00:00", "2013-06-30 23:59")
+    #train_exp_lambdas(c.getDBSession(), first_data, end_data)
+    train_dest_distrs(c.getDBSession(), first_data, end_data)
+
 
 if __name__ == "__main__":
     main()

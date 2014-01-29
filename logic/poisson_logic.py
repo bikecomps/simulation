@@ -37,33 +37,6 @@ class PoissonLogic(SimulationLogic):
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        not_full = []
-        not_empty = []
-        full = []
-        empty = [] 
-        for s_id in self.station_counts:
-            if s_id in self.empty_full_stations:
-	        if self.station_counts[s_id] > 0 and self.empty_full_stations[s_id] == "empty":
-                    not_empty.append(s_id)
-                    del self.empty_full_stations[s_id]      
-                elif self.station_counts[s_id] != self.stations[s_id].capacity:
-		    not_full.append(s_id)
-                    del self.empty_full_stations[s_id]
-            else:
-                if self.station_counts[s_id] == self.stations[s_id].capacity:
-                    full.append(s_id)
-                    self.empty_full_stations[s_id] = "full"
-                if self.station_counts[s_id] == 0:
-                    empty.append(s_id)
-                    self.empty_full_stations[s_id] = "empty"
-	if len(not_full) > 0:
-            print "\tNo longer full:\n" + "\t\t" + str(not_full)
-	if len(not_empty) > 0:
-            print "\tNo longer empty:\n" + "\t\t" + str(not_empty)
- 	if len(full) > 0:
-            print "\tNow full:\n" + "\t\t" + str(full)       
-	if len(empty) > 0:
-            print "\tNow empty:\n" + "\t\t" + str(empty)
         self.generate_new_trips(self.time)
         self.resolve_trips()
 
@@ -72,7 +45,9 @@ class PoissonLogic(SimulationLogic):
 
     def generate_new_trips(self, start_time):
         # Note that Monday is day 0 and Sunday is day 6. Is this the same for data_model?
+        station_count = 0
         for start_station_id in self.station_counts:
+            station_count += 1
             for end_station_id in self.station_counts:
                 lam = self.get_lambda(start_time.weekday(), start_time.hour,\
                          start_station_id, end_station_id)
@@ -138,13 +113,12 @@ class PoissonLogic(SimulationLogic):
     def load_lambdas(self, start_time, end_time):
         '''
         Caches lambdas into dictionary of day -> hour -> (start_id, end_id) -> lambda
+        Note: DB only has values > 0.
         '''
 
         # kind of gross but makes for easy housekeeping
         distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
-        num_added = 0
         # Inclusive
-        print start_time, end_time
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
             
@@ -159,10 +133,6 @@ class PoissonLogic(SimulationLogic):
         
             for lam in lambda_poisson:
                 distr_dict[lam.day_of_week][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
-                num_added += 1
-                if lam.value == 0:
-                    print "Wjat?"
-        print "Loaded %s lambdas" % num_added
         return distr_dict
 
     def get_trip_duration(self, gamma):

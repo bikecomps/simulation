@@ -34,9 +34,6 @@ class SimulationLogic:
         # List of trips that didn't end at the desired station due to a shortage
         self.bike_shortages = []
         self.dock_shortages = []
-        # Keys: all currently empty/full station ids. Values: empty or full
-        self.empty_full_stations = {}
-
        
     def getDBSession(self):
         return self.session
