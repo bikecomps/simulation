@@ -5,3 +5,4 @@ bike_counts.csv
 nohup.out
 *.swp
 misc/*
+*.png
