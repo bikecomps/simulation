@@ -53,17 +53,20 @@ class ExponentialLogic(SimulationLogic):
     def initialize_trips(self):
         hour = self.start_time.hour
         day = self.start_time.day
+        print "INIT",day,hour,self.start_time
         for s_id in self.stations.iterkeys():
             new_trip = self.generate_trip(s_id, self.start_time)
             self.pending_departures.put((new_trip.start_date, new_trip))
+        print "NO MORE INIT TRIPS"
 
     def generate_trip(self, s_id, time):
         #print "Generating a new trip from ",s_id
-        exp_l = self.exp_distrs[s_id][time.hour]
+        exp_l = self.exp_distrs[s_id][13]#self.exp_distrs[s_id][time.hour]
         # Returns time till next event in seconds
         wait_time = numpy.random.exponential(exp_l.rate)
 
         trip_start_time = time + datetime.timedelta(seconds=wait_time)
+        print trip_start_time
         # It should go somewhere depending on when the hour of its start_time (could be far in the future)
         end_station_id = self.get_destination(s_id, trip_start_time)
 
@@ -77,8 +80,8 @@ class ExponentialLogic(SimulationLogic):
             new_trip = data_model.Trip(str(random.randint(1,500)), 
                 "Casual", 2, trip_start_time, trip_end_time, s_id, end_station_id)
         else:
-            print "GAMMA ERROR:"
-            print "start station",s_id,"end station",end_station_id
+            #print "GAMMA ERROR:"
+            #print "start station",s_id,"end station",end_station_id
             #TODO !!! What to do if we've never seen trips between two stations????
             trip_end_time = trip_start_time
             new_trip = data_model.Trip(str(random.randint(1,500)), 
@@ -90,7 +93,7 @@ class ExponentialLogic(SimulationLogic):
         '''
             Returns a destination station given dest_distrs
         '''
-        print time.day, time.hour, s_id
+        #print time.day, time.hour, s_id
         vectors = self.dest_distrs[time.weekday()][time.hour][s_id]
         if len(vectors) > 0:
             cum_prob_vector = vectors[0]

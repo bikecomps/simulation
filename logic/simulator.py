@@ -74,7 +74,7 @@ def main():
     # For testing
     if len(sys.argv) == 1:
         # defaults
-        raw_start_date = "2012-6-1 00:00:00"
+        raw_start_date = "2012-6-1 06:00:00"
         raw_end_date = "2012-6-2 00:00:00"
         file_name = "/tmp/test.csv"
         logic = ExponentialLogic
@@ -102,7 +102,8 @@ def main():
             return 
     
         logic = logic_options[sys.argv[1]]
-
+    
+    print start_date,"-",end_date
     session = Connector().getDBSession()
     logic = logic(session)
     simulator = Simulator(logic) 

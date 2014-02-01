@@ -242,7 +242,7 @@ def main():
         start_date = datetime.datetime.strptime("2012-6-1 00 00", '%Y-%m-%d %H %M')
         end_date = datetime.datetime.strptime("2012-6-1 23 59", '%Y-%m-%d %H %M')
         
-        logic = PoissonLogic(session)
+        logic = ExponentialLogic(session)
         simulator = Simulator(logic)
         results = simulator.run(start_date, end_date)
 
@@ -262,7 +262,7 @@ def main():
     print 'produced trips:', len(results["trips"])
     evaluator = Evaluator(session,start_date,end_date,results["trips"],prod_on_start,prod_on_end)
     for day in evaluator.day_range:
-        result = evaluator.run_chi_square('arrivals',day)
+        result = evaluator.run_chi_square('departures',day)
         chi_sq = result[0]
         p_valu = result[1]
         print 'chi square = ', chi_sq

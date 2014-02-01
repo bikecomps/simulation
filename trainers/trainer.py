@@ -380,7 +380,7 @@ def train_gaussian(connector, start_date, end_date):
 def main():
     c = Connector()
     first_data = "2010-09-12"
-    end_data = "2012-12-30"
+    end_data = "2013-06-30"
 
     s_test_date = "2011-09-12"
     e_test_date = "2011-09-19" 
@@ -390,7 +390,7 @@ def main():
     # get_pairwise_counts(c, "2013-1-1", "2013-1-2")
     #train_gammas(c.getDBSession(), "2010-09-15", "2013-06-30")
     #train_poisson_new(c, "2010-09-15 00:00", "2013-06-30 23:59")
-    #train_exp_lambdas(c.getDBSession(), first_data, end_data)
+    train_exp_lambdas(c.getDBSession(), first_data, end_data)
     train_dest_distrs(c.getDBSession(), first_data, end_data)
 
 if __name__ == "__main__":
