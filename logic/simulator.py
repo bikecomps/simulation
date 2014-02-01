@@ -11,6 +11,7 @@ random.seed(23526)
 from models import *
 from simulation_logic import SimulationLogic
 from poisson_logic import PoissonLogic
+from exponential_logic import ExponentialLogic
 from utils import Connector
 
 class Simulator:
@@ -38,8 +39,8 @@ class Simulator:
         '''
         with open(file_name, 'w') as f:
             f.write(Trip.csv_header() + "\n")
-            for line in results:
-                f.write(line + "\n")
+            for line in results['trips']:
+                f.write(line.to_csv()+"\n")
 
     def save_to_db(self, trips, disappointments):
         '''
@@ -66,7 +67,8 @@ def print_usage():
 def main():
     logic_options = {
         "SimulationLogic" : SimulationLogic,
-        "PoissonLogic" : PoissonLogic
+        "PoissonLogic" : PoissonLogic,
+        "ExponentialLogic" : ExponentialLogic
     }
     
     # For testing
@@ -75,7 +77,8 @@ def main():
         raw_start_date = "2012-6-1 00:00:00"
         raw_end_date = "2012-6-2 00:00:00"
         file_name = "/tmp/test.csv"
-        logic = PoissonLogic
+        logic = ExponentialLogic
+        #logic = PoissonLogic
         start_date = datetime.datetime.strptime(raw_start_date, '%Y-%m-%d %H:%M:%S')
         end_date = datetime.datetime.strptime(raw_end_date, '%Y-%m-%d %H:%M:%S')
     else:
@@ -110,7 +113,7 @@ def main():
     num_ds = len([x for x in ds if x.trip == None])
     print "Empty diss", num_ds
     print "Full diss", len(ds) - num_ds
-    # simulator.write_out(results, file_name)
+    simulator.write_out(results, file_name)
     # simulator.save_to_db(results['trips'])
     session.close()
     

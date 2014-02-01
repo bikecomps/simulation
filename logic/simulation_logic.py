@@ -40,6 +40,7 @@ class SimulationLogic:
 
     def initialize(self, start_time, end_time):
         '''Sets states of stations at the start_time'''
+        print "Initializing"
         self.time = start_time
 
         self.start_time = start_time
@@ -51,6 +52,7 @@ class SimulationLogic:
         self.trip_list = []
         self.station_counts = {}
         self.stations = {}
+        print "\tInitializing stations"
         self.initialize_stations(start_time)
 
 
@@ -115,9 +117,6 @@ class SimulationLogic:
                                         for s_id, s_count in 
                                             self.station_counts.iteritems()
                                             if s_id not in full_stations}
-            print "Remaining bikes", bike_delta
-            print "Num stations left:", len(station_bike_prop)
-            print "Num full stations:", len(full_stations)
 
             for s_id, prop in station_bike_prop.iteritems():
                 added_bikes = round_func(prop * bike_delta) 
@@ -133,7 +132,7 @@ class SimulationLogic:
 
         for s_id, s in self.stations.iteritems():
             if s.capacity <= self.station_counts[s_id]:
-                print "Full station ",s_id, s.capacity, self.station_counts[s.id]
+                print "\t\tFull station ",s_id, s.capacity, self.station_counts[s.id]
 
 
     def update(self, timestep):

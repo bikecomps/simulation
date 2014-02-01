@@ -84,29 +84,23 @@ def train_dest_distrs(session, start_d, end_d):
     if num_days < 0:
         return False
     session.query(DestDistr).delete()
-
-    # Probably a better way to do this but it will work for now
-    day_count = [0] * 7
-    cur_date = start_date
-    while cur_date < end_date:
-        day_count[cur_date.weekday()] += 1
-        cur_date += timedelta(days=1)
-
+    session.commit()
+    print "Done deleting"
 
     stations_done = 0
     for s_id in station_ids:
 
         num_zero = 0
         non_zero = 0
-
         # index by hour, day, end_station -> num trips
         trip_map = [[defaultdict(int) for h in range(24)] for d in range(7)]
-        for trip in session.query(Trip)\
+
+        q = session.query(Trip)\
                 .filter(Trip.start_date.between(start_date, end_date))\
                 .filter(Trip.start_station_id == s_id)\
                 .join(Trip.trip_type, aliased=True)\
-                .filter(TripType.trip_type == 'Training'):
-           
+                .filter(TripType.trip_type == 'Training').yield_per(10000)
+        for trip in q:
             trip_map[trip.start_date.weekday()][trip.start_date.hour][trip.end_station_id] += 1
 
         # Convert above to percentages:
@@ -116,18 +110,42 @@ def train_dest_distrs(session, start_d, end_d):
                 station_map = day[j]
                 # Total values:
                 total_num_trips = float(sum(station_map.itervalues()))
+                for e_id in station_ids:
+                    # We're booting this. Not putting in DB (too much space)
+                    '''
+                    if total_num_trips == 0:
+                        # with 31101 -> hour 11,12 day 4
+                        # give each station equal probability of being chosen
+                        prob = 1.0 / num_stations
+                    else:
+                        prob = station_map.get(e_id, 0.0) / total_num_trips
+                        print "Here?"
+                    '''
+                    # Don't put any 0 probs in the db for now
+                    num_trips = station_map.get(e_id[0], 0.0)
+                    if num_trips:
+                        session.add(DestDistr(s_id, e_id[0], i, j, num_trips/total_num_trips))
+                    #else:
+                    #    print "Bad: ?",s_id,e_id,prob,total_num_trips
+                    #    print station_map
+                
+                '''
                 if total_num_trips == 0:
-                    num_zero += 1
                     # give each station equal probability of being chosen
                     prob = 1.0 / num_stations
                     for e_id in station_ids:
-                         session.add(DestDistr(s_id, e_id, i, j, prob))
+                        #session.add(DestDistr(s_id, e_id, i, j, prob))
+                        dd =DestDistr(s_id, e_id, i, j, prob)
+                        session.add(dd)
                 else:
-                    non_zero += 1
                     for e_id in station_ids:
                         count = station_map.get(e_id, 0)
-                        prob = count / total_num_trips
-                        session.add(DestDistr(s_id, e_id, i, j, prob))
+                        if count:
+                            prob = count / total_num_trips
+                            #session.add(DestDistr(s_id, e_id, i, j, prob))
+                            dd =DestDistr(s_id, e_id, i, j, prob)
+                            session.add(dd)
+                '''
         session.commit()
         session.flush()
         stations_done += 1
@@ -363,6 +381,9 @@ def main():
     c = Connector()
     first_data = "2010-09-12"
     end_data = "2012-12-30"
+
+    s_test_date = "2011-09-12"
+    e_test_date = "2011-09-19" 
     # train_gaussian(c, "2012-1-1", "2013-6-1")
     # train_poisson(c, "2012-1-1", "2013-1-1")
     # train_poisson_nn(c, 's','s')
@@ -371,7 +392,6 @@ def main():
     #train_poisson_new(c, "2010-09-15 00:00", "2013-06-30 23:59")
     #train_exp_lambdas(c.getDBSession(), first_data, end_data)
     train_dest_distrs(c.getDBSession(), first_data, end_data)
-
 
 if __name__ == "__main__":
     main()

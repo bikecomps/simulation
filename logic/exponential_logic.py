@@ -2,6 +2,7 @@
 '''
 Jeff's Exponential Logic Idea
 '''
+import itertools
 from utils import Connector
 from models import *
 from scipy.stats import poisson
@@ -20,10 +21,12 @@ class ExponentialLogic(SimulationLogic):
 
     def initialize(self, start_time, end_time):
         SimulationLogic.initialize(self, start_time, end_time)
-
+        print "\tLoading Exp Distributions"
         self.exp_distrs = self.load_exp_lambdas(start_time, end_time)
+        print "\tLoading gamma distributions"
         self.duration_distrs = self.load_gammas()
-        self.dest_distrs = self.load_dest_distrs()
+        print "\tLoading dest_distrs distributions"
+        self.dest_distrs = self.load_dest_distrs(start_time, end_time)
 
         # Retrieve StationDistance objects representing the five closest
         # stations for each stations.
@@ -35,8 +38,10 @@ class ExponentialLogic(SimulationLogic):
                     .order_by(data_model.StationDistance.distance)[:8]
             self.nearest_station_dists[station.id] = nearest_distances
 
+        print "\tInitializing Trips"
         #TODO Generate initial trips for every station
         self.initialize_trips()
+
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
@@ -53,34 +58,54 @@ class ExponentialLogic(SimulationLogic):
             self.pending_departures.put((new_trip.start_date, new_trip))
 
     def generate_trip(self, s_id, time):
-        exp_l = self.exp_distrs[time.day][time.hour][s_id]
-        #? Size parameter? 
+        #print "Generating a new trip from ",s_id
+        exp_l = self.exp_distrs[s_id][time.hour]
         # Returns time till next event in seconds
-        wait_time = numpy.random.exponential(1.0/exp_l.rate)
+        wait_time = numpy.random.exponential(exp_l.rate)
+
         trip_start_time = time + datetime.timedelta(seconds=wait_time)
-        trip_duration = self.get_trip_duration(gamma)
-        trip_end_time = trip_start_time + trip_duration
+        # It should go somewhere depending on when the hour of its start_time (could be far in the future)
+        end_station_id = self.get_destination(s_id, trip_start_time)
 
-        #TODO create this function
-        end_station_id = self.get_destination(s_id, time)
+        #print "Desire",(s_id,end_station_id)
+        gamma = self.duration_distrs.get((s_id, end_station_id), None)
+        if gamma:
+            trip_duration = self.get_trip_duration(gamma)
+            trip_end_time = trip_start_time + trip_duration
 
-        #TODO Add new TripType 
-        new_trip = data_model.Trip(str(random.randint(1,500)), 
-            "Casual", 2, start_time, end_time, s_id, end_station_id)
+            #TODO Add new TripType 
+            new_trip = data_model.Trip(str(random.randint(1,500)), 
+                "Casual", 2, trip_start_time, trip_end_time, s_id, end_station_id)
+        else:
+            print "GAMMA ERROR:"
+            print "start station",s_id,"end station",end_station_id
+            #TODO !!! What to do if we've never seen trips between two stations????
+            trip_end_time = trip_start_time
+            new_trip = data_model.Trip(str(random.randint(1,500)), 
+                "Casual", 2, trip_start_time, trip_end_time, s_id, end_station_id)
+            #raise Exception("Gamma doesn't exist")
         return new_trip
 
     def get_destination(self, s_id, time):
         '''
             Returns a destination station given dest_distrs
         '''
-        vectors = self.dest_distrs[time.day][time.hour][s_id]
-        cum_prob_vector = vectors[0]
-        station_vector = vectors[1]
+        print time.day, time.hour, s_id
+        vectors = self.dest_distrs[time.weekday()][time.hour][s_id]
+        if len(vectors) > 0:
+            cum_prob_vector = vectors[0]
+            station_vector = vectors[1]
 
-        # cum_prob_vector[-1] should be 1 No scaling needed as described here:
-        # http://docs.python.org/3/library/random.html (very bottom of page)
-        x = random.random()
-        return station_vector[bisect.bisect(cum_prob_vector, x)]
+            # cum_prob_vector[-1] should be 1 No scaling needed as described here:
+            # http://docs.python.org/3/library/random.html (very bottom of page)
+            x = random.random()
+        
+            print "Worked!"
+            return station_vector[bisect.bisect(cum_prob_vector, x)]
+        else:
+            #print "Error getting destionation: Day",time.day,"hour",time.hour,"s_id",s_id
+            # Send it to one of 273 randomly
+            return random.choice(self.stations.keys())
 
 
     def load_gammas(self):
@@ -95,41 +120,28 @@ class ExponentialLogic(SimulationLogic):
 
     def load_exp_lambdas(self, start_time, end_time):
         '''
-        Caches exp lambdas into dictionary of day -> hour -> station_id -> exp lambda
+        Caches exp lambdas into dictionary of station_id -> [exp_lambda], 1 per day
         '''
-
         # kind of gross but makes for easy housekeeping
-        distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+        distr_dict = {s:[0]*24 for s in self.stations.iterkeys()}
 
-        # Inclusive
-        for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
-            dow = day.weekday()
-            
-            start_hour = start_time.hour if start_time.weekday() == dow else 0
-            end_hour = end_time.hour if end_time.weekday() == dow else 24
-
-            # For now we're only loading in lambdas that have non-zero values. 
-            # We'll assume zero value if it's not in the dictionary
-            #lambda_poisson = self.session.query(data_model.Lambda) \
-            #    .filter(data_model.Lambda.day_of_week == dow) \
-            #    .filter(data_model.Lambda.hour.between(start_hour, end_hour))
-
-#TODO Figure out how to actually load exp_lambdas
+        distrs = self.session.query(data_model.ExpLambda)
         
-            for lam in lambda_poisson:
-                distr_dict[lam.day_of_week][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
+        for d in distrs:
+                distr_dict[d.station_id][d.hour] = d
         return distr_dict
 
     def load_dest_distrs(self, start_time, end_time):
         '''
         Caches destination distributions into dictionary of day -> hour -> start_station_id -> [cumulative_distr, corresponding stations]
-
+        # Change to a list of lists, faster, more space efficient
         '''
-        distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        distr_dict = [[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)] for d in range(7)]
 
 
         # Inclusive
         #TODO figure out what to do if timespan > a week -> incline to say ignore it
+        #TODO Bug: loading too much data at the moment, by a fair amount
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
             
@@ -138,26 +150,32 @@ class ExponentialLogic(SimulationLogic):
 
             date_distrs = self.session.query(data_model.DestDistr) \
                .filter(data_model.DestDistr.day_of_week == dow) \
-               .filter(data_model.DestDistr.hour.between(start_hour, end_hour))
+               .filter(data_model.DestDistr.hour.between(start_hour, end_hour)) \
+               .filter(data_model.DestDistr.prob > 0).yield_per(10000)
 
             for distr in date_distrs:
                 result = distr_dict[distr.day_of_week][distr.hour][distr.start_station_id]
+                #if distr.start_station_id == 31101:
+                #    print result
 
                 # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
                 if len(result) == 0:
-                    distr_dict[distr.day_of_week][distr.hour][distr.start_station_id] = [[distr.prob], [distr.station_id]]
+                    distr_dict[distr.day_of_week][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
                 else:
                     result[0].append(distr.prob)
-                    result[1].append(distr.station_id)
+                    result[1].append(distr.end_station_id)
 
+            print "\t\tStarting reductions"
             # Change all of the probability vectors into cumulative probability vectors
-            for day in date_distrs.itervalues():
-                for hour in day.itervalues():
-                    for s_id, vectors in hour.iteritems():
+            for hour in distr_dict[dow]:
+                for s_id, vectors in hour.iteritems():
+                    # We have data for choosing destination vector
+                    if len(vectors) == 2:
                         prob_vector = vectors[0]
-                        cum_prob_vector = list(itertools.accumulate(prob_vector))
+                        # thanks to http://stackoverflow.com/questions/14132545/itertools-accumulate-versus-functools-reduce
+                        # for basic accumulator code
+                        cum_prob_vector = reduce(lambda a, x: a + [a[-1] + x], prob_vector[1:], [prob_vector[0]])
                         vectors[0] = cum_prob_vector
-
         return distr_dict
 
     def get_trip_duration(self, gamma):
@@ -217,4 +235,4 @@ def main():
     print p.get_trip_duration(31100, 31101)
     print durs
 if __name__ == '__main__':
-
+    main()
