@@ -27,14 +27,19 @@ class RangeEvaluator:
 
         # store produced and real trips in dictionaries
         # station id -> [number of departures, number of arrivals]
-        self.produced = self.get_produced_trips()
-        self.real = self.get_real_trips()
+        self.produced, total_produced = self.get_produced_trips()
+        self.real, total_real = self.get_real_trips()
+        
+        print "total produced: ", total_produced
+        print "total real: ", total_real
 
     def get_produced_trips(self):
         logic = PoissonLogic(self.session)
         simulator = Simulator(logic)
         results = simulator.run(self.start_date, self.end_date)
         
+        total_trips = 0
+
         trips = {}
         for trip in results['trips']:
             trips.setdefault(trip.start_station_id, [0, 0])
@@ -43,7 +48,9 @@ class RangeEvaluator:
             trips[trip.start_station_id][0] += 1
             trips[trip.end_station_id][1] += 1
 
-        return trips
+            total_trips += 1
+
+        return trips, total_trips
         
     def get_real_trips(self):
         start_date_string = self.start_date.strftime('%Y-%m-%d %H:%M')
@@ -70,21 +77,26 @@ class RangeEvaluator:
         """.format(start_date_string, end_date_string)
 
         results = self.engine.execute(counts_query)
+        total_trips = 0
         for row in results:
             id = row["id1"] if row["id1"] else row["id2"]
             dep_counts = row["c1"] if row["c1"] else 0
             arr_counts = row["c2"] if row["c2"] else 0
             trips[id] = [dep_counts, arr_counts]
-        
-        return trips
+
+            total_trips += dep_counts
+
+        return trips, total_trips
 
     def eval_man_dist(self):
         total_diff = 0
         total_real = 0
 
         if self.verbose:
-            print "%15s | %15s | %15s | %15s" %("id", "name", "produced", "real")
+            print "%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
 
+        total_departures = 0
+        total_arrivals = 0
         for k in self.produced:
             diff = abs(self.produced[k][0] - self.real[k][0]) + \
                    abs(self.produced[k][1] - self.real[k][1])
@@ -102,11 +114,11 @@ class RangeEvaluator:
         total_real = 0
         
         if self.verbose:
-            print "%15s | %15s | %15s | %15s" %("id", "name", "produced", "real")
+            print "%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
         
         for k in self.produced:
-            diff = (self.produced[k][0] - self.real[k][0])**2
-            +(self.produced[k][1] - self.real[k][1])**2
+            diff = (self.produced[k][0] - self.real[k][0])**2 \
+                   + (self.produced[k][1] - self.real[k][1])**2
 
             if self.verbose:
                 print "%15s | %15s | %15s | %15s" \
