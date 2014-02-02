@@ -74,7 +74,7 @@ def main():
     # For testing
     if len(sys.argv) == 1:
         # defaults
-        raw_start_date = "2012-6-1 06:00:00"
+        raw_start_date = "2012-6-1 00:00:00"
         raw_end_date = "2012-6-2 00:00:00"
         file_name = "/tmp/test.csv"
         logic = ExponentialLogic
@@ -114,8 +114,29 @@ def main():
     num_ds = len([x for x in ds if x.trip == None])
     print "Empty diss", num_ds
     print "Full diss", len(ds) - num_ds
-    simulator.write_out(results, file_name)
-    # simulator.save_to_db(results['trips'])
+    #simulator.write_out(results, file_name)
+    #simulator.save_to_db(results['trips'])
+    hours = [0]*24
+    for t in results['trips']:
+        hours[t.start_date.hour] += 1
+
+    print "Times?"
+    for i in range(24):
+        print i,": ",hours[i]
+
+    
+    stations = {}
+    for t in results['trips']:
+        if t.start_station_id in stations:
+            stations[t.start_station_id] += 1
+        else:
+            stations[t.start_station_id] = 1
+
+    print "Stations?"
+    print len(stations.keys())
+    for s_id, count in stations.iteritems():
+        print s_id,count
+
     session.close()
     
 

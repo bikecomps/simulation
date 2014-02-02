@@ -61,12 +61,15 @@ class ExponentialLogic(SimulationLogic):
 
     def generate_trip(self, s_id, time):
         #print "Generating a new trip from ",s_id
-        exp_l = self.exp_distrs[s_id][13]#self.exp_distrs[s_id][time.hour]
+        #exp_l = self.exp_distrs[s_id][time.hour] #self.exp_distrs[s_id][13]#
+        # See what happens if we just use the min rate, should work better
+        exp_l = max(self.exp_distrs[s_id])
+
         # Returns time till next event in seconds
+        # Function takes in 1/rate = "scale" but it works better the other way...
         wait_time = numpy.random.exponential(exp_l.rate)
 
         trip_start_time = time + datetime.timedelta(seconds=wait_time)
-        print trip_start_time
         # It should go somewhere depending on when the hour of its start_time (could be far in the future)
         end_station_id = self.get_destination(s_id, trip_start_time)
 
@@ -103,7 +106,6 @@ class ExponentialLogic(SimulationLogic):
             # http://docs.python.org/3/library/random.html (very bottom of page)
             x = random.random()
         
-            print "Worked!"
             return station_vector[bisect.bisect(cum_prob_vector, x)]
         else:
             #print "Error getting destionation: Day",time.day,"hour",time.hour,"s_id",s_id
