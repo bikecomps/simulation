@@ -93,7 +93,8 @@ class RangeEvaluator:
         total_real = 0
 
         if self.verbose:
-            print "%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
+            print "\nManhattan Distance Calculations ---->"
+            print "\n\n\n%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
 
         total_departures = 0
         total_arrivals = 0
@@ -114,7 +115,8 @@ class RangeEvaluator:
         total_real = 0
         
         if self.verbose:
-            print "%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
+            print "\nEuclidean Distance Calculations ---->"
+            print "\n\n\n%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
         
         for k in self.produced:
             diff = (self.produced[k][0] - self.real[k][0])**2 \
@@ -129,6 +131,30 @@ class RangeEvaluator:
                               self.produced[k][0]**2 + self.produced[k][1]**2)
             
         return (1-(float(total_diff)/total_real))*100
+
+
+    def eval_mean_percentage_error(self):
+        total_error = 0
+        n = len(self.produced)
+        
+        if self.verbose:
+            print "\nMean Percentage Error Calculation ---->"
+            print "\n\n\n%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
+        
+        for k in self.produced:
+            diff1 = float(abs(self.produced[k][0] - self.real[k][0])) \
+                    / max(max(self.produced[k][0], self.real[k][0]), 1)
+            diff2 = float(abs(self.produced[k][1] - self.real[k][1])) \
+                    / max(max(self.produced[k][1], self.real[k][1]), 1)
+            diff = (diff1 + diff2)/2
+
+            if self.verbose:
+                print "%15s | %15s | %15s | %15s" \
+                %(k, self.produced[k], self.real[k], diff)
+            
+            total_error += diff
+            
+        return (1-(float(total_error)/n))*100    
 
 def main():
     if len(sys.argv) == 1:
@@ -149,8 +175,10 @@ def main():
 
     man = re.eval_man_dist()
     eucl = re.eval_eucl_dist()
+    mpe = re.eval_mean_percentage_error()
     print "accuracy based on manhattan distance: ", man, "%"
     print "accuracy based on euclidean distance: ", eucl, "%"
+    # print "accuracy based on mean percentage error: ", mpe, "%"
 
 if __name__ == "__main__":
     main()
