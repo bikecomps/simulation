@@ -30,7 +30,7 @@ test_orm=# select * from stations;
 '''
 
 import datetime
-from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, ForeignKey, Sequence, Index
+from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, Boolean, ForeignKey, Sequence, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
 
@@ -214,26 +214,41 @@ class Lambda(Base):
     end_station = relationship('Station', foreign_keys=[end_station_id], 
                                backref=backref('lambda_end'))
     hour = Column(Integer) # range 0-23
-    day_of_week = Column(Integer) # range 0-6
+    is_week_day = Column(Boolean)
+    year = Column(Integer)
+    month = Column(Integer)
     value = Column(Float)
 
-    def __init__(self, start_station_id, end_station_id, hour, day, val):
+    def __init__(self, start_station_id, end_station_id, 
+                 hour, is_week_day, year, month, 
+                 val):
         self.start_station_id = start_station_id
         self.end_station_id = end_station_id
+
+        self.year = year
+        self.is_week_day = is_week_day
         self.hour = hour
-        self.day_of_week = day
+        self.month = month
         self.value = val
     
     def __repr__(self):
-        return 'start station id: %s, end station id: %s, hour: %s, day of week: %s, value: %.2f'\
-                 % (self.start_station_id, self.end_station_id, self.hour, self.day_of_week, self.value)
+        return 'start station id: %s, end station id: %s, hour: %s, is_week_day: %s, year: %d, value: %.2f'\
+                 % (self.start_station_id, 
+                    self.end_station_id, 
+                    self.year,
+                    self.is_week_day,
+                    self.hour, 
+                    self.value)
 
     def getDict(self):
-        return {"start_station_id" : self.start_station_id,
-                "end_station_id" : self.end_station_id,
-                "hour" : self.hour,
-                "day_of_week" : self.day_of_week,
-                "value" : self.value}
+        return {
+            "start_station_id" : self.start_station_id,
+            "end_station_id" : self.end_station_id,
+            "year" : self.year,
+            "hour" : self.hour,
+            "is_week_day" : self.is_week_day,
+            "value" : self.value
+        }
 
 class ExpLambda(Base):
     '''
@@ -503,9 +518,11 @@ def main():
     Base.metadata.create_all(engine)
 
     # Lambda Indexes
-    lambda_index = Index('lambda_day_hour_index', Lambda.day_of_week, Lambda.hour)
-    lambda_day_index = Index('lambda_day_index', Lambda.day_of_week)
+    lambda_index = Index('lambda_day_hour_index', Lambda.is_week_day, Lambda.hour)
+    lambda_day_index = Index('lambda_day_index', Lambda.is_week_day)
     lambda_hour_index = Index('lambda_hour_index', Lambda.hour)
+    lambda_year_index = Index('lambda_year_index', Lambda.year)
+
     # Not working?
     lambda_non_zero_index = Index('lambda_non_zero_index', Lambda.value.isnot(0)) 
 

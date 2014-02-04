@@ -97,8 +97,9 @@ class PoissonLogic(SimulationLogic):
         # Note that Monday is day 0 and Sunday is day 6. Is this the same for data_model?
         for start_station_id in self.station_counts:
             for end_station_id in self.station_counts:
-                lam = self.get_lambda(start_time.weekday(), start_time.hour,\
-                         start_station_id, end_station_id)
+                lam = self.get_lambda(start_time.year, start_time.month,
+                                      start_time.weekday(), start_time.hour,
+                                      start_station_id, end_station_id)
                 gamma = self.duration_distrs.get((start_station_id, end_station_id), None)
                 # Check for invalid queries
                 if lam and gamma:
@@ -123,8 +124,9 @@ class PoissonLogic(SimulationLogic):
         probability = random.random()
         while probability == 0:
             probability = random.random()
-        # should preferably be a distribution * lam.value
-        num_trips = poisson.ppf(probability, lam.value * 0.05)
+
+        num_trips = poisson.ppf(probability, lam.value)
+
         if numpy.isnan(num_trips):
             num_trips = -1
         return int(round(num_trips))
@@ -151,20 +153,20 @@ class PoissonLogic(SimulationLogic):
             distr_dict[(gamma.start_station_id, gamma.end_station_id)] = gamma 
         return distr_dict
 
-    def get_lambda(self, day, hour, start_station, end_station):
+    def get_lambda(self, year, month, day, hour, start_station, end_station):
         '''
         If there is a lambda, return it. Otherwise return None as we only 
         load non-zero lambdas from the database for performance reasons.
         '''
-        return self.lambda_distrs.get(day, {}).get(hour, {}).get((start_station, end_station), None)
+        return self.lambda_distrs.get(year, {}).get(month, {}).get(day < 5, {}).get(hour, {}).get((start_station, end_station), None)
 
     def load_lambdas(self, start_time, end_time):
         '''
-        Caches lambdas into dictionary of day -> hour -> (start_id, end_id) -> lambda
+        Caches lambdas into dictionary of year -> is_week_day -> hour -> (start_id, end_id) -> lambda
         '''
 
         # kind of gross but makes for easy housekeeping
-        distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+        distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(float)))))
         num_added = 0
         # Inclusive
         print start_time, end_time
@@ -174,17 +176,22 @@ class PoissonLogic(SimulationLogic):
             start_hour = start_time.hour if start_time.weekday() == dow else 0
             end_hour = end_time.hour if end_time.weekday() == dow else 24
 
+            year = start_time.year
+            month = start_time.month
+            is_week_day = dow < 5
+
             # For now we're only loading in lambdas that have non-zero values. 
             # We'll assume zero value if it's not in the dictionary
             lambda_poisson = self.session.query(data_model.Lambda) \
-                .filter(data_model.Lambda.day_of_week == dow) \
+                .filter(data_model.Lambda.is_week_day == is_week_day) \
+                .filter(data_model.Lambda.year ==  year) \
+                .filter(data_model.Lambda.month == month) \
                 .filter(data_model.Lambda.hour.between(start_hour, end_hour))
         
             for lam in lambda_poisson:
-                distr_dict[lam.day_of_week][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
+                distr_dict[year][month][lam.is_week_day][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
                 num_added += 1
-                if lam.value == 0:
-                    print "Wjat?"
+
         print "Loaded %s lambdas" % num_added
         return distr_dict
 
