@@ -40,55 +40,6 @@ def  get_num_days(start_date, end_date):
     
     return info
 
-
-def train_poisson_new(conn, start_d, end_d):
-    print "training poisson parameters based on trip data from {0} and {1}".format(start_d, end_d)
-
-    find_trips_query = """
-    SELECT s_id, e_id, extract(dow from dt) as dow, hour, avg(cnt) as avg_cnt
-    FROM
-      (SELECT start_station_id as s_id, end_station_id as e_id,
-              start_date::date as dt, extract(hour from start_date) as hour, 
-              count(*) as cnt
-      FROM  (SELECT * 
-             FROM trips 
-             WHERE start_date  BETWEEN '{0}' and '{1}'
-                   AND trip_type_id = 1) as s1
-      GROUP BY start_station_id, end_station_id, dt, hour) as s2
-    GROUP BY s_id, e_id, dow, hour;
-    """.format(start_d, end_d)
-    
-    session = conn.getDBSession()
-    engine = conn.getDBEngine()
-
-    print "deleting all rows in the Lambda table"
-    # faster to delete all rows in the table
-    session.query(Lambda).delete()
-
-    cap = 10000
-    print "executing the query: \n"
-    print find_trips_query
-    results = engine.execute(find_trips_query)
-    count = 0
-
-    for row in results:
-        s_id = row["s_id"]
-        e_id = row["e_id"]
-        dow = row["dow"]
-        hour = row["hour"]
-        value = row["avg_cnt"]
-
-        l = Lambda(s_id, e_id, int(hour), int(dow), value)
-        session.add(l)
-        count += 1
-        
-        if count % cap == 0:
-            session.flush()
-            session.commit()
-
-    session.flush()
-    session.commit()
-
 def train_poisson(conn, start_d, end_d):
     '''
     Train parameters used to model poisson distributions
@@ -268,8 +219,6 @@ def train_gaussian(connector, start_date, end_date):
 def main():
     c = Connector()
     # train_gaussian(c, "2012-1-1", "2013-6-1")
-    # train_poisson(c, "2012-1-1", "2013-1-1")
-    # train_poisson_nn(c, 's','s')
     # get_pairwise_counts(c, "2013-1-1", "2013-1-2")
     # train_gammas(c.getDBSession(), "2010-09-15", "2013-06-30")
     train_poisson(c, "2010-09-15", "2013-06-30")
