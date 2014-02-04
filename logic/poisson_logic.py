@@ -135,7 +135,7 @@ class PoissonLogic(SimulationLogic):
         If there is a lambda, return it. Otherwise return None as we only 
         load non-zero lambdas from the database for performance reasons.
         '''
-        return self.lambda_distrs.get(year).get(month).get(day < 5, {}).get(hour, {}).get((start_station, end_station), None)
+        return self.lambda_distrs.get(year, {}).get(month, {}).get(day < 5, {}).get(hour, {}).get((start_station, end_station), None)
 
     def load_lambdas(self, start_time, end_time):
         '''
