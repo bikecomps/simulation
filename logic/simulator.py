@@ -125,6 +125,7 @@ def main():
         print i,": ",hours[i]
 
     
+    """
     stations = {}
     for t in results['trips']:
         if t.start_station_id in stations:
@@ -136,6 +137,7 @@ def main():
     print len(stations.keys())
     for s_id, count in stations.iteritems():
         print s_id,count
+    """
 
     session.close()
     

@@ -163,34 +163,7 @@ def train_exp_lambdas(session, start_d, end_d):
     num_days = float((end_date - start_date).days)
     if num_days < 0:
         return False
-    '''
-    # Probably a better way to do this but it will work for now
-    day_count = [0] * 7
-    cur_date = start_date
-    while cur_date < end_date:
-        day_count[cur_date.weekday()] += 1
-        cur_date += timedelta(days=1)
 
-    for s_id in s_ids:
-        trip_counts = [[0] * 24 for d in range(7)]
-        for trip in session.query(Trip)\
-                .filter(Trip.start_date.between(start_date, end_date))\
-                .filter(Trip.start_station_id == s_id)\
-                .join(Trip.trip_type, aliased=True)\
-                .filter(TripType.trip_type == 'Training'):
-           
-            trip_counts[trip.start_date.weekday()][trip.start_date.hour] += 1
-        for i in range(len(trip_counts)): # i.e. 7
-            d = trip_counts[i]
-            for hour in d:
-                if hour > 0 and day_count[i] / hour < 1:
-                    under_one_lambdas += 1
-                elif hour > 0:
-                    non_zero_lambdas += 1
-                else:
-                    zero_lambdas +=1 
-
-    '''
     station_count = 0
     for s_id in s_ids:
         trip_counts = [0] * 24
@@ -205,13 +178,11 @@ def train_exp_lambdas(session, start_d, end_d):
         for i in range(len(trip_counts)):
             # If hour is 0 then we've never observed a trip. 
             #We'll give it an average of 1 every 10000 hours (over a year)
-            if trip_counts[i] == 0:
-                rate = 10000
-            else:
+            if trip_counts[i] > 0:
                 rate = num_days / trip_counts[i]
-            # Convert from rate in hours to rate in seconds
-            rate *= 3600
-            session.add(ExpLambda(s_id, i, rate))
+                # Convert from rate in hours to rate in seconds
+                rate *= 3600
+                session.add(ExpLambda(s_id, i, rate))
         
         session.commit()
         session.flush()
@@ -221,6 +192,46 @@ def train_exp_lambdas(session, start_d, end_d):
     # shouldn't be necessary but keep it there for now
     session.commit()
     session.flush()
+
+def train_new_exp_lambdas(conn, start_d, end_d):
+    # Thanks to Daniel for the initial query code/most of this function
+    find_trips_query = """
+        SELECT s_id, extract(dow from dt) as dow, hour, avg(cnt) as avg_cnt
+        FROM
+            (SELECT start_station_id as s_id,
+                    start_date::date as dt, extract(hour from start_date) as hour, 
+                    count(*) as cnt
+                    FROM  (SELECT * 
+                           FROM trips 
+                           WHERE start_date  BETWEEN '{0}' and '{1}'
+                                 AND trip_type_id = 1) as s1
+                    GROUP BY start_station_id, dt, hour) as s2
+       GROUP BY s_id, dow, hour;
+       """.format(start_d, end_d)
+
+    engine = conn.getDBEngine()
+    session = conn.getDBSession()
+
+    session.query(ExpLambda).delete()
+    results = engine.execute(find_trips_query)
+
+    count = 0
+    for row in results:
+        s_id = row['s_id']
+        dow = row['dow']
+        hour = row['hour']
+        rate = 1.0/row['avg_cnt']
+        weekday = True if dow < 5 else False
+
+        session.add(ExpLambda(s_id, weekday, hour, rate))
+        count += 1
+        if count % 1000 == 0:
+            print "Done with %i" % count
+            session.commit()
+            session.flush()
+    session.commit()
+    session.flush()
+
 
 def train_poisson(conn, start_d, end_d):
     '''

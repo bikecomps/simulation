@@ -257,8 +257,8 @@ class ExpLambda(Base):
         self.rate = rate
     
     def __repr__(self):
-        return 'ExpLambda: station id: %s, hour: %s, value: %.2f'\
-                 % (self.station_id, self.hour, self.value)
+        return 'ExpLambda: station id: %s, hour: %s, rate: %.2f'\
+                 % (self.station_id, self.hour, self.rate)
 
 class DestDistr(Base):
     '''

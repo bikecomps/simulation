@@ -51,6 +51,10 @@ class ExponentialLogic(SimulationLogic):
         self.time += timestep
 
     def initialize_trips(self):
+        for s_id,els in self.exp_distrs.iteritems():
+            print s_id
+            for el in els:
+                print "\t",el
         hour = self.start_time.hour
         day = self.start_time.day
         print "INIT",day,hour,self.start_time
@@ -61,9 +65,17 @@ class ExponentialLogic(SimulationLogic):
 
     def generate_trip(self, s_id, time):
         #print "Generating a new trip from ",s_id
-        #exp_l = self.exp_distrs[s_id][time.hour] #self.exp_distrs[s_id][13]#
+        exp_l = self.exp_distrs[s_id][time.hour] #self.exp_distrs[s_id][13]#
+
+        # Never generated a trip, defer it until we have a feasible lambda
+        # Test using if its greater than x hours too (possibly deal with bad latenight hours
+        if not exp_l or exp_l.rate > 3600 * 3:
+            # Test it out to see how this works
+            # Have it look again the next hour
+            return Trip('-1', "Casual", 2, time + datetime.timedelta(seconds=3600), None, s_id, s_id)
+
         # See what happens if we just use the min rate, should work better
-        exp_l = max(self.exp_distrs[s_id])
+        #exp_l = max(self.exp_distrs[s_id])
 
         # Returns time till next event in seconds
         # Function takes in 1/rate = "scale" but it works better the other way...
@@ -195,7 +207,12 @@ class ExponentialLogic(SimulationLogic):
         '''Decrement station count, put in pending_arrivals queue. If station is empty, put it in the disappointments list.'''
         departure_station_ID = trip.start_station_id
 
-        if self.station_counts[departure_station_ID] == 0:
+
+        # Using trip_end_time=None to indicate that we should just generate another trip
+        if not trip.end_date:
+            new_trip = self.generate_trip(departure_station_ID, trip.start_date)
+            self.pending_departures.put((new_trip.start_date, new_trip))
+        elif self.station_counts[departure_station_ID] == 0:
             new_disappointment = Disappointment(departure_station_ID, trip.start_date, trip_id=None)
             self.session.add(new_disappointment)
             self.disappointment_list.append(new_disappointment)

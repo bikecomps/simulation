@@ -6,6 +6,7 @@ import random
 from collections import defaultdict
 
 import numpy as np
+import scipy.stats as stats
 import matplotlib
 from operator import itemgetter
 matplotlib.use('Agg')
@@ -16,11 +17,15 @@ def get_data_for_station_pair(session, station_one, station_two,
                               count=100):
     values = session.query(Trip).filter(Trip.start_station_id==station_one) \
         .filter(Trip.end_station_id == station_two) \
-        .filter(Trip.start_date.between(date_one, date_two))
+        .filter(Trip.start_date.between(date_one, date_two))\
+        .join(TripType, aliased=True)\
+        .filter(TripType.trip_type != "Removed")\
+
 
     return values
 
-def sample_trip_time_distrs(conn, choice, samples=10, sam_size=1500):
+def sample_distrs(conn, choice, samples=10, sam_size=100, 
+                            date_one="2010-01-01", date_two="2014-01-01"):
     # Get a number of pairs
     q = """
         SELECT start_station_id, end_station_id
@@ -81,11 +86,57 @@ def plot_poisson_hour(results, s_id, e_id):
     plt.clf()
 
 
+def gamma_test(durations):
+    try:
+        fit = stats.gamma.fit(durations, floc=0, fscale=1)
+        chi, p = stats.kstest(durations, 'gamma', fit)
+        return p
+    except Exception, e:
+        return None
+
+def normal_test(durations):
+    try:
+        chi, p = stats.normaltest(durations)
+        return p
+    except Exception:
+        return None
+
+def test_trip_time_distribution(session, test, limit=100,
+                                s_time="2010-01-01", e_time="2014-01-01"):
+    st_ids = list(session.query(Station.id).all())
+    p_vals = []
+
+    s_count = 0
+    for s_id in st_ids:
+        end_stations = {e_id[0]:[] for e_id in st_ids}
+        for t in session.query(Trip).filter(Trip.start_station_id == s_id)\
+                .filter(Trip.start_date.between(s_time, e_time))\
+                .join(TripType, aliased=True)\
+                .filter(TripType.trip_type != "Removed")\
+                .yield_per(5000):
+                end_stations[t.end_station_id].append(t.duration().total_seconds())
+        for e_id, durations in end_stations.iteritems():
+            if len(durations) > limit:
+                 p = test(durations) 
+                 if p != None:
+                     p_vals.append(p)
+
+        s_count += 1
+        if s_count % 10 == 0:
+            print "Done with ",s_count
+
+    print "Avg.",sum(p_vals)/len(p_vals)
+    s = sorted(p_vals)
+    print "Quartiles", s[0], s[len(p_vals)/4], \
+                    s[len(p_vals)/2], s[3*len(p_vals)/4], s[-1]
+
 def main():
     random.seed()
     c = Connector()
 
-    sample_trip_time_distrs(c, plot_poisson_hour, samples=30)
+    #sample_distrs(c, plot_dur_distributions, sam_size=300, samples=30,
+    #              date_one="2013-01-01")
+    test_trip_time_distribution(c.getDBSession(), normal_test, limit=100)
 
 if __name__ == '__main__':
     main()
