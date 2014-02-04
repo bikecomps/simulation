@@ -34,6 +34,8 @@ class PoissonLogic(SimulationLogic):
                     .filter(data_model.StationDistance.station1_id == station.id)\
                     .order_by(data_model.StationDistance.distance)[:8]
             self.nearest_station_dists[station.id] = nearest_distances
+        self.moving_bikes = 0
+
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
@@ -56,19 +58,40 @@ class PoissonLogic(SimulationLogic):
                 if self.station_counts[s_id] == 0:
                     empty.append(s_id)
                     self.empty_full_stations[s_id] = "empty"
-	if len(not_full) > 0:
+        if len(not_full) > 0:
             print "\tNo longer full:\n" + "\t\t" + str(not_full)
-	if len(not_empty) > 0:
-            print "\tNo longer empty:\n" + "\t\t" + str(not_empty)
- 	if len(full) > 0:
-            print "\tNow full:\n" + "\t\t" + str(full)       
-	if len(empty) > 0:
+        if len(not_empty) > 0:
+                print "\tNo longer empty:\n" + "\t\t" + str(not_empty)
+        if len(full) > 0:
+                print "\tNow full:\n" + "\t\t" + str(full)       
+        if len(empty) > 0:
             print "\tNow empty:\n" + "\t\t" + str(empty)
+        # self.rebalance_stations(full, empty)
         self.generate_new_trips(self.time)
         self.resolve_trips()
 
         # Increment after we run for the current timestep?
         self.time += timestep
+
+    def rebalance_stations(self, full, empty):
+		
+        for station_id in full:
+            to_remove = self.stations[station_id].capacity/2
+            self.station_counts[station_id] -= to_remove
+            self.moving_bikes += to_remove
+
+        while self.moving_bikes < len(empty):
+            random_station = random.choice(self.station_counts.keys())
+            if self.station_counts[random_station] > 1:
+                self.station_counts[random_station] -= 1
+                self.moving_bikes += 1
+		
+        if len(empty) > 0:
+            bikes_per_station = self.moving_bikes / len(empty)
+            for station_id in empty:
+                self.station_counts[station_id] = bikes_per_station
+                self.moving_bikes -= bikes_per_station
+
 
     def generate_new_trips(self, start_time):
         # Note that Monday is day 0 and Sunday is day 6. Is this the same for data_model?
