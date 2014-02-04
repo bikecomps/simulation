@@ -10,6 +10,7 @@ from utils import Connector
 from models import Trip, Station
 
 from datetime import datetime
+from dateutil import rrule
 
 import sys
 
@@ -27,10 +28,14 @@ class RangeEvaluator:
 
         # store produced and real trips in dictionaries
         # station id -> [number of departures, number of arrivals]
-        self.produced, total_produced = self.get_produced_trips()
+        self.produced, total_produced, total_dp = self.get_produced_trips()
         self.real, total_real = self.get_real_trips()
         
+        print "----------------------------------------------"
+        print "From:", datetime.strftime(start_date, "%Y-%m-%d %H:%M")
+        print "To:", datetime.strftime(end_date, "%Y-%m-%d %H:%M")
         print "total produced: ", total_produced
+        print "total disappointments: ", total_dp
         print "total real: ", total_real
 
     def get_produced_trips(self):
@@ -50,7 +55,7 @@ class RangeEvaluator:
 
             total_trips += 1
 
-        return trips, total_trips
+        return trips, total_trips, len(results['disappointments'])
         
     def get_real_trips(self):
         start_date_string = self.start_date.strftime('%Y-%m-%d %H:%M')
@@ -133,30 +138,39 @@ class RangeEvaluator:
         return (1-(float(total_diff)/total_real))*100
 
 
-    def eval_mean_percentage_error(self):
-        total_error = 0
-        n = len(self.produced)
-        
-        if self.verbose:
-            print "\nMean Percentage Error Calculation ---->"
-            print "\n\n\n%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
-        
-        for k in self.produced:
-            diff1 = float(abs(self.produced[k][0] - self.real[k][0])) \
-                    / max(max(self.produced[k][0], self.real[k][0]), 1)
-            diff2 = float(abs(self.produced[k][1] - self.real[k][1])) \
-                    / max(max(self.produced[k][1], self.real[k][1]), 1)
-            diff = (diff1 + diff2)/2
-
-            if self.verbose:
-                print "%15s | %15s | %15s | %15s" \
-                %(k, self.produced[k], self.real[k], diff)
-            
-            total_error += diff
-            
-        return (1-(float(total_error)/n))*100    
-
 def main():
+    run_all = True
+    
+    if run_all:
+        start_date = datetime.strptime("2010-09-15",
+                                       '%Y-%m-%d')
+        end_date = datetime.strptime("2013-06-30",
+                                     '%Y-%m-%d')
+        all_dates = []
+        date_ranges = []
+        for week in rrule.rrule(rrule.WEEKLY, dtstart=start_date, until=end_date):
+            all_dates.append(week)
+        for i in range(len(all_dates)-1):
+            date_ranges.append((all_dates[i], all_dates[i+1]))
+
+        outfile = open("results.txt", "w")
+
+        for (start, end) in date_ranges:
+            re = RangeEvaluator(start, end)
+            man = re.eval_man_dist()
+            eucl = re.eval_eucl_dist()
+            start_date_string = datetime.strftime(start, '%Y-%m-%d')
+            end_date_string = datetime.strftime(end, '%Y-%m-%d')
+            outfile.write("--------------------------------------------\n")
+            outfile.write("From: " + start_date_string+"\n")
+            outfile.write("To: " + end_date_string+"\n")
+            outfile.write("Accuracy based on Manhattan distance: %.2f %%\n" % (man))
+            outfile.write("Accuracy based on Euclidean distance: %.2f %%\n" % (eucl))
+            
+        outfile.close()
+        sys.exit()
+        
+
     if len(sys.argv) == 1:
         start_date = datetime.strptime('2012-1-1',
                                        '%Y-%m-%d')
@@ -171,14 +185,11 @@ def main():
         sys.exit("You need a start date and an end date")
 
     re = RangeEvaluator(start_date, end_date)
-    re.verbose = True
-
     man = re.eval_man_dist()
     eucl = re.eval_eucl_dist()
-    mpe = re.eval_mean_percentage_error()
     print "accuracy based on manhattan distance: ", man, "%"
     print "accuracy based on euclidean distance: ", eucl, "%"
-    # print "accuracy based on mean percentage error: ", mpe, "%"
+    
 
 if __name__ == "__main__":
     main()
