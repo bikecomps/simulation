@@ -12,6 +12,8 @@ from models import Trip, Station
 from datetime import datetime
 from dateutil import rrule
 
+import numpy as np
+
 import sys
 
 class RangeEvaluator:
@@ -139,7 +141,7 @@ class RangeEvaluator:
 
 
 def main():
-    run_all = True
+    run_all = False
     
     if run_all:
         start_date = datetime.strptime("2010-09-15",
@@ -189,7 +191,6 @@ def main():
     eucl = re.eval_eucl_dist()
     print "accuracy based on manhattan distance: ", man, "%"
     print "accuracy based on euclidean distance: ", eucl, "%"
-    
 
 if __name__ == "__main__":
     main()
