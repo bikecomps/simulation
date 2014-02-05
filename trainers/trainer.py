@@ -172,8 +172,7 @@ def train_gammas(session, start_date, end_date):
             session.add(g)
         session.flush()
         session.commit()
-        print "Trained station",s_id
-    
+        print "Trained station", s_id
              
     session.flush()
     session.commit()

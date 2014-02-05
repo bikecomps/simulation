@@ -187,6 +187,7 @@ def main():
         sys.exit("You need a start date and an end date")
 
     re = RangeEvaluator(start_date, end_date)
+    re.verbose = True
     man = re.eval_man_dist()
     eucl = re.eval_eucl_dist()
     print "accuracy based on manhattan distance: ", man, "%"
