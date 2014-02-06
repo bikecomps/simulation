@@ -16,57 +16,31 @@ from sqlalchemy import update, distinct
 from sqlalchemy.sql import extract, func
 from sqlalchemy.ext.declarative import declarative_base
 import numpy
-from pybrain.datasets import SupervisedDataSet
+from dateutil import rrule
+#from pybrain.datasets import SupervisedDataSet
 
 Base = declarative_base()
 
-def train_poisson_new(conn, start_d, end_d):
-    print "training poisson parameters based on trip data from {0} and {1}".format(start_d, end_d)
+def  get_num_days(start_date, end_date):
+    """
+    Return the number of days between 'start_date' and 'end_date'.
+    Parameterize by 'year' -> 'month' -> 'part_of_week'.
+    """
+    start_year = start_date.year
+    end_year = end_date.year    
+    info = {}
+    for year in range(start_year, end_year+1):
+        info[year] = {}
+        for i in range(1, 13):
+            info[year][i] = [0]*2        
 
-    find_trips_query = """
-    SELECT s_id, e_id, extract(dow from dt) as dow, hour, avg(cnt) as avg_cnt
-    FROM
-      (SELECT start_station_id as s_id, end_station_id as e_id,
-              start_date::date as dt, extract(hour from start_date) as hour, 
-              count(*) as cnt
-      FROM  (SELECT * 
-             FROM trips 
-             WHERE start_date  BETWEEN '{0}' and '{1}'
-                   AND trip_type_id = 1) as s1
-      GROUP BY start_station_id, end_station_id, dt, hour) as s2
-    GROUP BY s_id, e_id, dow, hour;
-    """.format(start_d, end_d)
+    for day in rrule.rrule(rrule.DAILY, dtstart=start_date, until=end_date):
+        dow = day.weekday()
+        index = 1 if dow < 5 else 0
+
+        info[day.year][day.month][index] += 1        
     
-    session = conn.getDBSession()
-    engine = conn.getDBEngine()
-
-    print "deleting all rows in the Lambda table"
-    # faster to delete all rows in the table
-    session.query(Lambda).delete()
-
-    cap = 10000
-    print "executing the query: \n"
-    print find_trips_query
-    results = engine.execute(find_trips_query)
-    count = 0
-
-    for row in results:
-        s_id = row["s_id"]
-        e_id = row["e_id"]
-        dow = row["dow"]
-        hour = row["hour"]
-        value = row["avg_cnt"]
-
-        l = Lambda(s_id, e_id, int(hour), int(dow), value)
-        session.add(l)
-        count += 1
-        
-        if count % cap == 0:
-            session.flush()
-            session.commit()
-
-    session.flush()
-    session.commit()
+    return info
 
 
 def train_dest_distrs(session, start_d, end_d):
@@ -152,67 +126,12 @@ def train_dest_distrs(session, start_d, end_d):
         stations_done += 1
         if stations_done % 10 == 0:
             print "Stations done",stations_done
-   
-def train_exp_lambdas(session, start_d, end_d):
-    start_date = datetime.strptime(start_d, '%Y-%m-%d')
-    end_date = datetime.strptime(end_d, '%Y-%m-%d')
-
-    session.query(ExpLambda).delete()
-
-    # For efficiency load stationwise 
-    s_ids = session.query(Station.id).all()
-    num_days = float((end_date - start_date).days)
-    if num_days < 0:
-        return False
-
-    station_count = 0
-    for s_id in s_ids:
-        trip_counts = [0] * 24
-        for trip in session.query(Trip)\
-                .filter(Trip.start_date.between(start_date, end_date))\
-                .filter(Trip.start_station_id == s_id)\
-                .join(Trip.trip_type, aliased=True)\
-                .filter(TripType.trip_type == 'Training'):
-           
-            trip_counts[trip.start_date.hour] += 1
-
-        for i in range(len(trip_counts)):
-            # If hour is 0 then we've never observed a trip. 
-            #We'll give it an average of 1 every 10000 hours (over a year)
-            if trip_counts[i] > 0:
-                rate = num_days / trip_counts[i]
-                # Convert from rate in hours to rate in seconds
-                rate *= 3600
-                session.add(ExpLambda(s_id, i, rate))
-        
-        session.commit()
-        session.flush()
-        station_count += 1
-        if station_count % 10 == 0:
-            print "Done with %s stations" % station_count
-    # shouldn't be necessary but keep it there for now
-    session.commit()
-    session.flush()
-
-def train_new_exp_lambdas(conn, start_d, end_d):
+  
+def train_exp_lambdas(conn, start_d, end_d):
     engine = conn.getDBEngine()
     session = conn.getDBSession()
 
     session.query(ExpLambda).delete()
-    '''
-    raw_query = """
-            SELECT EXTRACT(DOW FROM d) as dow, EXTRACT(HOUR FROM d) as hour, AVG(c) as avg
-            FROM (
-                SELECT date_trunc('hour', start_date) as d, COUNT(*) as c
-                FROM trips 
-                    WHERE start_date BETWEEN '{sd}' AND '{ed}' 
-                          AND trip_type_id=1
-                          AND start_station_id={sid}
-                GROUP BY date_trunc('hour', start_date)) as sub
-            GROUP BY EXTRACT(DOW FROM d), EXTRACT(HOUR FROM d);
-            """
-            '''
-
     raw_query = """
                 SELECT EXTRACT(DOW FROM start_date), EXTRACT(HOUR FROM start_date), COUNT(*) 
                 FROM trips 
@@ -244,14 +163,6 @@ def train_new_exp_lambdas(conn, start_d, end_d):
                 avg = float(count) / num_weekend_days
             counts[int(hour)][0 < dow < 6] = avg
 
-        '''for dow, hour, count in session.query(extract('dow', Trip.start_date), extract('hour', Trip.start_date), func.count(Trip.id), func.count(distinct(func.date_trunc('day',Trip.start_date))))\
-                .filter(Trip.start_date.between(start_d, end_d))\
-                .filter(Trip.start_station_id == s_id)\
-                .join(Trip.trip_type, aliased=True)\
-                .filter(TripType.trip_type == 'Training')\
-                .group_by(extract('dow', Trip.start_date), extract('hour', Trip.start_date)):
-                print dow, hour, count'''
-             
         for i in range(24):
             # If hour is 0 then we've never observed a trip - don't add to db
             for j in range(2):
@@ -279,10 +190,17 @@ def train_poisson(conn, start_d, end_d):
     '''
     a = datetime.strptime(start_d, '%Y-%m-%d')
     b = datetime.strptime(end_d, '%Y-%m-%d')
-    numdays = (b-a).days
-    if numdays < 1:
+    num_days = (b-a).days
+    if num_days < 1:
         print "You must train model using data for at least one day"
         return
+
+    start_date = a
+    end_date = b
+
+    # start_year, end_year
+    start_year = start_date.year
+    end_year = end_date.year
 
     # get session and engine
     session = conn.getDBSession()
@@ -292,49 +210,68 @@ def train_poisson(conn, start_d, end_d):
     cap = 10000
 
     t_hours = 24
-    t_days = 7
+    # (s1.id, s2.id) -> year -> month -> is_week_day 0 or 1 -> hour
     stationsd = {}
 
-    stations = session.query(Station).yield_per(cap)
+    stations = session.query(Station)
     for s1 in stations:
         for s2 in stations:
-            stationsd[(s1.id, s2.id)] = [[0]*t_hours for i in range(t_days)]
+            stationsd[(s1.id, s2.id)] = {}
+            for year in range(start_year, end_year+1):
+                stationsd[(s1.id, s2.id)][year] = {}
+                for month in range(1, 13):
+                    stationsd[(s1.id, s2.id)][year][month] = [[0]*t_hours for i in range(2)]
 
-    tripnum = 0
+    trip_num = 0
     for trip in session.query(Trip) \
             .filter(Trip.start_date.between(start_d, end_d)) \
             .yield_per(cap):
         s_id = trip.start_station_id
         e_id = trip.end_station_id
+
+        month = trip.start_date.month
+        year = trip.start_date.year
         hour = trip.start_date.hour
-        day = trip.start_date.weekday()
+        dow = trip.start_date.weekday()
 
-        stationsd[(s_id, e_id)][day-1][hour-1] += 1
+        stationsd[(s_id, e_id)][year][month][dow < 5][hour] += 1
 
-        tripnum += 1
-    
+        trip_num += 1
+
     # faster to delete all rows in the table
     session.query(Lambda).delete()
 
     count = 0
+    days = get_num_days(start_date, end_date)
+
     for (s_id, e_id) in stationsd:
         counts = stationsd[(s_id, e_id)]
-        for day in range(t_days):
-            for hour in range(t_hours):               
-                l = Lambda(s_id, e_id, hour+1, day+1, counts[day][hour]/float(numdays))
-                session.add(l)
-                count += 1
 
-                if count % cap == 0:
-                    session.flush()
-                    session.commit()
+        for year in range(start_year, end_year+1):
+            for month in range(1, 13):
+                for is_week_day in range(2):
+                    num_days = days[year][month][is_week_day]
+                
+                    for hour in range(t_hours):
+                        num_trips = counts[year][month][is_week_day][hour]
+
+                        if num_trips > 0:
+                            l = Lambda(s_id, e_id, 
+                                       hour, bool(is_week_day), 
+                                       year, month,
+                                       num_trips/float(num_days))
+                            session.add(l)
+                            count += 1
+
+                        if count % cap == 0:
+                            session.flush()
+                            session.commit()
                 
     # flush for last time
     session.flush()
     session.commit()
 
-    print "Number of trips used in training: %d" % tripnum
-    print "Parameters trained for %d day(s)" % numdays
+    print "Number of trips used in training: %d" % trip_num
 
 
 def train_gammas(session, start_date, end_date):
@@ -382,8 +319,7 @@ def train_gammas(session, start_date, end_date):
             session.add(g)
         session.flush()
         session.commit()
-        print "Trained station",s_id
-    
+        print "Trained station", s_id
              
     session.flush()
     session.commit()
@@ -434,13 +370,11 @@ def main():
     s_test_date = "2011-09-12"
     e_test_date = "2011-09-19" 
     # train_gaussian(c, "2012-1-1", "2013-6-1")
-    # train_poisson(c, "2012-1-1", "2013-1-1")
-    # train_poisson_nn(c, 's','s')
     # get_pairwise_counts(c, "2013-1-1", "2013-1-2")
-    #train_gammas(c.getDBSession(), "2010-09-15", "2013-06-30")
-    #train_poisson_new(c, "2010-09-15 00:00", "2013-06-30 23:59")
-    train_new_exp_lambdas(c, first_data, end_data)
+    train_exp_lambdas(c, first_data, end_data)
     #train_dest_distrs(c.getDBSession(), first_data, end_data)
+    # train_gammas(c.getDBSession(), "2010-09-15", "2013-06-30")
+    #train_poisson(c, "2010-09-15", "2013-06-30")
 
 if __name__ == "__main__":
     main()

@@ -12,6 +12,9 @@ from operator import itemgetter
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+allmeans = []
+allstds = []
+
 def get_data_for_station_pair(session, station_one, station_two, 
                               date_one="2010-01-01", date_two="2014-1-1",
                               count=100):
@@ -24,6 +27,7 @@ def get_data_for_station_pair(session, station_one, station_two,
 
     return values
 
+<<<<<<< HEAD
 def sample_distrs(conn, choice, samples=10, sam_size=100, 
                             date_one="2010-01-01", date_two="2014-01-01"):
     # Get a number of pairs
@@ -41,6 +45,24 @@ def sample_distrs(conn, choice, samples=10, sam_size=100,
         s_id, e_id = random.choice(cand_stations)
         trips = get_data_for_station_pair(session, s_id, e_id)
         choice(trips, s_id, e_id)
+
+
+
+def num_departures_distributions(results):
+    freqs = [0] * 24
+    for trip in results:
+        freqs[trip.start_date.hour] += 1
+    x = np.array(freqs)
+
+    mean = np.mean(x)
+    std = np.std(x)
+    allmeans.append(mean)
+    allstds.append(std)
+    print "mean=", np.mean(x)
+    print "std=", np.std(x)
+
+def num_arrivals_distributions(results):
+    pass
 
 def plot_dur_distributions(results, s_id, e_id):
     trip_lengths = [t.duration().total_seconds() for t in results]
@@ -133,10 +155,22 @@ def test_trip_time_distribution(session, test, limit=100,
 def main():
     random.seed()
     c = Connector()
-
     #sample_distrs(c, plot_dur_distributions, sam_size=300, samples=30,
     #              date_one="2013-01-01")
     #test_trip_time_distribution(c.getDBSession(), normal_test, limit=100)
+    session = c.getDBSession()
+    
+    stations = session.query(Station).all()
+    for s1 in stations:
+        for s2 in stations:
+            print "obtaining mean and std for s1=", s1.id, ";s2=", s2.id
+            trips = get_data_for_station_pair(session, s1.id, s2.id, "2012-1-1", "2013-1-1").all()
+            num_departures_distributions(trips)
+    # trips = get_data_for_station_pair(session, 31248, 31206, "2012-1-1", "2013-1-1").all()
+    # plot_time_distributions(trips)
+    print "mean of means:", np.mean(np.array(allmeans))        
+    print "mean of stds:", np.mean(np.array(allstds))
+    # plot_num_arrivals_distributions(trips)
 
 if __name__ == '__main__':
     main()

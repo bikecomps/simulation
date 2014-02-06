@@ -14,24 +14,25 @@ from logic import *
 
 class Evaluator:
     '''
+    NOTE TO SELF: Try Manhattan or Euclidean distances instead of p-values.
+
     Running one chi-square test for the entirety of a simulation's results:
-        1) evaluator = Evaluator(<session>, <start_date>, <end_date>, <prod_trips>, <prod_on_start>, <prod_on_end>)
+        1) evaluator = Evaluator(<session>, <granularity>, <start_date>, <end_date>, <prod_trips>, <prod_on_start>, <prod_on_end>)
         2) results = evaluator.run_chi_square(<statistic>)
         3) chi_sq = results[0]
         4) p_valu = results[1]
     '''
-    def __init__(self,session,start_date,end_date,prod_trips=None,prod_on_start=None,prod_on_end=None):
+    def __init__(self,session,granularity,start_date,end_date,prod_trips=None,prod_on_start=None,prod_on_end=None):
         self.session = session
+        self.granularity = granularity
         self.start_date = start_date
         self.end_date = end_date
         self.day_range = self.get_day_range()
-        # Could we average test trip data once and store them for future use?
         self.prod_trips = self.get_prod_trips(prod_trips,prod_on_start,prod_on_end)
         self.stations = self.session.query(Station)
-        #self.paired_stations = self.setup_paired_stations(self.trips,self.stations)
 
     def get_day_range(self):
-        print "Getting day range."
+        print "Getting day range:"
         start_day = self.start_date.isoweekday()
         end_day = self.end_date.isoweekday()
 
@@ -45,7 +46,6 @@ class Evaluator:
         return day_range
 
     def get_real_trips(self,day):
-    	# NOTE: Testing trips currently referred to by trip_type_id 3
         print "Fetching real trips from database."
         
         real_trips = []
@@ -96,7 +96,7 @@ class Evaluator:
         single_stations = {}
         
         for station in self.stations:
-            single_stations[station.id] = SingleStation(station.id)
+            single_stations[station.id] = SingleStation(station.id,self.granularity)
 
         for trip in trips:
             if type(trip) == tuple:
@@ -109,6 +109,9 @@ class Evaluator:
 
                 start_hour = trip[0].hour
                 end_hour = trip[1].hour
+                
+                dur_delta = trip[1] - trip[0]
+                trip_duration = dur_delta.total_seconds()
 
             else:
                 day = trip.start_date.isoweekday() - 1
@@ -118,23 +121,36 @@ class Evaluator:
             
                 start_hour = trip.start_date.hour
                 end_hour = trip.end_date.hour
+
+                trip_duration = trip.duration().total_seconds()
             
             if end_hour < start_hour and start_hour - end_hour < 20:
-                print 'WARNING! Time-traveler: start_hour: %d, end_hour: %d' % (start_hour, end_hour)
+                #print 'WARNING! Time-traveler: start_hour: %d, end_hour: %d' % (start_hour, end_hour)
                 time_travel_counter += 1
             
-            # Using trip_type_id 3 to access 'Training' trips.
-            if type(trip) == tuple: #trip.trip_type.trip_type_id == 3:
-                single_stations[start_station].real_departures[day][start_hour] += 1
-                single_stations[end_station].real_arrivals[day][end_hour] += 1
-                #single_stations[start_station].real_durations[day][0] += 1
-                #single_stations[start_station].real_durations[day][1] += trip.duration().total_seconds()
-                
-            else: #trip.trip_type.trip_type == "Produced":
-                single_stations[start_station].prod_departures[day][start_hour] += 1
-                single_stations[end_station].prod_arrivals[day][end_hour] += 1
-                #single_stations[start_station].prod_durations[day][start_hour][0] += 1
-                #single_stations[start_station].prod_durations[day][start_hour][1] += trip.duration().total_seconds()
+            # 'Testing' trips become tuples after queried from DB using SQL.
+            if self.granularity == 'hours':
+                if type(trip) == tuple:
+                    single_stations[start_station].real_departures[day][start_hour] += 1
+                    single_stations[end_station].real_arrivals[day][end_hour] += 1
+                    single_stations[start_station].real_durations[day][start_hour][0] += 1
+                    single_stations[start_station].real_durations[day][start_hour][1] += trip_duration
+                else:
+                    single_stations[start_station].prod_departures[day][start_hour] += 1
+                    single_stations[end_station].prod_arrivals[day][end_hour] += 1
+                    single_stations[start_station].prod_durations[day][start_hour][0] += 1
+                    single_stations[start_station].prod_durations[day][start_hour][1] += trip_duration
+            elif self.granularity == 'days':
+                if type(trip) == tuple:
+                    single_stations[start_station].real_departures[day] += 1
+                    single_stations[end_station].real_arrivals[day] += 1
+                    single_stations[start_station].real_durations[day][0] += 1
+                    single_stations[start_station].real_durations[day][1] += trip_duration
+                else:
+                    single_stations[start_station].prod_departures[day] += 1
+                    single_stations[end_station].prod_arrivals[day] += 1
+                    single_stations[start_station].prod_durations[day][0] += 1
+                    single_stations[start_station].prod_durations[day][1] += trip_duration
         
         print 'time_travel_counter', time_travel_counter    
         return single_stations
@@ -143,56 +159,124 @@ class Evaluator:
         self.real_trips = self.get_real_trips(day)
         self.single_stations = self.setup_single_stations()
         day_counts = self.get_day_counts(self.real_trips)
+        
         print 'Starting chi-square test.'
         low_observed_freqs = 0
         low_expected_freqs = 0
         zero_count = 0
         observed = []
         expected = []
-        
-        # ????? hour = self.start_date.hour
 
         for station_id, station_obj in self.single_stations.iteritems():
-            print "--------------------------------------------------------"
-            print 'Chi-Square: Working on station', station_id
-            print "--------------------------------------------------------"
-            print "Station | Day | Hour | Expected | Observed | Statistic"
-            print "--------------------------------------------------------"
+            station_obs = []
+            station_exp = []
+
+            if self.granularity == 'hours':
+                print "--------------------------------------------------------"
+                print 'Chi-Square: Working on station', station_id
+                print "--------------------------------------------------------"
+                print "Station | Day | Hour | Expected | Observed | Statistic"
+                print "--------------------------------------------------------"
+            
             for day in self.day_range:
-                for hour in range(24):
+                if self.granularity != 'hours':
                     if statistic == 'departures':
-                        new_observed = station_obj.prod_departures[day-1][hour]
-                        new_expected = station_obj.real_departures[day-1][hour] / float(day_counts[day-1])
-                   
+                        new_observed = station_obj.prod_departures[day-1]
+                        new_expected = station_obj.real_departures[day-1] / float(day_counts[day-1])
                     elif statistic == 'arrivals':
-                        new_observed = station_obj.prod_arrivals[day-1][hour]
-                        new_expected = station_obj.real_arrivals[day-1][hour] / float(day_counts[day-1])
-                   
+                        new_observed = station_obj.prod_arrivals[day-1]
+                        new_expected = station_obj.real_arrivals[day-1] / float(day_counts[day-1])
                     elif statistic == 'durations':
-                        new_observed = station_obj.prod_durations[day-1][hour]
-                        new_expected = station_obj.real_durations[day-1][hour] / day_counts[day-1]
-                   
+                        num_prod_trips = station_obj.prod_durations[day-1][0]
+                        prod_durations = station_obj.prod_durations[day-1][1]
+                        if num_prod_trips == 0:
+                            num_prod_trips = 1
+                        avg_prod_duration = prod_durations / float(num_prod_trips)
+
+                        num_real_trips = station_obj.real_durations[day-1][0]
+                        real_durations = station_obj.real_durations[day-1][1]
+                        if num_real_trips == 0:
+                            num_real_trips = 1
+                        avg_real_duration = real_durations / float(num_real_trips)
+
+                        new_observed = avg_prod_duration
+                        new_expected = avg_real_duration
                     else:
                         print 'ERROR: Unknown statistic used in chi-square test.'
                         return
-                   
+
                     if new_expected < 1:
                         zero_count += 1
-                        new_expected = 1.1
-
+                        new_expected = 1
+                        
                     observed.append(new_observed)
                     expected.append(new_expected)
-                    
-                    if len(str(hour)) == 1:
-                        print "%d   | %d   | %d    | %f        | %d        | %s" % (station_id,day,hour,new_expected,new_observed,statistic)
-                    else:
-                        print "%d   | %d   | %d   | %f        | %d        | %s" % (station_id,day,hour,new_expected,new_observed,statistic)
+
+                    station_obs.append(new_observed)
+                    station_exp.append(new_expected)
+                        
+                    print "%d   | %d   | %f        | %d        | %s" % (station_id,day,new_expected,new_observed,statistic)
 
                     if new_observed < 5:
                         low_observed_freqs += 1
                     if new_expected < 5:
                         low_expected_freqs += 1
-        
+
+                else:
+                    for hour in range(24):
+                        if statistic == 'departures':
+                            new_observed = station_obj.prod_departures[day-1][hour]
+                            new_expected = station_obj.real_departures[day-1][hour] / float(day_counts[day-1])
+                       
+                        elif statistic == 'arrivals':
+                            new_observed = station_obj.prod_arrivals[day-1][hour]
+                            new_expected = station_obj.real_arrivals[day-1][hour] / float(day_counts[day-1])
+                       
+                        elif statistic == 'durations':
+                            num_prod_trips = station_obj.prod_durations[day-1][hour][0]
+                            prod_durations = station_obj.prod_durations[day-1][hour][1]
+                            if num_prod_trips == 0:
+                                num_prod_trips = 1
+                            avg_prod_duration = prod_durations / float(num_prod_trips)
+
+                            num_real_trips = station_obj.real_durations[day-1][hour][0]
+                            real_durations = station_obj.real_durations[day-1][hour][1]
+                            if num_real_trips == 0:
+                                num_real_trips = 1
+                            avg_real_duration = real_durations / float(num_real_trips)
+
+                            new_observed = avg_prod_duration
+                            new_expected = avg_real_duration
+                       
+                        else:
+                            print 'ERROR: Unknown statistic used in chi-square test.'
+                            return
+                       
+                        if new_expected < 1:
+                            zero_count += 1
+                            new_expected = 1
+                        
+                        observed.append(new_observed)
+                        expected.append(new_expected)
+
+                        station_obs.append(new_observed)
+                        station_exp.append(new_expected)
+                        
+                        if len(str(hour)) == 1:
+                            print "%d   | %d   | %d    | %f        | %d        | %s" % (station_id,day,hour,new_expected,new_observed,statistic)
+                        else:
+                            print "%d   | %d   | %d   | %f        | %d        | %s" % (station_id,day,hour,new_expected,new_observed,statistic)
+
+                        if new_observed < 5:
+                            low_observed_freqs += 1
+                        if new_expected < 5:
+                            low_expected_freqs += 1
+            
+            if self.granularity == 'hours':
+                station_chi_sq = chisquare(numpy.asarray(station_obs),numpy.asarray(station_exp))
+                print "--------------------------------------------------------"
+                print 'Chi-Square = %f   p-value = %f' % (station_chi_sq[0],station_chi_sq[1])
+
         print 'observed_freqs < 5:', low_observed_freqs
         print 'expected_freqs < 5:', low_expected_freqs
         print 'expected_freqs = 0:', zero_count
@@ -207,7 +291,7 @@ class Evaluator:
             simple_date = datetime.datetime(date.year,date.month,date.day)
             if simple_date not in dates:
                 dates.append(simple_date)
-
+        print 'number of dates:', len(dates)
         for date in dates:
             day_counts[date.isoweekday()-1] += 1
 
@@ -215,30 +299,42 @@ class Evaluator:
         return day_counts
  
 class SingleStation:
-    def __init__(self,id):
+    def __init__(self,id,granularity='hours'):
         self.id = id
         
-        self.real_departures = [[0 for x in range(24)] for x in range(7)] # Replace 0 w/ [0 for x in range(24)]
-        self.real_arrivals = [[0 for x in range(24)] for x in range(7)]   # for hour-level granularity
-        self.real_durations = [[0,0] for x in range(7)]
-        
-        self.prod_departures = [[0 for x in range(24)] for x in range(7)]
-        self.prod_arrivals = [[0 for x in range(24)] for x in range(7)]
-        self.prod_durations = [[0,0] for x in range(7)]
+        if granularity == 'days':
+            self.real_departures = [0 for x in range(7)]
+            self.real_arrivals = [0 for x in range(7)]
+            self.real_durations = [[0,0] for x in range(7)]
+            
+            self.prod_departures = [0 for x in range(7)]
+            self.prod_arrivals = [0 for x in range(7)]
+            self.prod_durations = [[0,0] for x in range(7)]
+        elif granularity == 'hours':
+            self.real_departures = [[0 for x in range(24)] for x in range(7)]
+            self.real_arrivals = [[0 for x in range(24)] for x in range(7)]
+            self.real_durations = [[[0,0] for x in range(24)] for x in range(7)]
+            
+            self.prod_departures = [[0 for x in range(24)] for x in range(7)]
+            self.prod_arrivals = [[0 for x in range(24)] for x in range(7)]
+            self.prod_durations = [[[0,0] for x in range(24)] for x in range(7)]
 
 def print_usage():
     print '\nUSAGE'
-    print '--> python evaluator.py <start_date> <end_date> <prod_trips> <prod_on_start> <prod_on_end>'
+    print '--> python evaluator.py <granularity> <start_date> <end_date> <prod_trips> <prod_on_start> <prod_on_end>'
     print "--> Valid statistics are 'departures', 'arrivals', and 'durations'."
     print "--> Format dates as '%Y-%m-%d'.\n"
             
 def main():
     statistics = ['departures','arrivals','durations']
+    granularities = ['days','hours']
     session = Connector().getDBSession()
     
     if len(sys.argv) == 1:
         print 'Using default values.'
         
+        granularity = 'days'
+
         start_date = datetime.datetime.strptime("2012-6-1 00 00", '%Y-%m-%d %H %M')
         end_date = datetime.datetime.strptime("2012-6-1 23 59", '%Y-%m-%d %H %M')
         
@@ -246,21 +342,23 @@ def main():
         simulator = Simulator(logic)
         results = simulator.run(start_date, end_date)
 
-        prod_on_start = datetime.datetime.utcnow() - datetime.timedelta(days=30)# None
-        prod_on_end = datetime.datetime.utcnow() #None
+        prod_on_start = None #datetime.datetime.utcnow() - datetime.timedelta(days=30)
+        prod_on_end =  None #datetime.datetime.utcnow()
+
         
     else:
         if len(sys.argv) < 5 or sys.argv[1] not in statistics:
             print_usage()
             return
         
-        start_date = datetime.datetime.strptime(sys.argv[1], '%Y-%m-%d')
-        end_date = datetime.datetime.strptime(sys.argv[2], '%Y-%m-%d')
-        prod_on_start = datetime.datetime.strptime(sys.argv[3], '%Y-%m-%d')
-        prod_on_end = datetime.datetime.strptime(sys.argv[4], '%Y-%m-%d')
+        granularity = sys.argv[1]
+        start_date = datetime.datetime.strptime(sys.argv[2], '%Y-%m-%d')
+        end_date = datetime.datetime.strptime(sys.argv[3], '%Y-%m-%d')
+        prod_on_start = datetime.datetime.strptime(sys.argv[4], '%Y-%m-%d')
+        prod_on_end = datetime.datetime.strptime(sys.argv[5], '%Y-%m-%d')
     
     print 'produced trips:', len(results["trips"])
-    evaluator = Evaluator(session,start_date,end_date,results["trips"],prod_on_start,prod_on_end)
+    evaluator = Evaluator(session,granularity,start_date,end_date,results["trips"],prod_on_start,prod_on_end)
     for day in evaluator.day_range:
         result = evaluator.run_chi_square('departures',day)
         chi_sq = result[0]
@@ -270,7 +368,6 @@ def main():
             
 if __name__ == '__main__':
     main()
-
 
     #def setup_paired_stations(self,trips,stations):
     #    paired_stations = {}
@@ -319,38 +416,6 @@ if __name__ == '__main__':
 #             self.prod_trips.append(trip)
 #         else:
 #             print "Error: station_pair trips must be of type 'Testing' or 'Produced'."
-
-
-    #if statistic == 'departures':
-                #    new_observed = station_obj.prod_departures[day-1]
-                #    new_expected = station_obj.real_departures[day-1]
-                #elif statistic == 'arrivals':
-                #    new_observed = station_obj.prod_arrivals[day-1]
-                #    new_expected = station_obj.real_arrivals[day-1]
-                #elif statistic == 'durations':
-                #    new_observed = station_obj.prod_durations[day-1][0]
-                #    new_expected = station_obj.real_durations[day-1][1]
-                #else:
-                #    print 'ERROR: Unknown statistic used in chi-square test.'
-                #    return
-
-                #if new_expected == 0:
-                #    zero_count += 1
-                #    new_expected = 1
-
-                #observed.append(new_observed)
-                #expected.append(new_expected)
-                
-                #print "[Station:%d, Day:%d] Observed %s: %d" \
-                #    % (station_id,day,statistic,new_observed)
-                
-                #print "[Station:%d, Day:%d] Expected %s: %d" \
-                #    % (station_id,day,statistic,new_expected)
-                    
-                #if new_observed < 5:
-                #    low_observed_freqs += 1
-                #if new_expected < 5:
-                #    low_expected_freqs += 1
 
 # Originally methods in SingleStation
         # def compare_departure_numbers(self,day):

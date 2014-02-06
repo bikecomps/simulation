@@ -16,9 +16,9 @@ class StatsHandler(RequestHandler):
 
     def post(self):
         start_date = datetime.datetime.strptime(self.get_argument("start"),
-                                                "%m-%d-%Y %H:%M")
+                                                "%Y-%m-%d %H:%M")
         end_date = datetime.datetime.strptime(self.get_argument("end"),
-                                              "%m-%d-%Y %H:%M")
+                                              "%Y-%m-%d %H:%M")
         
         sstats = SummaryStats(start_date, end_date)
         self.write(sstats.get_stats())        

@@ -18,7 +18,7 @@ function toHours(d)  {
 }
 
 function formatDate(dateStr) {
-    return (new Date(dateStr)).dateFormat("m-d-Y H:i");
+    return (new Date(dateStr)).dateFormat("Y-m-d H:i");
 }
 
 function groupBarPlot(htmlIdName, data) {
@@ -261,7 +261,7 @@ function displaySummaryStats(data, from, to) {
 function processStatsForm() {
     var from = $("#from_date").val().trim(),
         to = $("#to_date").val().trim(),
-        currentDate = (new Date()).dateFormat("m-d-Y H:i");
+        currentDate = (new Date()).dateFormat("Y-m-d H:i");
 
     if (!from.length) {
         from = currentDate;
