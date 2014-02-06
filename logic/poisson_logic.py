@@ -53,13 +53,13 @@ class PoissonLogic(SimulationLogic):
             elif self.station_counts[s_id] == 0 and s_id not in self.empty_stations_set:
                 self.empty_stations_set.add(s_id)
         if len(not_full) > 0:
-            print "\tNo longer full:\n" + "\t\t" + str(not_full)
+            print "\tNo longer full:\n" + "\t\t" + str(list(not_full))
         if len(not_empty) > 0:
-                print "\tNo longer empty:\n" + "\t\t" + str(not_empty)
+                print "\tNo longer empty:\n" + "\t\t" + str(list(not_empty))
         if len(self.full_stations_set) > 0:
-                print "\tNow full:\n" + "\t\t" + str(self.full_stations_set)
+                print "\tNow full:\n" + "\t\t" + str(list(self.full_stations_set))
         if len(self.empty_stations_set) > 0:
-            print "\tNow empty:\n" + "\t\t" + str(self.empty_stations_set)
+            print "\tNow empty:\n" + "\t\t" + str(list(self.empty_stations_set))
         if self.rebalancing:
             self.rebalance_stations()
         # print "\tPost rebalance. Moving bikes:", self.moving_bikes

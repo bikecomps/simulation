@@ -101,17 +101,26 @@ class RangeEvaluator:
 
         if self.verbose:
             print "\nManhattan Distance Calculations ---->"
-            print "\n\n\n%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
-
+            print "\n\n\n%15s | %15s | %15s | %15s | %15s | %15s" %("station id",
+                                                                    "produced dep", 
+                                                                    "real dep",
+                                                                    "produced arr",
+                                                                    "real arr",
+                                                                    "difference")
+            
         total_departures = 0
         total_arrivals = 0
+
         for k in self.produced:
             diff = abs(self.produced[k][0] - self.real[k][0]) + \
                    abs(self.produced[k][1] - self.real[k][1])
             if self.verbose:
-                print "%15s | %15s | %15s | %15s" \
-                %(k, self.produced[k], self.real[k], diff)
-
+                print "%15s | %15s | %15s | %15s | %15s | %15s" %(k, self.produced[k][0],
+                                                                  self.real[k][0],
+                                                                  self.produced[k][1],
+                                                                  self.real[k][1],
+                                                                  diff)
+                
             total_diff += diff
             total_real += max(sum(self.real[k]), sum(self.produced[k]))
 
@@ -123,15 +132,23 @@ class RangeEvaluator:
         
         if self.verbose:
             print "\nEuclidean Distance Calculations ---->"
-            print "\n\n\n%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
+            print "\n\n\n%15s | %15s | %15s | %15s | %15s | %15s" %("station id",
+                                                                    "produced dep", 
+                                                                    "real dep",
+                                                                    "produced arr",
+                                                                    "real arr",
+                                                                    "difference")
         
         for k in self.produced:
             diff = (self.produced[k][0] - self.real[k][0])**2 \
                    + (self.produced[k][1] - self.real[k][1])**2
 
             if self.verbose:
-                print "%15s | %15s | %15s | %15s" \
-                %(k, self.produced[k], self.real[k], diff)
+                print "%15s | %15s | %15s | %15s | %15s | %15s" %(k, self.produced[k][0],
+                                                                  self.real[k][0],
+                                                                  self.produced[k][1],
+                                                                  self.real[k][1],
+                                                                  diff)
             
             total_diff += diff
             total_real += max(self.real[k][0]**2 + self.real[k][1]**2,
@@ -155,6 +172,9 @@ def main():
         for i in range(len(all_dates)-1):
             date_ranges.append((all_dates[i], all_dates[i+1]))
 
+        man_accuracies = []
+        eucl_accuracies = []
+
         outfile = open("results.txt", "w")
 
         for (start, end) in date_ranges:
@@ -168,8 +188,17 @@ def main():
             outfile.write("To: " + end_date_string+"\n")
             outfile.write("Accuracy based on Manhattan distance: %.2f %%\n" % (man))
             outfile.write("Accuracy based on Euclidean distance: %.2f %%\n" % (eucl))
-            
-        outfile.close()
+            man_accuracies.append(man)
+            eucl_accuracies.append(eucl)
+
+        man_accuracies = np.array(man_accuracies)
+        eucl_accuracies = np.array(eucl_accuracies)
+
+        outfile.write("\n\nMean of Manhattan Accuracies: %.2f %%\n" % (np.mean(man_accuracies)))
+        outfile.write("Standard Error of Manhattan Accuracies: %.2f %%\n" % (np.std(man_accuracies)))
+        outfile.write("\n\nMean of Euclidean Accuracies: %.2f %%\n" % (np.mean(eucl_accuracies)))
+        outfile.write("Standard Error of Euclidean Accuracies: %.2f %%\n" % (np.std(eucl_accuracies)))
+
         sys.exit()
         
 
@@ -190,8 +219,8 @@ def main():
     re.verbose = True
     man = re.eval_man_dist()
     eucl = re.eval_eucl_dist()
-    print "accuracy based on manhattan distance: ", man, "%"
-    print "accuracy based on euclidean distance: ", eucl, "%"
+    print "Accuracy based on manhattan distance: ", man, "%"
+    print "Accuracy based on euclidean distance: ", eucl, "%"
 
 if __name__ == "__main__":
     main()
