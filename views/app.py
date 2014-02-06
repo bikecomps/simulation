@@ -11,7 +11,9 @@ from analytics import SummaryStats
 
 class UnifiedHandler(RequestHandler):
     def get(self):
-        self.render("unified.html",title="SIMBA | Simulation of Bike Availability")
+        
+        intersections = PlotMap(None, None, None).intersections
+        self.render("unified.html",title="SIMBA | Simulation of Bike Availability",locations=intersections)
     
     def post(self):
         start_date = datetime.datetime.strptime(self.get_argument("start"),
@@ -70,5 +72,5 @@ if __name__ == "__main__":
         (r"/stats", StatsHandler),
 		(r"/unified", UnifiedHandler)
     ], **settings)
-    application.listen(3000)
+    application.listen(1337)
     tornado.ioloop.IOLoop.instance().start()
