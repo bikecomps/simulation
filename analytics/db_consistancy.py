@@ -1,6 +1,7 @@
 from utils import *
 from models import *
 import numpy
+import scipy.stats as stats
 
 '''
 So basically, the API sucks. Returning inconsistant counts
@@ -41,7 +42,8 @@ def test_capacities(session):
 
 def main():
     s = Connector().getDBSession()
-    test_capacities(s)
+    #test_capacities(s)
+    test_trip_time_distribution(s, normal_test, s_time="2013-01-01")
 
 
 if __name__ == '__main__':

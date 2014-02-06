@@ -23,6 +23,7 @@ function initialize() {
 	map = new google.maps.Map(document.getElementById('map-canvas'),
 			                  mapOptions);
     
+<<<<<<< HEAD
     // Draw a logo wherever there is a bike station
   	var stationLogo = '/static/img/cbLogo-16.png';
     //console.log("length="+Object.keys(locations).length);
@@ -32,6 +33,12 @@ function initialize() {
 		content: "Hakuna Matata! You clicked a station! G'day!"
 	});	
 
+=======
+    // Draw a logo wherever there is a bike station	
+	var stationLogo = '/static/img/cbLogo-16.png';
+    //:console.log("length="+Object.keys(locations).length);
+    
+>>>>>>> c1ed0f0c98f397ccc6ce046ebbde421349539fa8
     for (station=0; station < Object.keys(locations).length; station++) {
         // console.log(station + ": " + lat[station] + ", " + lng[station]);
         var stationLatLng = new google.maps.LatLng(locations[station][0], locations[station][1]);
@@ -40,9 +47,22 @@ function initialize() {
             position: stationLatLng,
             map: map,
             icon: stationLogo,
+<<<<<<< HEAD
 			title: 'Why can you read this? You should not.'
+=======
+	    title: 'This is a station, as you can see.'
+>>>>>>> c1ed0f0c98f397ccc6ce046ebbde421349539fa8
         });
+	var infoWindow = new google.maps.InfoWindow({
+		content: "Hakuna Matata?"
+	});
+	bindInfoWindow(marker, map, infoWindow);	
+		//var infowindow = new google.maps.InfoWindow({
+			//position: stationLatLng,
+			//content: marker.title
+		//});
 		
+<<<<<<< HEAD
 		//var infowindow = new google.maps.InfoWindow({
 		//	position: stationLatLng,
 		//	content: marker.title
@@ -52,7 +72,20 @@ function initialize() {
 			infoWindow.setContent(this.html);
 			infoWindow.open(map, this);
 		});	
+=======
+	//google.maps.event.addListener(marker, 'click', function() {
+	//	infoWindow.setContent(this.html);
+	//	infowindow.open(map, this);
+	//});	
+>>>>>>> c1ed0f0c98f397ccc6ce046ebbde421349539fa8
     }
+}
+
+function bindInfoWindow(marker, map, infoWindow) {
+	google.maps.event.addListener(marker, 'click', function() {
+		infoWindow.setContent(marker.title);
+		infoWindow.open(map, marker);	
+	});
 }
 
 function addLine(fromStation, toStation, color) {

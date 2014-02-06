@@ -77,7 +77,9 @@ class PoissonLogic(SimulationLogic):
 
     def generate_new_trips(self, start_time):
         # Note that Monday is day 0 and Sunday is day 6. Is this the same for data_model?
+        station_count = 0
         for start_station_id in self.station_counts:
+            station_count += 1
             for end_station_id in self.station_counts:
                 lam = self.get_lambda(start_time.year, start_time.month,
                                       start_time.weekday(), start_time.hour,
@@ -144,14 +146,14 @@ class PoissonLogic(SimulationLogic):
 
     def load_lambdas(self, start_time, end_time):
         '''
-        Caches lambdas into dictionary of year -> is_week_day -> hour -> (start_id, end_id) -> lambda
+        Caches lambdas into dictionary of day -> hour -> (start_id, end_id) -> lambda
+        Note: DB only has values > 0.
         '''
-
         # kind of gross but makes for easy housekeeping
         distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(float)))))
+
         num_added = 0
         # Inclusive
-        print start_time, end_time
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
             

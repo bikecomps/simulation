@@ -30,7 +30,7 @@ test_orm=# select * from stations;
 '''
 
 import datetime
-from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, Boolean, ForeignKey, Sequence, Index
+from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, ForeignKey, Sequence, Index, Boolean, Sequence
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
 
@@ -259,23 +259,22 @@ class ExpLambda(Base):
     '''
     __tablename__ = 'exp_lambda_distrs'
     id = Column(Integer, Sequence('exp_lambda_id_seq'), primary_key=True)
-    station_id = Column(Integer, ForeignKey('stations.id'))
+    station_id = Column(Integer, ForeignKey('stations.id'), nullable=False)
     station = relationship('Station', foreign_keys=[station_id],
                                  backref=backref('exp_lambdas'))
+    is_weekday = Column(Boolean, nullable=False)
+    hour = Column(Integer, nullable=False) # range 0-23
+    rate = Column(Float, nullable=False)
 
-    hour = Column(Integer) # range 0-23
-    day_of_week = Column(Integer) # range 0-6
-    rate = Column(Float)
-
-    def __init__(self, station_id, hour, day, val):
+    def __init__(self, station_id, is_weekday, hour, rate):
         self.station_id = station_id
+        self.is_weekday = is_weekday
         self.hour = hour
-        self.day_of_week = day
-        self.value = val
+        self.rate = rate
     
     def __repr__(self):
-        return 'ExpLambda: station id: %s, hour: %s, day of week: %s, value: %.2f'\
-                 % (self.station_id, self.hour, self.day_of_week, self.value)
+        return 'ExpLambda: station id: %s, weekday %r, hour: %s, rate: %.2f'\
+                 % (self.station_id, self.is_weekday, self.hour, self.rate)
 
 class DestDistr(Base):
     '''
@@ -295,21 +294,22 @@ class DestDistr(Base):
     day_of_week = Column(Integer) # range 0-6
     prob = Column(Float)
 
-    def __init__(self, start_station_id, end_station_id, hour, day, probability):
+    def __init__(self, start_station_id, end_station_id, day, hour, probability):
         self.start_station_id = start_station_id
         self.end_station_id = end_station_id
-        self.hour = hour
         self.day_of_week = day
+        self.hour = hour
         self.prob = probability
     
     def __repr__(self):
-        return 'Destination distribution: start station id: %s, end station id: %s, hour: %s, day of week: %s, prob: %.2f'\
+        return 'Destination distribution: start station id: %s, end station id: %s, hour: %s, day of week: %s, prob: %.4f'\
                  % (self.start_station_id, self.end_station_id, self.hour, self.day_of_week, self.prob)
 
 class Gamma(Base):
     '''
     Table stores gamma distributions for each pairwise station.
     Important: Based on seconds!
+    More Important: No gammas if there are no training data between the stations!
     '''
     __tablename__ = 'gamma_distrs'
     id = Column(Integer, Sequence('gamma_id_seq'), primary_key=True)
@@ -526,6 +526,13 @@ def main():
     # Not working?
     lambda_non_zero_index = Index('lambda_non_zero_index', Lambda.value.isnot(0)) 
 
+
+    dd_day_index = Index('dest_distr_day_index', DestDistr.day_of_week)
+    dd_hour_index = Index('dest_distr_hour_index', DestDistr.hour)
+    #dd_day_index.create(engine)
+    print "Done creating first index"
+    #dd_hour_index.create(engine)
+
     #TODO CREATE INDEX ON NON NULLS?
     # Created indexes, doesn't need to be created again
     #lambda_index.create(engine)
@@ -533,6 +540,15 @@ def main():
     #lambda_hour_index.create(engine)
     #lambda_non_zero_index.create(engine)
 
+    # For increasing speed of training
+    trip_date_index = Index('trip_date_index', Trip.start_date)
+    trip_start_station_index = Index('trip_start_station_index', Trip.start_station_id)
+    trip_end_station_index = Index('trip_end_station_index', Trip.end_station_id)
+
+
+    #trip_date_index.create(engine)
+    #trip_start_station_index.create(engine)
+    #trip_end_station_index.create(engine)
 
 if __name__ == '__main__':
     main()
