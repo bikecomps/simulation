@@ -12,8 +12,8 @@ from analytics import SummaryStats
 class UnifiedHandler(RequestHandler):
     def get(self):
         
-        intersections = PlotMap(None, None, None).intersections
-        self.render("unified.html",title="SIMBA | Simulation of Bike Availability",locations=intersections)
+        stations = PlotMap(None, None, None).stations
+        self.render("unified.html",title="SIMBA | Simulation of Bike Availability",locations=stations)
     
     def post(self):
         start_date = datetime.datetime.strptime(self.get_argument("start"),
