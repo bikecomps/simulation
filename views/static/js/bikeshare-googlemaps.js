@@ -46,23 +46,15 @@ function initialize() {
             position: stationLatLng,
             map: map,
             icon: stationLogo,
-			title: 'This is a station, as you can see.'
+	    id: locations[station][2],
+	    title: locations[station][3],
+            capacity: locations[station][4]
         });
 	var infoWindow = new google.maps.InfoWindow({
 		content: "Hakuna Matata?"
 	});
 	openWindow = infoWindow;
-	bindInfoWindow(marker, map, infoWindow);	
-		//var infowindow = new google.maps.InfoWindow({
-			//position: stationLatLng,
-			//content: marker.title
-		//});
-		
-		//var infowindow = new google.maps.InfoWindow({
-		//	position: stationLatLng,
-		//	content: marker.title
-		//});
-		
+	bindInfoWindow(marker, map, infoWindow);
     }
 }
 

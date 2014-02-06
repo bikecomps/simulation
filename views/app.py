@@ -48,8 +48,8 @@ class IndexHandler(RequestHandler):
                                             '%H:%M')
         end_time = datetime.datetime.strptime('20:00',
                                           '%H:%M')
-        intersections = PlotMap(day, start_time, end_time).intersections
-        self.render("home.html", title="BikeShare Comps", locations=intersections)
+        stations = PlotMap(day, start_time, end_time).stations
+        self.render("home.html", title="BikeShare Comps", locations=stations)
 
 class AboutHandler(RequestHandler):
     def get(self):
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         (r"/base", BaseHandler),
         (r"/about", AboutHandler),
         (r"/stats", StatsHandler),
-		(r"/unified", UnifiedHandler)
+	(r"/unified", UnifiedHandler)
     ], **settings)
-    application.listen(1337)
+    application.listen(3000)
     tornado.ioloop.IOLoop.instance().start()
