@@ -18,7 +18,7 @@ function initialize() {
 		center: new google.maps.LatLng(38.904, -77.032),
 		mapTypeId: google.maps.MapTypeId.ROADMAP,
 	};
-	map = new google.maps.Map(document.getElementById('map-canvas'),
+	map = new google.maps.Map(document.getElementById('map_canvas'),
 			                  mapOptions);
     
     // Draw a logo wherever there is a bike station
