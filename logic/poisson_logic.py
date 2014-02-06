@@ -154,6 +154,9 @@ class PoissonLogic(SimulationLogic):
         # kind of gross but makes for easy housekeeping
         distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(float)))))
 
+        # keep track of when we've hit the database for a particular request
+        requested_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(bool))))
+
         num_added = 0
 
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
@@ -166,17 +169,18 @@ class PoissonLogic(SimulationLogic):
             month = day.month
             is_week_day = dow < 5
             
-            if len(distr_dict[year][month][is_week_day]) == 0:
+            if not requested_dict[month][year][is_week_day][(start_hour, end_hour)]:
                 lambda_poisson = self.session \
                                      .query(data_model.Lambda) \
                                      .filter(data_model.Lambda.month == month) \
                                      .filter(data_model.Lambda.year == year) \
                                      .filter(data_model.Lambda.is_week_day == is_week_day) \
                                      .filter(data_model.Lambda.hour.between(start_hour, end_hour))
+                requested_dict[month][year][is_week_day][(start_hour, end_hour)] = True
                 
-                for lam in lambda_poisson:
-                    distr_dict[lam.year][lam.month][lam.is_week_day][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
-                    num_added += 1
+            for lam in lambda_poisson:
+                distr_dict[lam.year][lam.month][lam.is_week_day][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
+                num_added += 1
 
         print "Loaded %s lambdas" % num_added
         return distr_dict
