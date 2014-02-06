@@ -14,14 +14,24 @@ function initialize() {
 	var mapOptions = {
 		zoom: 12,
 		center: new google.maps.LatLng(38.904, -77.032),
-		mapTypeId: google.maps.MapTypeId.ROADMAP
+		mapTypeId: google.maps.MapTypeId.ROADMAP,
+		panControl: false,
+		zoomControlOptions: {
+			style: google.maps.ZoomControlStyle.DEFAULT
+		}
 	};
 	map = new google.maps.Map(document.getElementById('map-canvas'),
 			                  mapOptions);
     
     // Draw a logo wherever there is a bike station
   	var stationLogo = '/static/img/cbLogo-16.png';
-    console.log("length="+Object.keys(locations).length);
+    //console.log("length="+Object.keys(locations).length);
+
+	var infoWindow = null;
+	infoWindow = new google.maps.InfoWindow({
+		content: "Hakuna Matata! You clicked a station! G'day!"
+	});	
+
     for (station=0; station < Object.keys(locations).length; station++) {
         // console.log(station + ": " + lat[station] + ", " + lng[station]);
         var stationLatLng = new google.maps.LatLng(locations[station][0], locations[station][1]);
@@ -30,16 +40,17 @@ function initialize() {
             position: stationLatLng,
             map: map,
             icon: stationLogo,
-			title: 'This is a station, as you can see.'
+			title: 'Why can you read this? You should not.'
         });
 		
-		var infowindow = new google.maps.InfoWindow({
-			position: stationLatLng,
-			content: marker.title
-		});
+		//var infowindow = new google.maps.InfoWindow({
+		//	position: stationLatLng,
+		//	content: marker.title
+		//});
 		
 		google.maps.event.addListener(marker, 'click', function() {
-			infowindow.open(map, marker);
+			infoWindow.setContent(this.html);
+			infoWindow.open(map, this);
 		});	
     }
 }

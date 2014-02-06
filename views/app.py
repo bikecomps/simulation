@@ -9,6 +9,19 @@ from analytics import PlotMap
 from tornado.web import RequestHandler, Application
 from analytics import SummaryStats
 
+class UnifiedHandler(RequestHandler):
+    def get(self):
+        self.render("unified.html",title="SIMBA | Simulation of Bike Availability")
+    
+    def post(self):
+        start_date = datetime.datetime.strptime(self.get_argument("start"),
+                                                "%Y-%m-%d %H:%M")
+        end_date = datetime.datetime.strptime(self.get_argument("end"),
+                                              "%Y-%m-%d %H:%M")
+ 
+        sstats = SummaryStats(start_date, end_date)
+        self.write(sstats.get_stats())        
+         
 
 class StatsHandler(RequestHandler):
     def get(self):
@@ -54,7 +67,8 @@ if __name__ == "__main__":
         (r"/", IndexHandler),
         (r"/base", BaseHandler),
         (r"/about", AboutHandler),
-        (r"/stats", StatsHandler)
+        (r"/stats", StatsHandler),
+		(r"/unified", UnifiedHandler)
     ], **settings)
     application.listen(3000)
     tornado.ioloop.IOLoop.instance().start()

@@ -41,57 +41,39 @@ class PoissonLogic(SimulationLogic):
         '''Moves the simulation forward one timestep from given time'''
         not_full = []
         not_empty = []
-        full = []
-        empty = [] 
         for s_id in self.station_counts:
-            if s_id in self.empty_full_stations:
-	        if self.station_counts[s_id] > 0 and self.empty_full_stations[s_id] == "empty":
-                    not_empty.append(s_id)
-                    del self.empty_full_stations[s_id]      
-                elif self.station_counts[s_id] != self.stations[s_id].capacity:
-		    not_full.append(s_id)
-                    del self.empty_full_stations[s_id]
-            else:
-                if self.station_counts[s_id] == self.stations[s_id].capacity:
-                    full.append(s_id)
-                    self.empty_full_stations[s_id] = "full"
-                if self.station_counts[s_id] == 0:
-                    empty.append(s_id)
-                    self.empty_full_stations[s_id] = "empty"
+            if self.station_counts[s_id] > 0 and s_id in self.empty_stations_set:
+                not_empty.append(s_id)
+                self.empty_stations_set.remove(s_id)      
+            elif self.station_counts[s_id] != self.stations[s_id].capacity and s_id in self.full_stations_set:
+                not_full.append(s_id)
+                self.full_stations_set.remove(s_id)
+            elif self.station_counts[s_id] == self.stations[s_id].capacity and s_id not in self.full_stations_set:
+                self.full_stations_set.add(s_id)
+            elif self.station_counts[s_id] == 0 and s_id not in self.empty_stations_set:
+                self.empty_stations_set.add(s_id)
         if len(not_full) > 0:
             print "\tNo longer full:\n" + "\t\t" + str(not_full)
         if len(not_empty) > 0:
                 print "\tNo longer empty:\n" + "\t\t" + str(not_empty)
-        if len(full) > 0:
-                print "\tNow full:\n" + "\t\t" + str(full)       
-        if len(empty) > 0:
-            print "\tNow empty:\n" + "\t\t" + str(empty)
-        # self.rebalance_stations(full, empty)
+        if len(self.full_stations_set) > 0:
+                print "\tNow full:\n" + "\t\t" + str(self.full_stations_set)
+        if len(self.empty_stations_set) > 0:
+            print "\tNow empty:\n" + "\t\t" + str(self.empty_stations_set)
+        if self.rebalancing:
+            self.rebalance_stations()
+        # print "\tPost rebalance. Moving bikes:", self.moving_bikes
+        #if len(self.full_stations_set) > 0:
+        #        print "\t\tNow full:\n" + "\t\t" + str(self.full_stations_set)
+        #if len(self.empty_stations_set) > 0:
+        #    print "\t\tNow empty:\n" + "\t\t" + str(self.empty_stations_set)
         self.generate_new_trips(self.time)
+        if self.rebalancing:
+            self.rebalance_stations()
         self.resolve_trips()
 
         # Increment after we run for the current timestep?
         self.time += timestep
-
-    def rebalance_stations(self, full, empty):
-		
-        for station_id in full:
-            to_remove = self.stations[station_id].capacity/2
-            self.station_counts[station_id] -= to_remove
-            self.moving_bikes += to_remove
-
-        while self.moving_bikes < len(empty):
-            random_station = random.choice(self.station_counts.keys())
-            if self.station_counts[random_station] > 1:
-                self.station_counts[random_station] -= 1
-                self.moving_bikes += 1
-		
-        if len(empty) > 0:
-            bikes_per_station = self.moving_bikes / len(empty)
-            for station_id in empty:
-                self.station_counts[station_id] = bikes_per_station
-                self.moving_bikes -= bikes_per_station
-
 
     def generate_new_trips(self, start_time):
         # Note that Monday is day 0 and Sunday is day 6. Is this the same for data_model?
