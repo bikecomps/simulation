@@ -12,7 +12,8 @@ from collections import defaultdict
 import math
 from scipy.stats import gamma, kstest
 from datetime import datetime, timedelta
-from sqlalchemy import update
+from sqlalchemy import update, distinct
+from sqlalchemy.sql import extract, func
 from sqlalchemy.ext.declarative import declarative_base
 import numpy
 from pybrain.datasets import SupervisedDataSet
@@ -194,43 +195,80 @@ def train_exp_lambdas(session, start_d, end_d):
     session.flush()
 
 def train_new_exp_lambdas(conn, start_d, end_d):
-    # Thanks to Daniel for the initial query code/most of this function
-    find_trips_query = """
-        SELECT s_id, extract(dow from dt) as dow, hour, avg(cnt) as avg_cnt
-        FROM
-            (SELECT start_station_id as s_id,
-                    start_date::date as dt, extract(hour from start_date) as hour, 
-                    count(*) as cnt
-                    FROM  (SELECT * 
-                           FROM trips 
-                           WHERE start_date  BETWEEN '{0}' and '{1}'
-                                 AND trip_type_id = 1) as s1
-                    GROUP BY start_station_id, dt, hour) as s2
-       GROUP BY s_id, dow, hour;
-       """.format(start_d, end_d)
-
     engine = conn.getDBEngine()
     session = conn.getDBSession()
 
     session.query(ExpLambda).delete()
-    results = engine.execute(find_trips_query)
+    '''
+    raw_query = """
+            SELECT EXTRACT(DOW FROM d) as dow, EXTRACT(HOUR FROM d) as hour, AVG(c) as avg
+            FROM (
+                SELECT date_trunc('hour', start_date) as d, COUNT(*) as c
+                FROM trips 
+                    WHERE start_date BETWEEN '{sd}' AND '{ed}' 
+                          AND trip_type_id=1
+                          AND start_station_id={sid}
+                GROUP BY date_trunc('hour', start_date)) as sub
+            GROUP BY EXTRACT(DOW FROM d), EXTRACT(HOUR FROM d);
+            """
+            '''
 
-    count = 0
-    for row in results:
-        s_id = row['s_id']
-        dow = row['dow']
-        hour = row['hour']
-        rate = 1.0/row['avg_cnt']
-        weekday = True if dow < 5 else False
+    raw_query = """
+                SELECT EXTRACT(DOW FROM start_date), EXTRACT(HOUR FROM start_date), COUNT(*) 
+                FROM trips 
+                    WHERE start_date BETWEEN '{sd}' AND '{ed}' 
+                          AND trip_type_id=1
+                          AND start_station_id={sid}
+                GROUP BY EXTRACT(DOW FROM start_date), EXTRACT(HOUR FROM start_date);
+            """
+    # Calculate the number of weekdays in a range, and weekend days
+    # thanks http://stackoverflow.com/questions/3615375/python-count-days-ignoring-weekends
+    start_date = datetime.strptime(start_d, '%Y-%m-%d')
+    end_date = datetime.strptime(end_d, '%Y-%m-%d')
 
-        session.add(ExpLambda(s_id, weekday, hour, rate))
-        count += 1
-        if count % 1000 == 0:
-            print "Done with %i" % count
-            session.commit()
-            session.flush()
+    day_generator = (start_date + timedelta(x + 1) for x in xrange((end_date - start_date).days + 1))
+    num_weekdays = sum(day.weekday() < 5 for day in day_generator)
+    num_weekend_days = (end_date - start_date).days - num_weekdays
+
+    station_count = 0
+    for s_id in session.query(Station.id).all():
+        # 24 hours then [is a weekday, not a weekday]
+        counts = [[0,0] for x in range(24)]
+        
+        query = raw_query.format(sd=start_d, ed=end_d, sid=s_id[0])
+        for dow, hour, count in engine.execute(query):
+            # Postgres does 0-6, sunday = 0
+            if 0 < dow < 6:
+                avg = float(count) / num_weekdays
+            else:
+                avg = float(count) / num_weekend_days
+            counts[int(hour)][0 < dow < 6] = avg
+
+        '''for dow, hour, count in session.query(extract('dow', Trip.start_date), extract('hour', Trip.start_date), func.count(Trip.id), func.count(distinct(func.date_trunc('day',Trip.start_date))))\
+                .filter(Trip.start_date.between(start_d, end_d))\
+                .filter(Trip.start_station_id == s_id)\
+                .join(Trip.trip_type, aliased=True)\
+                .filter(TripType.trip_type == 'Training')\
+                .group_by(extract('dow', Trip.start_date), extract('hour', Trip.start_date)):
+                print dow, hour, count'''
+             
+        for i in range(24):
+            # If hour is 0 then we've never observed a trip - don't add to db
+            for j in range(2):
+                if counts[i][j] > 0:
+                    # Convert from rate in hours to rate in seconds
+                    rate = 3600.0 / counts[i][j]
+                    session.add(ExpLambda(s_id, bool(j), i, rate))
+       
+        session.commit()
+        session.flush()
+        station_count += 1
+        if station_count % 10 == 0:
+            print "Done with %s stations" % station_count
+    # shouldn't be necessary but keep it there for now
     session.commit()
     session.flush()
+
 
 
 def train_poisson(conn, start_d, end_d):
@@ -390,8 +428,8 @@ def train_gaussian(connector, start_date, end_date):
 
 def main():
     c = Connector()
-    first_data = "2013-01-01"
-    end_data = "2013-06-30"
+    first_data = "2013-06-01"
+    end_data = "2014-01-01"
 
     s_test_date = "2011-09-12"
     e_test_date = "2011-09-19" 
@@ -401,7 +439,7 @@ def main():
     # get_pairwise_counts(c, "2013-1-1", "2013-1-2")
     #train_gammas(c.getDBSession(), "2010-09-15", "2013-06-30")
     #train_poisson_new(c, "2010-09-15 00:00", "2013-06-30 23:59")
-    train_exp_lambdas(c.getDBSession(), first_data, end_data)
+    train_new_exp_lambdas(c, first_data, end_data)
     #train_dest_distrs(c.getDBSession(), first_data, end_data)
 
 if __name__ == "__main__":

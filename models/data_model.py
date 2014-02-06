@@ -30,7 +30,7 @@ test_orm=# select * from stations;
 '''
 
 import datetime
-from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, ForeignKey, Sequence, Index
+from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, ForeignKey, Sequence, Index, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
 
@@ -244,21 +244,22 @@ class ExpLambda(Base):
     '''
     __tablename__ = 'exp_lambda_distrs'
     id = Column(Integer, Sequence('exp_lambda_id_seq'), primary_key=True)
-    station_id = Column(Integer, ForeignKey('stations.id'))
+    station_id = Column(Integer, ForeignKey('stations.id'), nullable=False)
     station = relationship('Station', foreign_keys=[station_id],
                                  backref=backref('exp_lambdas'))
+    is_weekday = Column(Boolean, nullable=False)
+    hour = Column(Integer, nullable=False) # range 0-23
+    rate = Column(Float, nullable=False)
 
-    hour = Column(Integer) # range 0-23
-    rate = Column(Float)
-
-    def __init__(self, station_id, hour, rate):
+    def __init__(self, station_id, is_weekday, hour, rate):
         self.station_id = station_id
+        self.is_weekday = is_weekday
         self.hour = hour
         self.rate = rate
     
     def __repr__(self):
-        return 'ExpLambda: station id: %s, hour: %s, rate: %.2f'\
-                 % (self.station_id, self.hour, self.rate)
+        return 'ExpLambda: station id: %s, weekday %r, hour: %s, rate: %.2f'\
+                 % (self.station_id, self.is_weekday, self.hour, self.rate)
 
 class DestDistr(Base):
     '''
@@ -528,9 +529,9 @@ def main():
     trip_end_station_index = Index('trip_end_station_index', Trip.end_station_id)
 
 
-    trip_date_index.create(engine)
-    trip_start_station_index.create(engine)
-    trip_end_station_index.create(engine)
+    #trip_date_index.create(engine)
+    #trip_start_station_index.create(engine)
+    #trip_end_station_index.create(engine)
 
 if __name__ == '__main__':
     main()

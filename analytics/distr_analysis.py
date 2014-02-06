@@ -48,7 +48,7 @@ def plot_dur_distributions(results, s_id, e_id):
 
 
     # Still a ton of outliers! Remove top 20 values?
-    trip_lengths = sorted(trip_lengths)[:-20]
+    trip_lengths = sorted(trip_lengths)#[:-20]
 
     print "Avg.",np.average(trip_lengths),"Variance",np.std(trip_lengths)**2
     n, bins, patches = plt.hist(trip_lengths, num_bins, 
@@ -136,7 +136,7 @@ def main():
 
     #sample_distrs(c, plot_dur_distributions, sam_size=300, samples=30,
     #              date_one="2013-01-01")
-    test_trip_time_distribution(c.getDBSession(), normal_test, limit=100)
+    #test_trip_time_distribution(c.getDBSession(), normal_test, limit=100)
 
 if __name__ == '__main__':
     main()

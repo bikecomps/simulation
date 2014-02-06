@@ -51,10 +51,12 @@ class ExponentialLogic(SimulationLogic):
         self.time += timestep
 
     def initialize_trips(self):
+        '''
         for s_id,els in self.exp_distrs.iteritems():
             print s_id
             for el in els:
                 print "\t",el
+        '''
         hour = self.start_time.hour
         day = self.start_time.day
         print "INIT",day,hour,self.start_time
@@ -64,12 +66,13 @@ class ExponentialLogic(SimulationLogic):
         print "NO MORE INIT TRIPS"
 
     def generate_trip(self, s_id, time):
-        #print "Generating a new trip from ",s_id
-        exp_l = self.exp_distrs[s_id][time.hour] #self.exp_distrs[s_id][13]#
+        # Check weekday or weekend
+        idx = 0 if  time.weekday() < 5 else 1
+        exp_l = self.exp_distrs[s_id][idx][time.hour] 
 
         # Never generated a trip, defer it until we have a feasible lambda
         # Test using if its greater than x hours too (possibly deal with bad latenight hours
-        if not exp_l or exp_l.rate > 3600 * 3:
+        if not exp_l:
             # Test it out to see how this works
             # Have it look again the next hour
             return Trip('-1', "Casual", 2, time + datetime.timedelta(seconds=3600), None, s_id, s_id)
@@ -137,15 +140,21 @@ class ExponentialLogic(SimulationLogic):
 
     def load_exp_lambdas(self, start_time, end_time):
         '''
-        Caches exp lambdas into dictionary of station_id -> [exp_lambda], 1 per day
+        Caches exp lambdas into dictionary of station_id -> [weekday, weekend] -> hours 
         '''
         # kind of gross but makes for easy housekeeping
-        distr_dict = {s:[0]*24 for s in self.stations.iterkeys()}
+        distr_dict = {s:[[None]*24, [None]*24] for s in self.stations.iterkeys()}
 
         distrs = self.session.query(data_model.ExpLambda)
         
         for d in distrs:
-                distr_dict[d.station_id][d.hour] = d
+            distr_dict[d.station_id][d.is_weekday][d.hour] = d
+
+        for s_id, x in distr_dict.iteritems():
+            print s_id
+            print [y.rate if y else 0 for y in x[0]]
+            print [y.rate if y else 0if y else 0  for y in x[1]]
+
         return distr_dict
 
     def load_dest_distrs(self, start_time, end_time):
