@@ -110,8 +110,12 @@ class PoissonLogic(SimulationLogic):
         probability = random.random()
         while probability == 0:
             probability = random.random()
+            
+        # when using all data (training + testing)
+        # num_trips = poisson.ppf(probability, lam.value)
 
-        num_trips = poisson.ppf(probability, lam.value)
+        # when using only training data
+        num_trips = poisson.ppf(probability, lam.value * (4./3))
 
         if numpy.isnan(num_trips):
             num_trips = -1

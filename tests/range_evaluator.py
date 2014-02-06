@@ -161,7 +161,7 @@ def main():
     run_all = False
     
     if run_all:
-        start_date = datetime.strptime("2010-09-15",
+        start_date = datetime.strptime("2011-01-01",
                                        '%Y-%m-%d')
         end_date = datetime.strptime("2013-06-30",
                                      '%Y-%m-%d')
@@ -175,7 +175,7 @@ def main():
         man_accuracies = []
         eucl_accuracies = []
 
-        outfile = open("results.txt", "w")
+        outfile = open("results2.txt", "w")
 
         for (start, end) in date_ranges:
             re = RangeEvaluator(start, end)
