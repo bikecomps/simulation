@@ -33,8 +33,8 @@ class IndexHandler(RequestHandler):
                                             '%H:%M')
         end_time = datetime.datetime.strptime('20:00',
                                           '%H:%M')
-        intersections = PlotMap(day, start_time, end_time).intersections
-        self.render("home.html", title="BikeShare Comps", locations=intersections)
+        stations = PlotMap(day, start_time, end_time).stations
+        self.render("home.html", title="BikeShare Comps", locations=stations)
 
 class AboutHandler(RequestHandler):
     def get(self):
