@@ -71,6 +71,7 @@ class PoissonLogic(SimulationLogic):
         self.time += timestep
 
     def generate_new_trips(self, start_time):
+
         # Note that Monday is day 0 and Sunday is day 6. Is this the same for data_model?
         for start_station_id in self.station_counts:
             for end_station_id in self.station_counts:
@@ -83,7 +84,9 @@ class PoissonLogic(SimulationLogic):
                     num_trips = self.get_num_trips(lam)
                     for i in range(num_trips):
                         # Starting time of the trip is randomly chosen within the Lambda's time range, which is hard-coded to be an hour.
-                        added_time = datetime.timedelta(0, random.randint(0, 59), 0, 0, random.randint(0, 59), 0, 0)
+                        added_time = datetime.timedelta(0, random.randint(0, 59),
+                                                        0, 0, random.randint(0, 59), 
+                                                        0, 0)
                         trip_start_time = start_time + added_time
                         trip_duration = self.get_trip_duration(gamma)
                         trip_end_time = trip_start_time + trip_duration
@@ -91,7 +94,6 @@ class PoissonLogic(SimulationLogic):
                                 trip_start_time, trip_end_time, start_station_id, end_station_id)
                         self.pending_departures.put((start_time, new_trip))
 
-                
 
     def get_num_trips(self, lam):
         """
@@ -141,33 +143,31 @@ class PoissonLogic(SimulationLogic):
         '''
         Caches lambdas into dictionary of year -> is_week_day -> hour -> (start_id, end_id) -> lambda
         '''
-
         # kind of gross but makes for easy housekeeping
         distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(float)))))
         num_added = 0
-        # Inclusive
-        print start_time, end_time
+
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
             
             start_hour = start_time.hour if start_time.weekday() == dow else 0
             end_hour = end_time.hour if end_time.weekday() == dow else 24
 
-            year = start_time.year
-            month = start_time.month
+            year = day.year
+            month = day.month
             is_week_day = dow < 5
-
-            # For now we're only loading in lambdas that have non-zero values. 
-            # We'll assume zero value if it's not in the dictionary
-            lambda_poisson = self.session.query(data_model.Lambda) \
-                .filter(data_model.Lambda.is_week_day == is_week_day) \
-                .filter(data_model.Lambda.year ==  year) \
-                .filter(data_model.Lambda.month == month) \
-                .filter(data_model.Lambda.hour.between(start_hour, end_hour))
-        
-            for lam in lambda_poisson:
-                distr_dict[year][month][lam.is_week_day][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
-                num_added += 1
+            
+            if len(distr_dict[year][month][is_week_day]) == 0:
+                lambda_poisson = self.session \
+                                     .query(data_model.Lambda) \
+                                     .filter(data_model.Lambda.month == month) \
+                                     .filter(data_model.Lambda.year == year) \
+                                     .filter(data_model.Lambda.is_week_day == is_week_day) \
+                                     .filter(data_model.Lambda.hour.between(start_hour, end_hour))
+                
+                for lam in lambda_poisson:
+                    distr_dict[lam.year][lam.month][lam.is_week_day][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
+                    num_added += 1
 
         print "Loaded %s lambdas" % num_added
         return distr_dict
@@ -221,5 +221,6 @@ def main():
     p = PoissonLogic(session)
     print p.get_trip_duration(31100, 31101)
     print durs
+
 if __name__ == '__main__':
     main()
