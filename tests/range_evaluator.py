@@ -5,7 +5,7 @@ distance between the vector of produced trips and the vector of
 real trips.
 """
 
-from logic import PoissonLogic, Simulator
+from logic import ExponentialLogic, PoissonLogic, Simulator
 from utils import Connector
 from models import Trip, Station
 
@@ -41,7 +41,8 @@ class RangeEvaluator:
         print "total real: ", total_real
 
     def get_produced_trips(self):
-        logic = PoissonLogic(self.session)
+        #logic = PoissonLogic(self.session)
+        logic = ExponentialLogic(self.session)
         simulator = Simulator(logic)
         results = simulator.run(self.start_date, self.end_date)
         
@@ -114,6 +115,30 @@ class RangeEvaluator:
 
             total_diff += diff
             total_real += max(sum(self.real[k]), sum(self.produced[k]))
+
+        return (1-(float(total_diff)/total_real))*100
+
+    def eval_man_indiv_dist(self, get_arrivals):
+        total_diff = 0
+        total_real = 0
+
+        if self.verbose:
+            if get_arrivals:
+                print "\nArrivals Manhattan Distance Calculations ---->"
+            else:
+                print "\nDepartures Manhattan Distance Calculations ---->"
+
+            print "\n\n\n%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
+
+        for k in self.produced:
+            diff = abs(self.produced[k][get_arrivals] - self.real[k][get_arrivals])
+
+            if self.verbose:
+                print "%15s | %15s | %15s | %15s" \
+                %(k, self.produced[k][get_arrivals], self.real[k][get_arrivals], diff)
+
+            total_diff += diff
+            total_real += max(self.real[k][get_arrivals], self.produced[k][get_arrivals])
 
         return (1-(float(total_diff)/total_real))*100
 
@@ -190,8 +215,13 @@ def main():
     re.verbose = True
     man = re.eval_man_dist()
     eucl = re.eval_eucl_dist()
+    man_arr = re.eval_man_indiv_dist(True)
+    man_dep = re.eval_man_indiv_dist(False)
+
     print "accuracy based on manhattan distance: ", man, "%"
     print "accuracy based on euclidean distance: ", eucl, "%"
+    print "accuracy of arrivals by m-distance: ",man_arr, "%"
+    print "accuracy of departures by m-distance: ",man_dep, "%"
 
 if __name__ == "__main__":
     main()

@@ -262,19 +262,25 @@ class ExpLambda(Base):
     station_id = Column(Integer, ForeignKey('stations.id'), nullable=False)
     station = relationship('Station', foreign_keys=[station_id],
                                  backref=backref('exp_lambdas'))
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
     is_weekday = Column(Boolean, nullable=False)
     hour = Column(Integer, nullable=False) # range 0-23
     rate = Column(Float, nullable=False)
 
-    def __init__(self, station_id, is_weekday, hour, rate):
+    def __init__(self, station_id, year, month, is_weekday, hour, rate):
         self.station_id = station_id
+        self.year = year
+        self.month = month
         self.is_weekday = is_weekday
         self.hour = hour
         self.rate = rate
     
     def __repr__(self):
-        return 'ExpLambda: station id: %s, weekday %r, hour: %s, rate: %.2f'\
-                 % (self.station_id, self.is_weekday, self.hour, self.rate)
+        return 'ExpLambda: station id: %s, year %r, month %r, weekday %r,\
+                    hour: %s, rate: %.2f'\
+                 % (self.station_id, self.year, self.month, 
+                    self.is_weekday, self.hour, self.rate)
 
 class DestDistr(Base):
     '''

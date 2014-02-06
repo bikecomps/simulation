@@ -21,7 +21,7 @@ from dateutil import rrule
 
 Base = declarative_base()
 
-def  get_num_days(start_date, end_date):
+def get_num_days(start_date, end_date):
     """
     Return the number of days between 'start_date' and 'end_date'.
     Parameterize by 'year' -> 'month' -> 'part_of_week'.
@@ -86,41 +86,11 @@ def train_dest_distrs(session, start_d, end_d):
                 # Total values:
                 total_num_trips = float(sum(station_map.itervalues()))
                 for e_id in station_ids:
-                    # We're booting this. Not putting in DB (too much space)
-                    '''
-                    if total_num_trips == 0:
-                        # with 31101 -> hour 11,12 day 4
-                        # give each station equal probability of being chosen
-                        prob = 1.0 / num_stations
-                    else:
-                        prob = station_map.get(e_id, 0.0) / total_num_trips
-                        print "Here?"
-                    '''
                     # Don't put any 0 probs in the db for now
                     num_trips = station_map.get(e_id[0], 0.0)
                     if num_trips:
                         session.add(DestDistr(s_id, e_id[0], i, j, num_trips/total_num_trips))
-                    #else:
-                    #    print "Bad: ?",s_id,e_id,prob,total_num_trips
-                    #    print station_map
-                
-                '''
-                if total_num_trips == 0:
-                    # give each station equal probability of being chosen
-                    prob = 1.0 / num_stations
-                    for e_id in station_ids:
-                        #session.add(DestDistr(s_id, e_id, i, j, prob))
-                        dd =DestDistr(s_id, e_id, i, j, prob)
-                        session.add(dd)
-                else:
-                    for e_id in station_ids:
-                        count = station_map.get(e_id, 0)
-                        if count:
-                            prob = count / total_num_trips
-                            #session.add(DestDistr(s_id, e_id, i, j, prob))
-                            dd =DestDistr(s_id, e_id, i, j, prob)
-                            session.add(dd)
-                '''
+
         session.commit()
         session.flush()
         stations_done += 1
@@ -132,37 +102,69 @@ def train_exp_lambdas(conn, start_d, end_d):
     session = conn.getDBSession()
 
     session.query(ExpLambda).delete()
+
+    #AND trip_type_id=1
     raw_query = """
-                SELECT EXTRACT(DOW FROM start_date), EXTRACT(HOUR FROM start_date), COUNT(*) 
+                SELECT EXTRACT(YEAR FROM start_date), EXTRACT(MONTH FROM start_date), 
+                       EXTRACT(DOW FROM start_date), 
+                       EXTRACT(HOUR FROM start_date), COUNT(*) 
                 FROM trips 
-                    WHERE start_date BETWEEN '{sd}' AND '{ed}' 
-                          AND trip_type_id=1
-                          AND start_station_id={sid}
-                GROUP BY EXTRACT(DOW FROM start_date), EXTRACT(HOUR FROM start_date);
+                WHERE start_date BETWEEN '{sd}' AND '{ed}' 
+                      AND start_station_id={sid}
+                GROUP BY EXTRACT(YEAR FROM start_date), EXTRACT(MONTH FROM start_date),
+                       EXTRACT(DOW FROM start_date), EXTRACT(HOUR FROM start_date);
             """
     # Calculate the number of weekdays in a range, and weekend days
     # thanks http://stackoverflow.com/questions/3615375/python-count-days-ignoring-weekends
     start_date = datetime.strptime(start_d, '%Y-%m-%d')
     end_date = datetime.strptime(end_d, '%Y-%m-%d')
 
-    day_generator = (start_date + timedelta(x + 1) for x in xrange((end_date - start_date).days + 1))
-    num_weekdays = sum(day.weekday() < 5 for day in day_generator)
-    num_weekend_days = (end_date - start_date).days - num_weekdays
+    #day_generator = (start_date + timedelta(x + 1) for x in xrange((end_date - start_date).days + 1))
+    #num_weekdays = sum(day.weekday() < 5 for day in day_generator)
+    #num_weekend_days = (end_date - start_date).days - num_weekdays
+    #print num_weekdays,num_weekend_days
+    days_info = get_num_days(start_date, end_date)
 
     station_count = 0
     for s_id in session.query(Station.id).all():
         # 24 hours then [is a weekday, not a weekday]
-        counts = [[0,0] for x in range(24)]
-        
-        query = raw_query.format(sd=start_d, ed=end_d, sid=s_id[0])
-        for dow, hour, count in engine.execute(query):
-            # Postgres does 0-6, sunday = 0
-            if 0 < dow < 6:
-                avg = float(count) / num_weekdays
-            else:
-                avg = float(count) / num_weekend_days
-            counts[int(hour)][0 < dow < 6] = avg
+        counts = {y:[[[0] * 24, [0] * 24] for m in range(12)] 
+                  for y in xrange(start_date.year, end_date.year + 1)}
 
+        query = raw_query.format(sd=start_d, ed=end_d, sid=s_id[0])
+
+        for year, month, dow, hour, count in engine.execute(query):
+            # Postgres does 0-6, sunday = 0
+            #print year, month, dow, hour, count
+            #if s_id[0] == 31000:
+            #    print dow, hour, count
+
+            #if 0 < dow < 6:
+            #    avg = float(count) / num_weekdays
+            #else:
+            #    avg = float(count) / num_weekend_days
+            #print counts
+            #print year, month, (0 < dow < 6), hour
+            counts[int(year)][int(month) - 1][0 < dow < 6][int(hour)] = float(count)
+            #counts[int(hour)][0 < dow < 6] = avg
+
+        #if s_id[0] == 31000:
+            #print counts
+        for y, year_data in counts.iteritems():
+            for m in xrange(len(year_data)):
+                month_data = year_data[m]
+                for d in xrange(len(month_data)):
+                    day_data = month_data[d]
+                    for h in xrange(len(day_data)):
+                        # He did his using a dictionary rather than a 0-indexed array
+                        #print day_data[h], days_info[y][m+1][d]
+                        day_count = days_info[y][m+1][d]
+                        if day_count > 0 and day_data[h] > 0:
+                            avg = day_data[h]  / day_count
+                            # Convert to seconds
+                            rate = 3600.0 / avg
+                            session.add(ExpLambda(s_id, y, m, bool(d), h, rate))
+        """
         for i in range(24):
             # If hour is 0 then we've never observed a trip - don't add to db
             for j in range(2):
@@ -170,7 +172,7 @@ def train_exp_lambdas(conn, start_d, end_d):
                     # Convert from rate in hours to rate in seconds
                     rate = 3600.0 / counts[i][j]
                     session.add(ExpLambda(s_id, bool(j), i, rate))
-       
+        """ 
         session.commit()
         session.flush()
         station_count += 1
@@ -364,8 +366,8 @@ def train_gaussian(connector, start_date, end_date):
 
 def main():
     c = Connector()
-    first_data = "2013-06-01"
-    end_data = "2014-01-01"
+    first_data = "2010-09-15"
+    end_data = "2013-06-30"
 
     s_test_date = "2011-09-12"
     e_test_date = "2011-09-19" 

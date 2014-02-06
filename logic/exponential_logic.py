@@ -68,14 +68,16 @@ class ExponentialLogic(SimulationLogic):
     def generate_trip(self, s_id, time):
         # Check weekday or weekend
         idx = 0 if  time.weekday() < 5 else 1
-        exp_l = self.exp_distrs[s_id][idx][time.hour] 
+        exp_l = self.exp_distrs[s_id][time.year][time.month]\
+                               [time.weekday() < 5][time.hour] 
 
         # Never generated a trip, defer it until we have a feasible lambda
         # Test using if its greater than x hours too (possibly deal with bad latenight hours
-        if not exp_l:
+        if not exp_l or exp_l.rate > 3600 * 3:
             # Test it out to see how this works
             # Have it look again the next hour
-            return Trip('-1', "Casual", 2, time + datetime.timedelta(seconds=3600), None, s_id, s_id)
+            return Trip('-1', "Casual", 2, time + datetime.timedelta(seconds=3600), 
+                        None, s_id, s_id)
 
         # See what happens if we just use the min rate, should work better
         #exp_l = max(self.exp_distrs[s_id])
@@ -140,20 +142,25 @@ class ExponentialLogic(SimulationLogic):
 
     def load_exp_lambdas(self, start_time, end_time):
         '''
-        Caches exp lambdas into dictionary of station_id -> [weekday, weekend] -> hours 
+        Caches exp lambdas into dictionary of 
+        s_id->year->month->[weekend, weekday]->hours
         '''
         # kind of gross but makes for easy housekeeping
         distr_dict = {s:[[None]*24, [None]*24] for s in self.stations.iterkeys()}
+        distr_dict = {s: {y:[[[None] * 24, [None] * 24] for m in range(12)] 
+                           for y in xrange(start_time.year, end_time.year + 1)} 
+                           for s in self.stations.iterkeys()}
 
-        distrs = self.session.query(data_model.ExpLambda)
+        distrs = self.session.query(data_model.ExpLambda)\
+                             .filter(ExpLambda.year >= start_time.year)\
+                             .filter(ExpLambda.month >= start_time.month)\
+                             .filter(ExpLambda.year <= end_time.year)\
+                             .filter(ExpLambda.month <= end_time.month)\
+                             .yield_per(5000)
+
         
         for d in distrs:
-            distr_dict[d.station_id][d.is_weekday][d.hour] = d
-
-        for s_id, x in distr_dict.iteritems():
-            print s_id
-            print [y.rate if y else 0 for y in x[0]]
-            print [y.rate if y else 0if y else 0  for y in x[1]]
+            distr_dict[d.station_id][d.year][d.month][d.is_weekday][d.hour] = d
 
         return distr_dict
 

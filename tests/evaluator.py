@@ -333,7 +333,7 @@ def main():
     if len(sys.argv) == 1:
         print 'Using default values.'
         
-        granularity = 'days'
+        granularity = 'hours'
 
         start_date = datetime.datetime.strptime("2012-6-1 00 00", '%Y-%m-%d %H %M')
         end_date = datetime.datetime.strptime("2012-6-1 23 59", '%Y-%m-%d %H %M')
@@ -369,66 +369,3 @@ def main():
 if __name__ == '__main__':
     main()
 
-    #def setup_paired_stations(self,trips,stations):
-    #    paired_stations = {}
-    #    for start in stations:
-    #        for end in stations:
-    #            if (start.id,end.id) not in station_pairs:
-    #                station_pairs[(start.id,end.id)] = StationPair(start,end)
-    #    for trip in trips:
-    #        start = trip.start_station_id
-    #        end = trip.end_station_id
-    #        if (start.id,end.id) not in station_pairs:
-    #            new_station_pair = StationPair(start,end)
-    #            new_station_pair.add_trip(trip)
-    #            paired_stations[(start.id,end.id)] = new_station_pair
-    #        else:
-    #            paired_stations[(start.id,end.id)].add_trip(trip)
-    #    return paired_stations
-    
-    #def compare_trip_numbers(self,station_pair):
-    #    num_real_trips = len(station_pair.real_trips)
-    #    num_prod_trips = len(station_pair.prod_trips)
-    #    return num_real_trips - num_prod_trips
-    
-    #def compare_trip_times(self,station_pair):
-    #    total_real_time = 0
-    #    total_prod_time = 0
-    #    for trip in station_pair.real_trips:
-    #        total_real_time += trip.duration()
-    #    for trip in station_pair.prod_trips:
-    #        total_prod_time += trip.duration()
-    #    avg_real_time = total_real_time / len(station_pair.real_trips)
-    #    avg_prod_time = total_prod_time / len(station_pair.prod_trips)
-    #    return avg_real_time - avg_prod_time
-
-# class StationPair:
-#     def __init__(self,start_station,end_station):
-#         self.start_station = start_station
-#         self.end_station = end_station
-#         self.real_trips = []
-#         self.prod_trips = []
-#     
-#     def add_trip(self,trip):
-#         if trip.trip_type == 'Testing':
-#             self.real_trips.append(trip)
-#         elif trip.trip_type == 'Produced':
-#             self.prod_trips.append(trip)
-#         else:
-#             print "Error: station_pair trips must be of type 'Testing' or 'Produced'."
-
-# Originally methods in SingleStation
-        # def compare_departure_numbers(self,day):
-        #     num_real_departures = self.real_departures[day][hour]
-        #     num_prod_departures = self.prod_departures[day][hour]
-        #     return num_real_departures - num_prod_departures
-            
-        # def compare_arrival_numbers(self,day):
-        #     num_real_arrivals = self.real_arrivals[day][hour]
-        #     num_prod_arrivals = self.prod_arrivals[day][hour]
-        #     return num_real_arrivals - num_prod_arrivals
-            
-        # def compare_avg_durations(self,day):
-        #     real_avg = self.real_durations[day][1] / float(self.real_durations[day][0])
-        #     prod_avg = self.prod_durations[day][1] / float(self.prod_durations[day][0])
-        #     return real_avg - prod_avg
