@@ -23,8 +23,8 @@ footer p {
 
 .full-width-wrapper {
     width: 100%;
-    max-width: 100%;
     min-height: 600px;
+	max-width: 100%;
 }
 
 #time-slider {

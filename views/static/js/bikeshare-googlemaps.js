@@ -16,11 +16,20 @@ function initialize() {
 	var mapOptions = {
 		zoom: 12,
 		center: new google.maps.LatLng(38.904, -77.032),
-		mapTypeId: google.maps.MapTypeId.ROADMAP
+		mapTypeId: google.maps.MapTypeId.ROADMAP,
 	};
-	map = new google.maps.Map(document.getElementById('map-canvas'),
+	map = new google.maps.Map(document.getElementById('map_canvas'),
 			                  mapOptions);
     
+    // Draw a logo wherever there is a bike station
+  	var stationLogo = '/static/img/cbLogo-16.png';
+    //console.log("length="+Object.keys(locations).length);
+
+	// var infoWindow = null;
+	// infoWindow = new google.maps.InfoWindow({
+	//	content: "Hakuna Matata! You clicked a station! G'day!"
+	// });	
+
     // Draw a logo wherever there is a bike station	
 	var stationLogo = '/static/img/cbLogo-16.png';
     //:console.log("length="+Object.keys(locations).length);
@@ -41,16 +50,7 @@ function initialize() {
 		content: "Hakuna Matata?"
 	});
 	openWindow = infoWindow;
-	bindInfoWindow(marker, map, infoWindow);	
-		//var infowindow = new google.maps.InfoWindow({
-			//position: stationLatLng,
-			//content: marker.title
-		//});
-		
-	//google.maps.event.addListener(marker, 'click', function() {
-	//	infoWindow.setContent(this.html);
-	//	infowindow.open(map, this);
-	//});	
+	bindInfoWindow(marker, map, infoWindow);
     }
 }
 
