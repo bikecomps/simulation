@@ -3,6 +3,8 @@ var locations;
 var connections;
 var map;
 
+var openWindow;
+
 function set_coordinates(val)
 {
     j_val = val.replace(/&quot;/g,'"');
@@ -56,6 +58,7 @@ function initialize() {
 	var infoWindow = new google.maps.InfoWindow({
 		content: "Hakuna Matata?"
 	});
+	openWindow = infoWindow;
 	bindInfoWindow(marker, map, infoWindow);	
 		//var infowindow = new google.maps.InfoWindow({
 			//position: stationLatLng,
@@ -83,8 +86,10 @@ function initialize() {
 
 function bindInfoWindow(marker, map, infoWindow) {
 	google.maps.event.addListener(marker, 'click', function() {
+		openWindow.close();
 		infoWindow.setContent(marker.title);
-		infoWindow.open(map, marker);	
+		infoWindow.open(map, marker);
+		openWindow = infoWindow;	
 	});
 }
 
