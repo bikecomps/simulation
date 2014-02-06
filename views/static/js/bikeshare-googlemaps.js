@@ -14,6 +14,10 @@ function set_coordinates(val)
 function initialize() {
     connections = [];
 	var mapOptions = {
+		panControl: false,
+		zoomControlOptions: {
+			position: google.maps.ControlPosition.TOP_RIGHT
+		},
 		zoom: 12,
 		center: new google.maps.LatLng(38.904, -77.032),
 		mapTypeId: google.maps.MapTypeId.ROADMAP,
