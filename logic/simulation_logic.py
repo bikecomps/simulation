@@ -35,14 +35,17 @@ class SimulationLogic:
         self.bike_shortages = []
         self.dock_shortages = []
         # Keys: all currently empty/full station ids. Values: empty or full
-        self.empty_full_stations = {}
-
+        self.empty_stations_set = set()
+        self.full_stations_set = set()
+        self.arr_dis_stations = {}
+        self.dep_dis_stations = {}
        
     def getDBSession(self):
         return self.session
 
-    def initialize(self, start_time, end_time):
+    def initialize(self, start_time, end_time,rebalancing=True):
         '''Sets states of stations at the start_time'''
+        print "Initializing"
         self.time = start_time
 
         self.start_time = start_time
@@ -54,8 +57,9 @@ class SimulationLogic:
         self.trip_list = []
         self.station_counts = {}
         self.stations = {}
+        print "\tInitializing stations"
         self.initialize_stations(start_time)
-
+        self.rebalancing = rebalancing
 
 
     def get_total_num_bikes(self):
@@ -118,9 +122,6 @@ class SimulationLogic:
                                         for s_id, s_count in 
                                             self.station_counts.iteritems()
                                             if s_id not in full_stations}
-            print "Remaining bikes", bike_delta
-            print "Num stations left:", len(station_bike_prop)
-            print "Num full stations:", len(full_stations)
 
             for s_id, prop in station_bike_prop.iteritems():
                 added_bikes = round_func(prop * bike_delta) 
@@ -136,7 +137,7 @@ class SimulationLogic:
 
         for s_id, s in self.stations.iteritems():
             if s.capacity <= self.station_counts[s_id]:
-                print "Full station ",s_id, s.capacity, self.station_counts[s.id]
+                print "\t\tFull station ",s_id, s.capacity, self.station_counts[s.id]
 
 
     def update(self, timestep):
@@ -167,6 +168,8 @@ class SimulationLogic:
         eventType = eventTuple[0]
         trip = eventTuple[1]
         while eventType != None:
+            if self.rebalancing:
+                self.rebalance_stations()
             if eventType == DEPARTURE_TYPE:
                 if trip.start_date > self.time:
                     # Put trip back in proper queue if it's over the time, and stop the while loop
@@ -194,8 +197,13 @@ class SimulationLogic:
         departure_station_ID = trip.start_station_id
 
         if self.station_counts[departure_station_ID] == 0:
+            self.empty_stations_set.add(departure_station_ID)
             new_disappointment = Disappointment(departure_station_ID, trip.start_date, trip_id=None)
             self.session.add(new_disappointment)
+            if departure_station_ID not in self.dep_dis_stations:
+                self.dep_dis_stations[departure_station_ID] = 1
+            else:
+                self.dep_dis_stations[departure_station_ID] += 1
             self.disappointment_list.append(new_disappointment)
             self.resolve_sad_departure(trip)
         else:
@@ -214,8 +222,13 @@ class SimulationLogic:
 
         capacity = self.stations[arrival_station_ID].capacity
         if self.station_counts[arrival_station_ID] == capacity:
+            self.full_stations_set.add(arrival_station_ID)
             new_disappointment = Disappointment(arrival_station_ID, trip.end_date, trip_id=None)
             trip.disappointments.append(new_disappointment)
+            if arrival_station_ID not in self.arr_dis_stations:
+                self.arr_dis_stations[arrival_station_ID] = 1
+            else:
+                self.arr_dis_stations[arrival_station_ID] += 1
             self.disappointment_list.append(new_disappointment)
             self.resolve_sad_arrival(trip)
         else:
@@ -256,12 +269,42 @@ class SimulationLogic:
                 self.pending_departures.put((first_departure.start_date, first_departure))
         return (eventType, trip)
 
+    def rebalance_stations(self):		
+        remove_from_full = []
+        for station_id in self.full_stations_set:
+            to_remove = self.stations[station_id].capacity/2
+            self.station_counts[station_id] -= to_remove
+            self.moving_bikes += to_remove
+            remove_from_full.append(station_id)
+        for s in remove_from_full:
+            self.full_stations_set.remove(s)
+
+        while self.moving_bikes < len(self.empty_stations_set):
+            random_station = random.choice(self.station_counts.keys())
+            if self.station_counts[random_station] > 1:
+                self.station_counts[random_station] -= 1
+                self.moving_bikes += 1
+		
+        if len(self.empty_stations_set) > 0:
+            bikes_per_station = self.moving_bikes / len(self.empty_stations_set)
+            remove_from_empty = []
+            for station_id in self.empty_stations_set:
+                self.station_counts[station_id] = bikes_per_station
+                self.moving_bikes -= bikes_per_station
+                remove_from_empty.append(station_id)
+            for s in remove_from_empty:    
+                self.empty_stations_set.remove(s)
+
+
+
 
     def flush(self):
         '''Returns list of all trips since initialization, or adds them to the database if to_database is True'''
 
         return {'trips':self.trip_list,
-                'disappointments':self.disappointment_list}
+                'disappointments':self.disappointment_list,
+                'arr_dis_stations':self.arr_dis_stations,
+                'dep_dis_stations':self.dep_dis_stations}
         
 
     def cleanup(self):
@@ -278,7 +321,7 @@ def main():
     SL.update(step)
     SL.update(step)
     trips = SL.flush()
-       
+      
 
 if __name__ == "__main__":
     main()

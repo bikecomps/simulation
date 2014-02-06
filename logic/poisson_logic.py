@@ -34,37 +34,42 @@ class PoissonLogic(SimulationLogic):
                     .filter(data_model.StationDistance.station1_id == station.id)\
                     .order_by(data_model.StationDistance.distance)[:8]
             self.nearest_station_dists[station.id] = nearest_distances
+        self.moving_bikes = 0
+
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
         not_full = []
         not_empty = []
-        full = []
-        empty = [] 
         for s_id in self.station_counts:
-            if s_id in self.empty_full_stations:
-	        if self.station_counts[s_id] > 0 and self.empty_full_stations[s_id] == "empty":
-                    not_empty.append(s_id)
-                    del self.empty_full_stations[s_id]      
-                elif self.station_counts[s_id] != self.stations[s_id].capacity:
-		    not_full.append(s_id)
-                    del self.empty_full_stations[s_id]
-            else:
-                if self.station_counts[s_id] == self.stations[s_id].capacity:
-                    full.append(s_id)
-                    self.empty_full_stations[s_id] = "full"
-                if self.station_counts[s_id] == 0:
-                    empty.append(s_id)
-                    self.empty_full_stations[s_id] = "empty"
-	if len(not_full) > 0:
+            if self.station_counts[s_id] > 0 and s_id in self.empty_stations_set:
+                not_empty.append(s_id)
+                self.empty_stations_set.remove(s_id)      
+            elif self.station_counts[s_id] != self.stations[s_id].capacity and s_id in self.full_stations_set:
+                not_full.append(s_id)
+                self.full_stations_set.remove(s_id)
+            elif self.station_counts[s_id] == self.stations[s_id].capacity and s_id not in self.full_stations_set:
+                self.full_stations_set.add(s_id)
+            elif self.station_counts[s_id] == 0 and s_id not in self.empty_stations_set:
+                self.empty_stations_set.add(s_id)
+        if len(not_full) > 0:
             print "\tNo longer full:\n" + "\t\t" + str(not_full)
-	if len(not_empty) > 0:
-            print "\tNo longer empty:\n" + "\t\t" + str(not_empty)
- 	if len(full) > 0:
-            print "\tNow full:\n" + "\t\t" + str(full)       
-	if len(empty) > 0:
-            print "\tNow empty:\n" + "\t\t" + str(empty)
+        if len(not_empty) > 0:
+                print "\tNo longer empty:\n" + "\t\t" + str(not_empty)
+        if len(self.full_stations_set) > 0:
+                print "\tNow full:\n" + "\t\t" + str(self.full_stations_set)
+        if len(self.empty_stations_set) > 0:
+            print "\tNow empty:\n" + "\t\t" + str(self.empty_stations_set)
+        if self.rebalancing:
+            self.rebalance_stations()
+        # print "\tPost rebalance. Moving bikes:", self.moving_bikes
+        #if len(self.full_stations_set) > 0:
+        #        print "\t\tNow full:\n" + "\t\t" + str(self.full_stations_set)
+        #if len(self.empty_stations_set) > 0:
+        #    print "\t\tNow empty:\n" + "\t\t" + str(self.empty_stations_set)
         self.generate_new_trips(self.time)
+        if self.rebalancing:
+            self.rebalance_stations()
         self.resolve_trips()
 
         # Increment after we run for the current timestep?
@@ -73,7 +78,9 @@ class PoissonLogic(SimulationLogic):
     def generate_new_trips(self, start_time):
 
         # Note that Monday is day 0 and Sunday is day 6. Is this the same for data_model?
+        station_count = 0
         for start_station_id in self.station_counts:
+            station_count += 1
             for end_station_id in self.station_counts:
                 lam = self.get_lambda(start_time.year, start_time.month,
                                       start_time.weekday(), start_time.hour,
@@ -141,10 +148,12 @@ class PoissonLogic(SimulationLogic):
 
     def load_lambdas(self, start_time, end_time):
         '''
-        Caches lambdas into dictionary of year -> is_week_day -> hour -> (start_id, end_id) -> lambda
+        Caches lambdas into dictionary of day -> hour -> (start_id, end_id) -> lambda
+        Note: DB only has values > 0.
         '''
         # kind of gross but makes for easy housekeeping
         distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(float)))))
+
         num_added = 0
 
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
