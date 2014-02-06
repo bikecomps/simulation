@@ -14,21 +14,22 @@ function set_coordinates(val)
 function SimulationControl(controlDiv) {
     controlDiv.id = "simulation_control";
     
+    var controlForm = document.createElement('form');
+
     var from_div = document.createElement('div');
+    from_div.id = 'from_div';
     var from_input = document.createElement('input');
     from_input.type = 'text';
     from_input.id = 'from_date';
     from_input.placeholder = 'Start Date';
-    from_input.float = 'left';
     from_div.appendChild(from_input);
 
     var to_div = document.createElement('div');
+    to_div.id = 'to_div';
     var to_input = document.createElement('input');
     to_input.type = 'text';
     to_input.id = 'to_date';
     to_input.placeholder = 'End Date';
-    to_input.width = '50px';
-    to_input.float = 'left';
     to_div.appendChild(to_input);
 
     var submit = document.createElement('button');
@@ -37,9 +38,11 @@ function SimulationControl(controlDiv) {
     submit.id = 'submit';
     submit.value = 'Go!';
 
-    controlDiv.appendChild(from_div);
-    controlDiv.appendChild(to_div);
-    controlDiv.appendChild(submit);
+    controlForm.appendChild(from_div);
+    controlForm.appendChild(to_div);
+    controlForm.appendChild(submit);
+
+    controlDiv.appendChild(controlForm);
 
 }
 
