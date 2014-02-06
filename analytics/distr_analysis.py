@@ -27,7 +27,6 @@ def get_data_for_station_pair(session, station_one, station_two,
 
     return values
 
-<<<<<<< HEAD
 def sample_distrs(conn, choice, samples=10, sam_size=100, 
                             date_one="2010-01-01", date_two="2014-01-01"):
     # Get a number of pairs
