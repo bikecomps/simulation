@@ -114,7 +114,6 @@ def main():
     num_ds = len([x for x in ds if x.trip == None])
     print "Empty diss", num_ds
     print "Full diss", len(ds) - num_ds
-<<<<<<< HEAD
     print "Arrival dis stations:"
     print results['arr_dis_stations']
     print "Departure dis stations:"
@@ -122,7 +121,6 @@ def main():
     
     # simulator.write_out(results, file_name)
     # simulator.save_to_db(results['trips'])
-=======
     #simulator.write_out(results, file_name)
     #simulator.save_to_db(results['trips'])
     hours = [0]*24
@@ -148,7 +146,6 @@ def main():
         print s_id,count
     """
 
->>>>>>> c1ed0f0c98f397ccc6ce046ebbde421349539fa8
     session.close()
     
 
