@@ -103,13 +103,14 @@ def train_exp_lambdas(conn, start_d, end_d):
 
     session.query(ExpLambda).delete()
 
-    #AND trip_type_id=1
+    # Hard code in training data for now
     raw_query = """
                 SELECT EXTRACT(YEAR FROM start_date), EXTRACT(MONTH FROM start_date), 
                        EXTRACT(DOW FROM start_date), 
                        EXTRACT(HOUR FROM start_date), COUNT(*) 
                 FROM trips 
                 WHERE start_date BETWEEN '{sd}' AND '{ed}' 
+                      AND trip_type_id=1
                       AND start_station_id={sid}
                 GROUP BY EXTRACT(YEAR FROM start_date), EXTRACT(MONTH FROM start_date),
                        EXTRACT(DOW FROM start_date), EXTRACT(HOUR FROM start_date);
@@ -162,17 +163,10 @@ def train_exp_lambdas(conn, start_d, end_d):
                         if day_count > 0 and day_data[h] > 0:
                             avg = day_data[h]  / day_count
                             # Convert to seconds
+                            print "AVG: ", s_id,y,m,bool(d),h,avg,"Num Days: ",day_count,"Num counts: ",day_data[h]
                             rate = 3600.0 / avg
-                            session.add(ExpLambda(s_id, y, m, bool(d), h, rate))
-        """
-        for i in range(24):
-            # If hour is 0 then we've never observed a trip - don't add to db
-            for j in range(2):
-                if counts[i][j] > 0:
-                    # Convert from rate in hours to rate in seconds
-                    rate = 3600.0 / counts[i][j]
-                    session.add(ExpLambda(s_id, bool(j), i, rate))
-        """ 
+                            session.add(ExpLambda(s_id, y, m + 1, bool(d), h, rate))
+
         session.commit()
         session.flush()
         station_count += 1

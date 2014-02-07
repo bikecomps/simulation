@@ -79,12 +79,14 @@ class ExponentialLogic(SimulationLogic):
             return Trip('-1', "Casual", 2, time + datetime.timedelta(seconds=3600), 
                         None, s_id, s_id)
 
-        # See what happens if we just use the min rate, should work better
-        #exp_l = max(self.exp_distrs[s_id])
-
         # Returns time till next event in seconds
         # Function takes in 1/rate = "scale" but it works better the other way...
-        wait_time = numpy.random.exponential(exp_l.rate)
+        wait_time = numpy.random.exponential(exp_l.rate*(3./4))
+        '''
+        if wait_time > 3600:
+            return Trip('-1', "Casual", 2, time + datetime.timedelta(seconds=3600), 
+                        None, s_id, s_id)
+        '''
 
         trip_start_time = time + datetime.timedelta(seconds=wait_time)
         # It should go somewhere depending on when the hour of its start_time (could be far in the future)
@@ -100,8 +102,8 @@ class ExponentialLogic(SimulationLogic):
             new_trip = data_model.Trip(str(random.randint(1,500)), 
                 "Casual", 2, trip_start_time, trip_end_time, s_id, end_station_id)
         else:
-            #print "GAMMA ERROR:"
-            #print "start station",s_id,"end station",end_station_id
+            print "GAMMA ERROR:"
+            print "start station",s_id,"end station",end_station_id
             #TODO !!! What to do if we've never seen trips between two stations????
             trip_end_time = trip_start_time
             new_trip = data_model.Trip(str(random.randint(1,500)), 
@@ -125,7 +127,7 @@ class ExponentialLogic(SimulationLogic):
         
             return station_vector[bisect.bisect(cum_prob_vector, x)]
         else:
-            #print "Error getting destionation: Day",time.day,"hour",time.hour,"s_id",s_id
+            print "Error getting destination: Day",time.day,"hour",time.hour,"s_id",s_id
             # Send it to one of 273 randomly
             return random.choice(self.stations.keys())
 
