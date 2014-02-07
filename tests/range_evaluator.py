@@ -5,7 +5,7 @@ distance between the vector of produced trips and the vector of
 real trips.
 """
 
-from logic import ExponentialLogic, PoissonLogic, Simulator
+from logic import ExponentialLogic, PoissonLogic, Simulator, AltPoissonLogic
 from utils import Connector
 from models import Trip, Station
 
@@ -42,7 +42,8 @@ class RangeEvaluator:
 
     def get_produced_trips(self):
         #logic = PoissonLogic(self.session)
-        logic = ExponentialLogic(self.session)
+        #logic = ExponentialLogic(self.session)
+        logic = AltPoissonLogic(self.session)
         simulator = Simulator(logic)
         results = simulator.run(self.start_date, self.end_date)
         

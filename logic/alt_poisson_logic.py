@@ -6,6 +6,7 @@
     - Do we have to specify standard deviation and whatever the poisson equivalent is? (Perhaps we use scipy's rvs function but I haven't figured it out yet.)
 '''
 from utils import Connector
+import bisect
 from models import *
 from scipy.stats import poisson
 import numpy
@@ -15,7 +16,7 @@ import datetime
 from dateutil import rrule
 from collections import defaultdict
 
-class AlPoissonLogic(SimulationLogic):
+class AltPoissonLogic(SimulationLogic):
 
     def __init__(self, session):
         SimulationLogic.__init__(self, session)
@@ -42,48 +43,29 @@ class AlPoissonLogic(SimulationLogic):
         '''Moves the simulation forward one timestep from given time'''
         not_full = []
         not_empty = []
-        full = []
-        empty = [] 
         for s_id in self.station_counts:
-            if s_id in self.empty_full_stations:
-	        if self.station_counts[s_id] > 0 and self.empty_full_stations[s_id] == "empty":
-                    not_empty.append(s_id)
-                    del self.empty_full_stations[s_id]      
-                elif self.station_counts[s_id] != self.stations[s_id].capacity:
-		    not_full.append(s_id)
-                    del self.empty_full_stations[s_id]
-            else:
-                if self.station_counts[s_id] == self.stations[s_id].capacity:
-                    full.append(s_id)
-                    self.empty_full_stations[s_id] = "full"
-                if self.station_counts[s_id] == 0:
-                    empty.append(s_id)
-                    self.empty_full_stations[s_id] = "empty"
+            if self.station_counts[s_id] > 0 and s_id in self.empty_stations_set:
+                not_empty.append(s_id)
+                self.empty_stations_set.remove(s_id)      
+            elif self.station_counts[s_id] != self.stations[s_id].capacity and s_id in self.full_stations_set:
+                not_full.append(s_id)
+                self.full_stations_set.remove(s_id)
+            elif self.station_counts[s_id] == self.stations[s_id].capacity and s_id not in self.full_stations_set:
+                self.full_stations_set.add(s_id)
+            elif self.station_counts[s_id] == 0 and s_id not in self.empty_stations_set:
+                self.empty_stations_set.add(s_id)
 
+        if self.rebalancing:
+            self.rebalance_stations()
+ 
         self.generate_new_trips(self.time)
+        if self.rebalancing:
+            self.rebalance_stations()
+
         self.resolve_trips()
 
         # Increment after we run for the current timestep?
         self.time += timestep
-
-    def rebalance_stations(self, full, empty):
-		
-        for station_id in full:
-            to_remove = self.stations[station_id].capacity/2
-            self.station_counts[station_id] -= to_remove
-            self.moving_bikes += to_remove
-
-        while self.moving_bikes < len(empty):
-            random_station = random.choice(self.station_counts.keys())
-            if self.station_counts[random_station] > 1:
-                self.station_counts[random_station] -= 1
-                self.moving_bikes += 1
-		
-        if len(empty) > 0:
-            bikes_per_station = self.moving_bikes / len(empty)
-            for station_id in empty:
-                self.station_counts[station_id] = bikes_per_station
-                self.moving_bikes -= bikes_per_station
 
     def load_dest_distrs(self, start_time, end_time):
         '''
@@ -156,15 +138,15 @@ class AlPoissonLogic(SimulationLogic):
     def generate_new_trips(self, start_time):
         for s_id in self.station_counts:
             lam = self.get_lambda(start_time.year, start_time.month,
-                                  start_time.weekday(), start_time.hour,
-                                  start_station_id, end_station_id)
+                                  start_time.weekday(), start_time.hour, s_id)
+
             if lam:
                 num_trips = self.get_num_trips(lam)
                 for i in xrange(num_trips):
-                    e_id = self.get_destination(s_id)
+                    e_id = self.get_destination(s_id, start_time)
                     gamma = self.duration_distrs.get((s_id, e_id), None)
                     if gamma:
-                        added_time = datetime.timedelta(seconds=random.randint(3600))
+                        added_time = datetime.timedelta(seconds=random.randint(0, 3600))
                         trip_start_time = start_time + added_time
                         trip_duration = self.get_trip_duration(gamma)
                         trip_end_time = trip_start_time + trip_duration
@@ -179,11 +161,12 @@ class AlPoissonLogic(SimulationLogic):
         Samples a poisson distribution with the given lambda and returns the number
         of trips produced from the dist. Returns -1 if lambda = 0 -> undefined function.
         """
+        # HACK RIGHT NOW
         probability = random.random()
         while probability == 0:
             probability = random.random()
 
-        num_trips = poisson.ppf(probability, lam.value)
+        num_trips = poisson.ppf(probability, (4./3) * 3600./lam.rate)
 
         if numpy.isnan(num_trips):
             num_trips = -1
@@ -211,43 +194,46 @@ class AlPoissonLogic(SimulationLogic):
             distr_dict[(gamma.start_station_id, gamma.end_station_id)] = gamma 
         return distr_dict
 
-    def get_lambda(self, year, month, day, hour, start_station, end_station):
+    def get_lambda(self, year, month, day, hour, start_station):
         '''
         If there is a lambda, return it. Otherwise return None as we only 
         load non-zero lambdas from the database for performance reasons.
         '''
-        return self.lambda_distrs.get(year, {}).get(month, {}).get(day < 5, {}).get(hour, {}).get((start_station, end_station), None)
+        return self.lambda_distrs.get(year, {}).get(month, {}).get(day < 5, {}).get(hour, {}).get(start_station, None)
 
     def load_lambdas(self, start_time, end_time):
         '''
-        Caches lambdas into dictionary of day -> hour -> (start_id, end_id) -> lambda
         Note: DB only has values > 0.
         '''
         # kind of gross but makes for easy housekeeping
         distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(float)))))
 
+        # keep track of when we've hit the database for a particular request
+        requested_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(bool))))
+
         num_added = 0
-        # Inclusive
+
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
             
             start_hour = start_time.hour if start_time.weekday() == dow else 0
             end_hour = end_time.hour if end_time.weekday() == dow else 24
 
-            year = start_time.year
-            month = start_time.month
+            year = day.year
+            month = day.month
             is_week_day = dow < 5
-
-            # For now we're only loading in lambdas that have non-zero values. 
-            # We'll assume zero value if it's not in the dictionary
-            lambda_poisson = self.session.query(data_model.Lambda) \
-                .filter(data_model.Lambda.is_week_day == is_week_day) \
-                .filter(data_model.Lambda.year ==  year) \
-                .filter(data_model.Lambda.month == month) \
-                .filter(data_model.Lambda.hour.between(start_hour, end_hour))
-        
+            
+            if not requested_dict[month][year][is_week_day][(start_hour, end_hour)]:
+                lambda_poisson = self.session \
+                                     .query(ExpLambda) \
+                                     .filter(ExpLambda.month == month) \
+                                     .filter(ExpLambda.year == year) \
+                                     .filter(ExpLambda.is_weekday == is_week_day) \
+                                     .filter(ExpLambda.hour.between(start_hour, end_hour))
+                requested_dict[month][year][is_week_day][(start_hour, end_hour)] = True
+                
             for lam in lambda_poisson:
-                distr_dict[year][month][lam.is_week_day][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
+                distr_dict[lam.year][lam.month][lam.is_weekday][lam.hour][lam.station_id] = lam
                 num_added += 1
 
         print "Loaded %s lambdas" % num_added

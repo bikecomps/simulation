@@ -39,7 +39,7 @@ class SimulationLogic:
         self.full_stations_set = set()
         self.arr_dis_stations = {}
         self.dep_dis_stations = {}
-       
+
     def getDBSession(self):
         return self.session
 

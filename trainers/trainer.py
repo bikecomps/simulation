@@ -137,8 +137,8 @@ def train_exp_lambdas(conn, start_d, end_d):
         for year, month, dow, hour, count in engine.execute(query):
             # Postgres does 0-6, sunday = 0
             #print year, month, dow, hour, count
-            #if s_id[0] == 31000:
-            #    print dow, hour, count
+            if s_id[0] == 31000 and int(year)==2010 and int(month)==11 and int(hour)==13:
+                print dow, hour, count, days_info[year][month]
 
             #if 0 < dow < 6:
             #    avg = float(count) / num_weekdays
@@ -146,8 +146,11 @@ def train_exp_lambdas(conn, start_d, end_d):
             #    avg = float(count) / num_weekend_days
             #print counts
             #print year, month, (0 < dow < 6), hour
-            counts[int(year)][int(month) - 1][0 < dow < 6][int(hour)] = float(count)
+            counts[int(year)][int(month) - 1][0 < dow < 6][int(hour)] += float(count)
             #counts[int(hour)][0 < dow < 6] = avg
+            if s_id[0] == 31000 and int(year)==2010 and int(month)==11 and int(hour)==13:
+                print dow, hour, count, days_info[year][month], counts[int(year)][int(month) - 1]
+
 
         #if s_id[0] == 31000:
             #print counts
@@ -163,7 +166,7 @@ def train_exp_lambdas(conn, start_d, end_d):
                         if day_count > 0 and day_data[h] > 0:
                             avg = day_data[h]  / day_count
                             # Convert to seconds
-                            print "AVG: ", s_id,y,m,bool(d),h,avg,"Num Days: ",day_count,"Num counts: ",day_data[h]
+                            #print "AVG: ", s_id,y,m,bool(d),h,avg,"Num Days: ",day_count,"Num counts: ",day_data[h]
                             rate = 3600.0 / avg
                             session.add(ExpLambda(s_id, y, m + 1, bool(d), h, rate))
 
@@ -253,11 +256,12 @@ def train_poisson(conn, start_d, end_d):
                         num_trips = counts[year][month][is_week_day][hour]
 
                         if num_trips > 0:
+                            print "AVG: ", s_id,year,month,bool(is_week_day),hour, num_trips/float(num_days),"Num Days: ",num_days,"Num counts: ",num_trips
                             l = Lambda(s_id, e_id, 
                                        hour, bool(is_week_day), 
                                        year, month,
                                        num_trips/float(num_days))
-                            session.add(l)
+                            #session.add(l)
                             count += 1
 
                         if count % cap == 0:
@@ -368,10 +372,10 @@ def main():
     # e_test_date = "2011-09-19" 
     # train_gaussian(c, "2012-1-1", "2013-6-1")
     # get_pairwise_counts(c, "2013-1-1", "2013-1-2")
-    # train_exp_lambdas(c, first_data, end_data)
+    train_exp_lambdas(c, first_data, end_data)
     #train_dest_distrs(c.getDBSession(), first_data, end_data)
     # train_gammas(c.getDBSession(), "2010-09-15", "2013-06-30")
-    train_poisson(c, "2010-09-15", "2013-06-30")
+    #train_poisson(c, "2010-09-15", "2013-06-30")
 
 if __name__ == "__main__":
     main()
