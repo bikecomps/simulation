@@ -381,7 +381,8 @@ def main():
         start_date = datetime.datetime.strptime("2012-7-1 00 00", '%Y-%m-%d %H %M')
         end_date = datetime.datetime.strptime("2012-7-1 23 59", '%Y-%m-%d %H %M')
         
-        logic = ExponentialLogic(session)
+        #logic = ExponentialLogic(session)
+        logic = PoissonLogic(session)
         simulator = Simulator(logic)
         results = simulator.run(start_date, end_date)
 
