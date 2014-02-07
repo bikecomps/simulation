@@ -65,7 +65,7 @@ class ExponentialLogic(SimulationLogic):
             self.pending_departures.put((new_trip.start_date, new_trip))
         print "NO MORE INIT TRIPS"
 
-    def generate_trip(self, s_id, time):
+    def _generate_trip(self, s_id, time):
         # Check weekday or weekend
         idx = 0 if  time.weekday() < 5 else 1
         exp_l = self.exp_distrs[s_id][time.year][time.month]\
