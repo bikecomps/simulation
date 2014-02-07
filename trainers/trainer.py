@@ -221,6 +221,7 @@ def train_poisson(conn, start_d, end_d):
     trip_num = 0
     for trip in session.query(Trip) \
             .filter(Trip.start_date.between(start_d, end_d)) \
+            .filter(Trip.trip_type_id == 1) \
             .yield_per(cap):
         s_id = trip.start_station_id
         e_id = trip.end_station_id
@@ -235,7 +236,7 @@ def train_poisson(conn, start_d, end_d):
         trip_num += 1
 
     # faster to delete all rows in the table
-    session.query(Lambda).delete()
+    # session.query(Lambda).delete()
 
     count = 0
     days = get_num_days(start_date, end_date)
@@ -363,14 +364,14 @@ def main():
     first_data = "2010-09-15"
     end_data = "2013-06-30"
 
-    s_test_date = "2011-09-12"
-    e_test_date = "2011-09-19" 
+    # s_test_date = "2011-09-12"
+    # e_test_date = "2011-09-19" 
     # train_gaussian(c, "2012-1-1", "2013-6-1")
     # get_pairwise_counts(c, "2013-1-1", "2013-1-2")
-    train_exp_lambdas(c, first_data, end_data)
+    # train_exp_lambdas(c, first_data, end_data)
     #train_dest_distrs(c.getDBSession(), first_data, end_data)
     # train_gammas(c.getDBSession(), "2010-09-15", "2013-06-30")
-    #train_poisson(c, "2010-09-15", "2013-06-30")
+    train_poisson(c, "2010-09-15", "2013-06-30")
 
 if __name__ == "__main__":
     main()

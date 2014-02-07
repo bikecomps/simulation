@@ -18,34 +18,31 @@ class PlotMap:
 
         self.session = Connector().getDBSession()
         self.indent = False
-        self.intersections = self.get_coordinates()
+        self.stations = self.get_stations()
 
-    def get_coordinates(self):
+    def get_stations(self):
         
-        intersections_dict = {}
-        intersections_counter = 0
+        stations_dict = {}
+        stations_counter = 0
 
-        intersections = self.session.query(Intersection)
-        for intersection in intersections:
-            lat = intersection.lat
-            lon = intersection.lon
-            intersections_dict[intersections_counter] = [lat, lon]
-            intersections_counter+=1
-        return json.dumps(intersections_dict)
-
-    def dump_json(self, to_dump):
-        if self.indent:
-            return json.dumps(to_dump, indent=4, default=self.json_dump_handler)
-        else:
-            return json.dumps(to_dump, default=self.json_dump_handler)
-
-    def json_dump_handler(self, obj):
-        if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
-        else:
-            raise TypeError, 'Cannot serialize item %s of type %s' % (repr(obj), type(obj))
+	stations = self.session.query(Station)
+	for station in stations:
+		id = station.id
+		name = station.name
+		capacity = station.capacity
+		intersection_id = station.intersection_id
+		intersections= self.session.query(Intersection).filter(Intersection.id==intersection_id)
+		for intersection in intersections:
+			#print station.name
+			#print intersection.lat
+			#print intersection.lon
+			stations_dict[stations_counter] = [intersection.lat, intersection.lon, id, name, capacity]
+		stations_counter+=1
+	return json.dumps(stations_dict)
 
 def main():
+
+# DEPRECATED. DO NOT RUN THIS FILE DIRECTLY.
 
     day = 1
     start_time = datetime.datetime.strptime('06:00',
