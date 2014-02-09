@@ -41,9 +41,9 @@ class RangeEvaluator:
         print "total real: ", total_real
 
     def get_produced_trips(self):
-        logic = PoissonLogic(self.session)
+        #logic = PoissonLogic(self.session)
         #logic = ExponentialLogic(self.session)
-        #logic = AltPoissonLogic(self.session)
+        logic = AltPoissonLogic(self.session)
         simulator = Simulator(logic)
         results = simulator.run(self.start_date, self.end_date)
         
@@ -229,9 +229,9 @@ def main():
         
 
     if len(sys.argv) == 1:
-        start_date = datetime.strptime('2012-1-1',
+        start_date = datetime.strptime('2012-6-8',
                                        '%Y-%m-%d')
-        end_date = datetime.strptime('2012-1-2',
+        end_date = datetime.strptime('2012-6-10',
                                      '%Y-%m-%d')
     elif len(sys.argv) == 3:
         start_date = datetime.strptime(sys.argv[1], 

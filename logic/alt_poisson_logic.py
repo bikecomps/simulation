@@ -72,7 +72,7 @@ class AltPoissonLogic(SimulationLogic):
         Caches destination distributions into dictionary of day -> hour -> start_station_id -> [cumulative_distr, corresponding stations]
         # Change to a list of lists, faster, more space efficient
         '''
-        distr_dict = [[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)] for d in range(7)]
+        distr_dict = [[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)] for d in range(2)]
 
 
         # Inclusive
@@ -85,25 +85,23 @@ class AltPoissonLogic(SimulationLogic):
             end_hour = end_time.hour if end_time.weekday() == dow else 24
 
             date_distrs = self.session.query(data_model.DestDistr) \
-               .filter(data_model.DestDistr.day_of_week == dow) \
+               .filter(data_model.DestDistr.is_week_day == (dow < 5)) \
                .filter(data_model.DestDistr.hour.between(start_hour, end_hour)) \
                .filter(data_model.DestDistr.prob > 0).yield_per(10000)
 
             for distr in date_distrs:
-                result = distr_dict[distr.day_of_week][distr.hour][distr.start_station_id]
-                #if distr.start_station_id == 31101:
-                #    print result
+                result = distr_dict[distr.is_week_day][distr.hour][distr.start_station_id]
 
                 # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
                 if len(result) == 0:
-                    distr_dict[distr.day_of_week][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
+                    distr_dict[distr.is_week_day][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
                 else:
                     result[0].append(distr.prob)
                     result[1].append(distr.end_station_id)
 
             print "\t\tStarting reductions"
             # Change all of the probability vectors into cumulative probability vectors
-            for hour in distr_dict[dow]:
+            for hour in distr_dict[(dow < 5)]:
                 for s_id, vectors in hour.iteritems():
                     # We have data for choosing destination vector
                     if len(vectors) == 2:
@@ -120,15 +118,18 @@ class AltPoissonLogic(SimulationLogic):
             Returns a destination station given dest_distrs
         '''
         #print time.day, time.hour, s_id
-        vectors = self.dest_distrs[time.weekday()][time.hour][s_id]
-        if len(vectors) > 0:
+        vectors = self.dest_distrs[time.weekday() < 5][time.hour][s_id]
+        if vectors:
             cum_prob_vector = vectors[0]
             station_vector = vectors[1]
 
             # cum_prob_vector[-1] should be 1 No scaling needed as described here:
             # http://docs.python.org/3/library/random.html (very bottom of page)
-            x = random.random()
+            # Scale it appropriately
+            x = random.random() * cum_prob_vector[-1] 
         
+            for i in range(len(cum_prob_vector)):
+                print s_id,cum_prob_vector, station_vector,'\n\n'
             return station_vector[bisect.bisect(cum_prob_vector, x)]
         else:
             print "Error getting destination: Day",time.day,"hour",time.hour,"s_id",s_id
@@ -155,7 +156,6 @@ class AltPoissonLogic(SimulationLogic):
                                                   trip_start_time, trip_end_time,
                                                   s_id, e_id)
                         self.pending_departures.put((start_time, new_trip))
-
     def get_num_trips(self, lam):
         """
         Samples a poisson distribution with the given lambda and returns the number
@@ -166,7 +166,8 @@ class AltPoissonLogic(SimulationLogic):
         while probability == 0:
             probability = random.random()
 
-        num_trips = poisson.ppf(probability, (4./3) * 3600./lam.rate)
+        # (4./3) * 
+        num_trips = poisson.ppf(probability, 3600./lam.rate)
 
         if numpy.isnan(num_trips):
             num_trips = -1
@@ -228,12 +229,12 @@ class AltPoissonLogic(SimulationLogic):
                                      .query(ExpLambda) \
                                      .filter(ExpLambda.month == month) \
                                      .filter(ExpLambda.year == year) \
-                                     .filter(ExpLambda.is_weekday == is_week_day) \
+                                     .filter(ExpLambda.is_week_day == is_week_day) \
                                      .filter(ExpLambda.hour.between(start_hour, end_hour))
                 requested_dict[month][year][is_week_day][(start_hour, end_hour)] = True
                 
             for lam in lambda_poisson:
-                distr_dict[lam.year][lam.month][lam.is_weekday][lam.hour][lam.station_id] = lam
+                distr_dict[lam.year][lam.month][lam.is_week_day][lam.hour][lam.station_id] = lam
                 num_added += 1
 
         print "Loaded %s lambdas" % num_added

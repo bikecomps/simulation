@@ -19,6 +19,8 @@ class ExponentialLogic(SimulationLogic):
     def __init__(self, session):
         SimulationLogic.__init__(self, session)
 
+        self.loading_times = []
+
     def initialize(self, start_time, end_time):
         SimulationLogic.initialize(self, start_time, end_time)
         print "\tLoading Exp Distributions"
@@ -44,6 +46,7 @@ class ExponentialLogic(SimulationLogic):
         self.moving_bikes = 0
 
 
+
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
         self.resolve_trips()
@@ -60,11 +63,9 @@ class ExponentialLogic(SimulationLogic):
         '''
         hour = self.start_time.hour
         day = self.start_time.day
-        print "INIT",day,hour,self.start_time
         for s_id in self.stations.iterkeys():
             new_trip = self.generate_trip(s_id, self.start_time)
             self.pending_departures.put((new_trip.start_date, new_trip))
-        print "NO MORE INIT TRIPS"
 
     def generate_trip(self, s_id, time):
         # Check weekday or weekend
@@ -74,22 +75,21 @@ class ExponentialLogic(SimulationLogic):
 
         # Never generated a trip, defer it until we have a feasible lambda
         # Test using if its greater than x hours too (possibly deal with bad latenight hours
-        if not exp_l or exp_l.rate > 3600 * 3:
+        if not exp_l:# or exp_l.rate > 3600 * 2:
             # Test it out to see how this works
             # Have it look again the next hour
-            return Trip('-1', "Casual", 2, time + datetime.timedelta(seconds=3600), 
+            return Trip('-1', "Casual", 2, time + datetime.timedelta(seconds=3601), 
                         None, s_id, s_id)
 
         # Returns time till next event in seconds
         # Function takes in 1/rate = "scale" but it works better the other way...
-        wait_time = numpy.random.exponential(exp_l.rate*(3./4))
-        '''
-        if wait_time > 3600:
-            return Trip('-1', "Casual", 2, time + datetime.timedelta(seconds=3600), 
-                        None, s_id, s_id)
-        '''
+        wait_time = numpy.random.exponential(exp_l.rate*(2./4))
+        #if wait_time > 3600:
+        #    return Trip('-1', "Casual", 2, time + datetime.timedelta(seconds=3601), 
+        #                None, s_id, s_id)
 
         trip_start_time = time + datetime.timedelta(seconds=wait_time)
+        self.loading_times.append((s_id, wait_time, time))
         # It should go somewhere depending on when the hour of its start_time (could be far in the future)
         end_station_id = self.get_destination(s_id, trip_start_time)
 
@@ -103,8 +103,9 @@ class ExponentialLogic(SimulationLogic):
             new_trip = data_model.Trip(str(random.randint(1,500)), 
                 "Casual", 2, trip_start_time, trip_end_time, s_id, end_station_id)
         else:
-            print "GAMMA ERROR:"
-            print "start station",s_id,"end station",end_station_id
+            #print "GAMMA ERROR:"
+            #print "Generate a trip from ",s_id,"for",wait_time,"seconds in the future"
+            #print "start station",s_id,"end station",end_station_id
             #TODO !!! What to do if we've never seen trips between two stations????
             trip_end_time = trip_start_time
             new_trip = data_model.Trip(str(random.randint(1,500)), 
@@ -117,7 +118,7 @@ class ExponentialLogic(SimulationLogic):
             Returns a destination station given dest_distrs
         '''
         #print time.day, time.hour, s_id
-        vectors = self.dest_distrs[time.weekday()][time.hour][s_id]
+        vectors = self.dest_distrs[time.weekday() < 5][time.hour][s_id]
         if len(vectors) > 0:
             cum_prob_vector = vectors[0]
             station_vector = vectors[1]
@@ -128,7 +129,7 @@ class ExponentialLogic(SimulationLogic):
         
             return station_vector[bisect.bisect(cum_prob_vector, x)]
         else:
-            print "Error getting destination: Day",time.day,"hour",time.hour,"s_id",s_id
+            print "Error getting destination: Weekday",time.weekday(),"hour",time.hour,"s_id",s_id
             # Send it to one of 273 randomly
             return random.choice(self.stations.keys())
 
@@ -161,18 +162,18 @@ class ExponentialLogic(SimulationLogic):
                              .filter(ExpLambda.month <= end_time.month)\
                              .yield_per(5000)
 
-        
+        num_ds = 0 
         for d in distrs:
-            distr_dict[d.station_id][d.year][d.month][d.is_weekday][d.hour] = d
-
+            distr_dict[d.station_id][d.year][d.month][d.is_week_day][d.hour] = d
+            num_ds += 1
+        print "Loaded %i distributions", num_ds
         return distr_dict
 
     def load_dest_distrs(self, start_time, end_time):
         '''
         Caches destination distributions into dictionary of day -> hour -> start_station_id -> [cumulative_distr, corresponding stations]
-        # Change to a list of lists, faster, more space efficient
         '''
-        distr_dict = [[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)] for d in range(7)]
+        distr_dict = [[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)] for d in range(2)]
 
 
         # Inclusive
@@ -185,18 +186,18 @@ class ExponentialLogic(SimulationLogic):
             end_hour = end_time.hour if end_time.weekday() == dow else 24
 
             date_distrs = self.session.query(data_model.DestDistr) \
-               .filter(data_model.DestDistr.day_of_week == dow) \
+               .filter(data_model.DestDistr.is_week_day == dow < 5) \
                .filter(data_model.DestDistr.hour.between(start_hour, end_hour)) \
                .filter(data_model.DestDistr.prob > 0).yield_per(10000)
 
             for distr in date_distrs:
-                result = distr_dict[distr.day_of_week][distr.hour][distr.start_station_id]
+                result = distr_dict[distr.day_of_week < 5][distr.hour][distr.start_station_id]
                 #if distr.start_station_id == 31101:
                 #    print result
 
                 # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
                 if len(result) == 0:
-                    distr_dict[distr.day_of_week][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
+                    distr_dict[distr.day_of_week < 5][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
                 else:
                     result[0].append(distr.prob)
                     result[1].append(distr.end_station_id)
@@ -230,12 +231,15 @@ class ExponentialLogic(SimulationLogic):
         # Using trip_end_time=None to indicate that we should just generate another trip
         if not trip.end_date:
             new_trip = self.generate_trip(departure_station_ID, trip.start_date)
+            #self.add_departure(new_trip)
             self.pending_departures.put((new_trip.start_date, new_trip))
         elif self.station_counts[departure_station_ID] == 0:
             new_disappointment = Disappointment(departure_station_ID, trip.start_date, trip_id=None)
             self.session.add(new_disappointment)
             self.disappointment_list.append(new_disappointment)
             self.resolve_sad_departure(trip)
+            new_trip = self.generate_trip(departure_station_ID, trip.start_date)
+            self.pending_departures.put((new_trip.start_date, new_trip))
         else:
             self.station_counts[departure_station_ID] -= 1
             self.pending_arrivals.put((trip.end_date, trip))

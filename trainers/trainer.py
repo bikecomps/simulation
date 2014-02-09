@@ -67,8 +67,8 @@ def train_dest_distrs(session, start_d, end_d):
 
         num_zero = 0
         non_zero = 0
-        # index by hour, day, end_station -> num trips
-        trip_map = [[defaultdict(int) for h in range(24)] for d in range(7)]
+        # index by [weekend, is_weekday], day, end_station -> num trips
+        trip_map = [[defaultdict(int) for h in range(24)] for d in range(2)]
 
         q = session.query(Trip)\
                 .filter(Trip.start_date.between(start_date, end_date))\
@@ -76,7 +76,7 @@ def train_dest_distrs(session, start_d, end_d):
                 .join(Trip.trip_type, aliased=True)\
                 .filter(TripType.trip_type == 'Training').yield_per(10000)
         for trip in q:
-            trip_map[trip.start_date.weekday()][trip.start_date.hour][trip.end_station_id] += 1
+            trip_map[trip.start_date.weekday() < 5][trip.start_date.hour][trip.end_station_id] += 1
 
         # Convert above to percentages:
         for i in range(len(trip_map)):
@@ -89,7 +89,7 @@ def train_dest_distrs(session, start_d, end_d):
                     # Don't put any 0 probs in the db for now
                     num_trips = station_map.get(e_id[0], 0.0)
                     if num_trips:
-                        session.add(DestDistr(s_id, e_id[0], i, j, num_trips/total_num_trips))
+                        session.add(DestDistr(s_id, e_id[0], bool(i), j, num_trips/total_num_trips))
 
         session.commit()
         session.flush()
@@ -100,9 +100,12 @@ def train_dest_distrs(session, start_d, end_d):
 def train_exp_lambdas(conn, start_d, end_d):
     engine = conn.getDBEngine()
     session = conn.getDBSession()
+    start_date = datetime.strptime(start_d, '%Y-%m-%d')
+    end_date = datetime.strptime(end_d, '%Y-%m-%d')
 
     session.query(ExpLambda).delete()
 
+    #AND trip_type_id=1
     # Hard code in training data for now
     raw_query = """
                 SELECT EXTRACT(YEAR FROM start_date), EXTRACT(MONTH FROM start_date), 
@@ -110,20 +113,10 @@ def train_exp_lambdas(conn, start_d, end_d):
                        EXTRACT(HOUR FROM start_date), COUNT(*) 
                 FROM trips 
                 WHERE start_date BETWEEN '{sd}' AND '{ed}' 
-                      AND trip_type_id=1
                       AND start_station_id={sid}
                 GROUP BY EXTRACT(YEAR FROM start_date), EXTRACT(MONTH FROM start_date),
                        EXTRACT(DOW FROM start_date), EXTRACT(HOUR FROM start_date);
             """
-    # Calculate the number of weekdays in a range, and weekend days
-    # thanks http://stackoverflow.com/questions/3615375/python-count-days-ignoring-weekends
-    start_date = datetime.strptime(start_d, '%Y-%m-%d')
-    end_date = datetime.strptime(end_d, '%Y-%m-%d')
-
-    #day_generator = (start_date + timedelta(x + 1) for x in xrange((end_date - start_date).days + 1))
-    #num_weekdays = sum(day.weekday() < 5 for day in day_generator)
-    #num_weekend_days = (end_date - start_date).days - num_weekdays
-    #print num_weekdays,num_weekend_days
     days_info = get_num_days(start_date, end_date)
 
     station_count = 0
@@ -136,37 +129,20 @@ def train_exp_lambdas(conn, start_d, end_d):
 
         for year, month, dow, hour, count in engine.execute(query):
             # Postgres does 0-6, sunday = 0
-            #print year, month, dow, hour, count
-            if s_id[0] == 31000 and int(year)==2010 and int(month)==11 and int(hour)==13:
-                print dow, hour, count, days_info[year][month]
-
-            #if 0 < dow < 6:
-            #    avg = float(count) / num_weekdays
-            #else:
-            #    avg = float(count) / num_weekend_days
-            #print counts
-            #print year, month, (0 < dow < 6), hour
             counts[int(year)][int(month) - 1][0 < dow < 6][int(hour)] += float(count)
-            #counts[int(hour)][0 < dow < 6] = avg
-            if s_id[0] == 31000 and int(year)==2010 and int(month)==11 and int(hour)==13:
-                print dow, hour, count, days_info[year][month], counts[int(year)][int(month) - 1]
 
-
-        #if s_id[0] == 31000:
-            #print counts
         for y, year_data in counts.iteritems():
             for m in xrange(len(year_data)):
                 month_data = year_data[m]
                 for d in xrange(len(month_data)):
                     day_data = month_data[d]
                     for h in xrange(len(day_data)):
-                        # He did his using a dictionary rather than a 0-indexed array
-                        #print day_data[h], days_info[y][m+1][d]
+                        # Days using a dictionary rather than a 0-indexed 
+                        # array (hence + 1)
                         day_count = days_info[y][m+1][d]
                         if day_count > 0 and day_data[h] > 0:
                             avg = day_data[h]  / day_count
                             # Convert to seconds
-                            #print "AVG: ", s_id,y,m,bool(d),h,avg,"Num Days: ",day_count,"Num counts: ",day_data[h]
                             rate = 3600.0 / avg
                             session.add(ExpLambda(s_id, y, m + 1, bool(d), h, rate))
 
@@ -372,8 +348,8 @@ def main():
     # e_test_date = "2011-09-19" 
     # train_gaussian(c, "2012-1-1", "2013-6-1")
     # get_pairwise_counts(c, "2013-1-1", "2013-1-2")
-    train_exp_lambdas(c, first_data, end_data)
-    #train_dest_distrs(c.getDBSession(), first_data, end_data)
+    #train_exp_lambdas(c, first_data, end_data)
+    train_dest_distrs(c.getDBSession(), first_data, end_data)
     # train_gammas(c.getDBSession(), "2010-09-15", "2013-06-30")
     #train_poisson(c, "2010-09-15", "2013-06-30")
 
