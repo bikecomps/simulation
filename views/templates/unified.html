@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+
+{% block css_and_scripts %}
+<link rel="stylesheet" type="text/css" href="/static/css/jquery.datetimepicker.css" />
+<script src="/static/js/jquery.datetimepicker.js"></script>
+
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="/static/development-bundle/demos/demos.css">
+
+<style>
+#map_canvas {
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+
+#simulation_control {
+  margin-top: 7px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: black;
+  background-color: rgba(125,125,125,0.7);
+  padding: 10px;
+  width: 342px;
+  height: 55px;
+}
+
+#control_form {
+  height: 100%;
+}
+
+#from_div {
+  width: 130px;
+  height: 100%;
+  float: left;
+}
+
+#to_div {
+  width: 130px;
+  height: 100%;
+  margin-left: 10px;
+  float: left;
+}
+
+#from_date {
+  height: 100%;
+}
+
+#to_date {
+  height: 100%;
+}
+
+input[type="text"] {
+  height: 100%;
+  font-size: 12px;
+}
+
+form button[type="submit"] {
+  margin-left: 10px;
+  height: 100%;
+  width: 40px;
+  float: left;
+  line-height: 8px;
+  font-size: 12px;
+}
+
+#stats_tab {
+  width: 500px;
+  height: 400px;
+  position: absolute;
+  left: 95%;
+  top: 150px;
+  border-radius: 10%;
+  background-color: rgba(125, 125, 125, 0.7);
+  border-style: solid;
+  border-color: black;
+  border-width: 1px;
+}
+
+#stats_panel {
+  width: 80%;
+  height: 80px;
+  border-radius: 10%;
+  background-color: rgba(125,125,125,0.7);
+  border-style: solid;
+  border-color: black;
+  border-width: 1px;
+  display: none;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+#summary_stats_results h4 {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: black;
+  padding-bottom: 5px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  clear: both;
+  text-align: center
+}
+
+.chart {
+  background: #b0e0f8;
+  margin: 5px;
+}
+
+.chart rect {
+  stroke: white;
+  fill: steelblue;
+}
+
+.chart text {
+  fill: white;
+}
+
+.chart text.name {
+  fill: #000;
+}
+
+#num_departures_per_station {
+  margin-top: 30px;
+}
+
+#num_departures_per_station div {
+  height: 300px;
+  overflow:scroll;
+}
+
+#num_arrivals_per_station {
+  margin-top: 30px;
+}
+
+#num_arrivals_per_station div {
+  height: 300px;
+  overflow:scroll;
+}
+
+#num_trips_per_hour {
+  margin-top: 30px;
+}
+
+#num_trips_per_hour div {
+  font: 10px sans-serif;
+}
+
+#num_trips_per_hour div
+.axis path,
+#num_trips_per_hour div
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+#num_trips_per_hour .bar {
+  fill: steelblue;
+}
+
+#num_trips_per_hour
+.x.axis path {
+  display: none;
+}
+
+#loading {
+  display: none;
+}
+
+#overall_trip_stats {
+  float: left;
+  width: 36%;
+}
+
+#min_duration_trip {
+  float: left;
+  width: 32%;
+  padding-left: 20px;
+}
+
+#max_duration_trip {
+  float: right;
+  width: 32%;
+  padding-left: 20px;
+}
+</style>
+
+<!-- Google Maps script -->    
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+<script src="/static/js/bikeshare-googlemaps.js"></script>
+
+<script type="application/javascript">
+    set_coordinates("{{locations}}");
+</script>
+
+{% end %}
+
+{% block content %}
+<!-- <div id="stats_tab"></div> -->
+<div class="row">  
+   <div class="large-12 columns">
+      <!--<div id="simulation_control">
+        <form onsubmit="processStatsForm(); return false;">
+          <div id="from_div">
+            <input type="text" id="from_date" placeholder="Start Date" />
+          </div>
+          <div id="to_div">
+            <input type="text" id="to_date" placeholder="End Date" />
+          </div>
+          <button type="submit" class="button" id="submit">Go!</button>
+          <script>
+  			    var button = document.getElementById("submit");
+  			    google.maps.event.addDomListener(button, 'click', function() {
+  				      console.log("yayayayayay this worked!");
+  			    });
+          </script>
+        </form>
+      </div>-->
+      <div id="loading">
+        <img src="/static/img/loading-gif-animation.gif" alt="loading" width=50px />
+      </div>
+      <div id="stats_panel">
+	<div class="row">
+	<div id="overall_trip_stats">
+        <h5>Overall Statistics</h5>
+        <table>
+          <tr>
+            <td>Total Number of Trips Completed</td>
+            <td id="total_num_trips"></td>
+          </tr>
+          <tr>
+            <td>Total Number of Disappointments</td>
+            <td id="total_num_disappointments"></td>
+          </tr>
+          <tr>
+            <td>Average Trip Time</td>
+            <td id="avg_trip_time"></td>
+          </tr>
+          <tr>
+            <td>Standard Deviation of Trip Times</td>
+            <td id="std_trip_time"></td>
+          </tr>
+        </table>
+	</div>
+        <div id="min_duration_trip">
+          <h5>Minimum Duration Trip</h5>
+          <table>
+            <tr>
+              <td>Start Station</td>
+              <td class="start_station_name"></td>
+            </tr>
+            <tr>
+              <td>End Station</td>
+              <td class="end_station_name"></td>              
+            </tr>
+            <tr>
+              <td>Duration</td>
+              <td class="duration"></td>
+            </tr>
+            <tr>
+              <td>Trip Start Time</td>
+              <td class="start_datetime"></td>
+            </tr>
+            <tr>
+              <td>Trip End Time</td>
+              <td class="end_datetime"></td>
+            </tr>
+          </table>
+        </div>
+        <div id="max_duration_trip">
+          <h5>Maximum Duration Trip</h5>
+          <table>
+            <tr>
+              <td>Start Station</td>
+              <td class="start_station_name"></td>
+            </tr>
+            <tr>
+              <td>End Station</td>
+              <td class="end_station_name"></td>              
+            </tr>
+            <tr>
+              <td>Duration</td>
+              <td class="duration"></td>
+            </tr>
+            <tr>
+              <td>Trip Start Time</td>
+              <td class="start_datetime"></td>
+            </tr>
+            <tr>
+              <td>Trip End Time</td>
+              <td class="end_datetime"></td>
+            </tr>
+          </table>
+        </div>
+	</div>
+	<br />
+        <div id="num_departures_per_station">
+          <h5>Number of Departures per Station</h5>
+          <div>
+          </div>
+        </div>
+        <br />
+        <div id="num_arrivals_per_station">
+          <h5>Number of Arrivals per Station</h5>
+          <div>
+          </div>
+        </div>
+        <div id="num_trips_per_hour">
+          <h5>Number of Trips per Hour</h5>
+          <div>
+          </div>
+        </div>
+      </div>
+    </div>    
+</div>
+
+<script src="/static/js/foundation.min.js"></script>
+
+<script>
+  $(document).foundation();
+</script>
+
+<div class="full-screen-wrapper">
+    <div id="map_canvas">
+    </div>
+</div>
+
+<script>
+$('#stats_tab').click(function() {
+  $('#stats_tab').toggle("slide", {
+    direction: 'left',
+    distance: 400,
+  });
+});
+</script>
+
+{% end %}
+
