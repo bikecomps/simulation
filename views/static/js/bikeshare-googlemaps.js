@@ -14,7 +14,9 @@ function set_coordinates(val)
 function SimulationControl(controlDiv) {
     controlDiv.id = "simulation_control";
     
-    var controlForm = document.createElement('form');
+    var control_form = document.createElement('form');
+    control_form.id = 'control_form';
+   // control_form.onsubmit = "processStatsForm(this); return false;";
 
     var from_div = document.createElement('div');
     from_div.id = 'from_div';
@@ -36,21 +38,23 @@ function SimulationControl(controlDiv) {
     submit.type = 'submit';
     submit.class = 'button';
     submit.id = 'submit';
-    submit.value = 'Go!';
+    submit.innerHTML = 'Go!';
 
-    controlForm.appendChild(from_div);
-    controlForm.appendChild(to_div);
-    controlForm.appendChild(submit);
+    control_form.appendChild(from_div);
+    control_form.appendChild(to_div);
+    control_form.appendChild(submit);
 
-    controlDiv.appendChild(controlForm);
-
+    controlDiv.appendChild(control_form);
 }
 
 function initialize() {
     connections = [];
 	var mapOptions = {
 		panControl: false,
-		zoomControlOptions: {
+		minZoom: 4,
+                maxZoom: 17,
+                scrollwheel: false,
+                zoomControlOptions: {
 			position: google.maps.ControlPosition.TOP_LEFT
 		},
 		zoom: 12,
@@ -64,7 +68,15 @@ function initialize() {
     var simControl = new SimulationControl(simControlDiv);
 
     map.controls[google.maps.ControlPosition.TOP_LEFT].push(simControlDiv);
-    
+    google.maps.event.addListenerOnce(map, 'idle', function(){
+        $('#from_date, #to_date').datetimepicker({
+          closeOnDateSelect: true,
+          yearStart: 2012,
+          yearEnd: 2016,
+          format: 'Y-m-d H:i',
+      });
+    });
+
     // Draw a logo wherever there is a bike station
   	var stationLogo = '/static/img/cbLogo-16.png';
     //console.log("length="+Object.keys(locations).length);

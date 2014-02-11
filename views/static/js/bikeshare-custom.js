@@ -272,7 +272,7 @@ function processStatsForm() {
 
     $.ajax({
         type: "POST",
-        url: "/stats",
+        url: "/unified",
         data: { start: from, end: to },
         beforeSend: function() {
             $("#results").hide();
