@@ -267,16 +267,23 @@ class DestDistr(Base):
     end_station_id = Column(Integer, ForeignKey('stations.id'))
     end_station = relationship('Station', foreign_keys=[end_station_id], 
                                backref=backref('dest_distr_end'))
-    hour = Column(Integer, nullable=False) # range 0-23
+
+
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
     is_week_day = Column(Boolean, nullable=False)
+    hour = Column(Integer, nullable=False) # range 0-23
     prob = Column(Float, nullable=False)
 
-    def __init__(self, start_station_id, end_station_id, is_week_day, hour, probability):
+    def __init__(self, start_station_id, end_station_id, year, month, 
+                 is_week_day, hour, prob):
         self.start_station_id = start_station_id
         self.end_station_id = end_station_id
+        self.year = year
+        self.month = month
         self.is_week_day = is_week_day
         self.hour = hour
-        self.prob = probability
+        self.prob = prob
     
     def __repr__(self):
         return 'Destination distribution: start station id: %s, end station id: %s, hour: %s, is week day?: %r, prob: %.4f'\

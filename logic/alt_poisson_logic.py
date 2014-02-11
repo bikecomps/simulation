@@ -23,8 +23,11 @@ class AltPoissonLogic(SimulationLogic):
 
     def initialize(self, start_time, end_time):
         SimulationLogic.initialize(self, start_time, end_time)
+        print "Loading Lambdas"
         self.lambda_distrs = self.load_lambdas(start_time, end_time)
+        print "Loading Gammas"
         self.duration_distrs = self.load_gammas()
+        print "Loading Destination Distrs"
         self.dest_distrs = self.load_dest_distrs(start_time, end_time)
 
         # Retrieve StationDistance objects representing the five closest
@@ -78,6 +81,7 @@ class AltPoissonLogic(SimulationLogic):
         # Inclusive
         #TODO figure out what to do if timespan > a week -> incline to say ignore it
         #TODO Bug: loading too much data at the moment, by a fair amount
+        num_distrs = 0
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
             
@@ -85,9 +89,11 @@ class AltPoissonLogic(SimulationLogic):
             end_hour = end_time.hour if end_time.weekday() == dow else 24
 
             date_distrs = self.session.query(data_model.DestDistr) \
-               .filter(data_model.DestDistr.is_week_day == (dow < 5)) \
-               .filter(data_model.DestDistr.hour.between(start_hour, end_hour)) \
-               .filter(data_model.DestDistr.prob > 0).yield_per(10000)
+               .filter(DestDistr.year == day.year)\
+               .filter(DestDistr.month == day.month)\
+               .filter(DestDistr.is_week_day == (dow < 5)) \
+               .filter(DestDistr.hour.between(start_hour, end_hour))\
+               .yield_per(10000)
 
             for distr in date_distrs:
                 result = distr_dict[distr.is_week_day][distr.hour][distr.start_station_id]
@@ -98,6 +104,7 @@ class AltPoissonLogic(SimulationLogic):
                 else:
                     result[0].append(distr.prob)
                     result[1].append(distr.end_station_id)
+                num_distrs += 1
 
             print "\t\tStarting reductions"
             # Change all of the probability vectors into cumulative probability vectors
@@ -110,6 +117,7 @@ class AltPoissonLogic(SimulationLogic):
                         # for basic accumulator code
                         cum_prob_vector = reduce(lambda a, x: a + [a[-1] + x], prob_vector[1:], [prob_vector[0]])
                         vectors[0] = cum_prob_vector
+        print "Loaded %d distrs" % num_distrs
         return distr_dict
 
 
@@ -128,8 +136,6 @@ class AltPoissonLogic(SimulationLogic):
             # Scale it appropriately
             x = random.random() * cum_prob_vector[-1] 
         
-            for i in range(len(cum_prob_vector)):
-                print s_id,cum_prob_vector, station_vector,'\n\n'
             return station_vector[bisect.bisect(cum_prob_vector, x)]
         else:
             print "Error getting destination: Day",time.day,"hour",time.hour,"s_id",s_id

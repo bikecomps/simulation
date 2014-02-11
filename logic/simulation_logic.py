@@ -93,7 +93,7 @@ class SimulationLogic:
             
             avg_count = numpy.average(bike_counts)
             std_count = numpy.std(bike_counts)
-            #TODO Convert to new distribution
+
             if len(bike_counts) > 0:
                 count = int(random.gauss(avg_count, std_count))
                 if count > s.capacity:
@@ -270,6 +270,7 @@ class SimulationLogic:
         return (eventType, trip)
 
     def rebalance_stations(self):		
+
         remove_from_full = []
         for station_id in self.full_stations_set:
             to_remove = self.stations[station_id].capacity/2

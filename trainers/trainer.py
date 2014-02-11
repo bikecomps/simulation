@@ -65,10 +65,13 @@ def train_dest_distrs(session, start_d, end_d):
     stations_done = 0
     for s_id in station_ids:
 
-        num_zero = 0
-        non_zero = 0
         # index by [weekend, is_weekday], day, end_station -> num trips
-        trip_map = [[defaultdict(int) for h in range(24)] for d in range(2)]
+        trip_map = {y:[[[defaultdict(int)] * 24, [defaultdict(int)] * 24] 
+                    for m in range(12)] for y in 
+                        xrange(start_date.year, end_date.year + 1)}
+
+
+        #trip_map = [[defaultdict(int) for h in range(24)] for d in range(2)]
 
         q = session.query(Trip)\
                 .filter(Trip.start_date.between(start_date, end_date))\
@@ -76,21 +79,26 @@ def train_dest_distrs(session, start_d, end_d):
                 .join(Trip.trip_type, aliased=True)\
                 .filter(TripType.trip_type == 'Training').yield_per(10000)
         for trip in q:
-            trip_map[trip.start_date.weekday() < 5][trip.start_date.hour][trip.end_station_id] += 1
+            t_time = trip.start_date
+            trip_map[t_time.year][t_time.month - 1][t_time.weekday() < 5]\
+                    [t_time.hour][trip.end_station_id] += 1
 
         # Convert above to percentages:
-        for i in range(len(trip_map)):
-            day = trip_map[i]
-            for j in range(len(day)):
-                station_map = day[j]
-                # Total values:
-                total_num_trips = float(sum(station_map.itervalues()))
-                for e_id in station_ids:
-                    # Don't put any 0 probs in the db for now
-                    num_trips = station_map.get(e_id[0], 0.0)
-                    if num_trips:
-                        session.add(DestDistr(s_id, e_id[0], bool(i), j, num_trips/total_num_trips))
-
+        for y, year_data in trip_map.iteritems():
+            for m in xrange(len(year_data)):
+                month_data = year_data[m]
+                for d in xrange(len(month_data)):
+                    day_data = month_data[d]
+                    for h in xrange(len(day_data)):
+                        hour_data = day_data[h]
+                        total_num_trips = float(sum(hour_data.itervalues()))
+                        for e_id, num_trips in hour_data.iteritems():
+                            # Don't put any 0 probs in the db for now
+                            #num_trips = station_map.get(e_id[0], 0.0)
+                            #if num_trips:
+                            session.add(DestDistr(s_id, e_id, y, m, bool(d), 
+                                        h, num_trips/total_num_trips))
+                   
         session.commit()
         session.flush()
         stations_done += 1

@@ -49,7 +49,27 @@ class ExponentialLogic(SimulationLogic):
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
+        not_full = []
+        not_empty = []
+        for s_id in self.station_counts:
+            if self.station_counts[s_id] > 0 and s_id in self.empty_stations_set:
+                not_empty.append(s_id)
+                self.empty_stations_set.remove(s_id)      
+            elif self.station_counts[s_id] != self.stations[s_id].capacity and s_id in self.full_stations_set:
+                not_full.append(s_id)
+                self.full_stations_set.remove(s_id)
+            elif self.station_counts[s_id] == self.stations[s_id].capacity and s_id not in self.full_stations_set:
+                self.full_stations_set.add(s_id)
+            elif self.station_counts[s_id] == 0 and s_id not in self.empty_stations_set:
+                self.empty_stations_set.add(s_id)
+
+        if self.rebalancing:
+            self.rebalance_stations()
+ 
         self.resolve_trips()
+
+        if self.rebalancing:
+            self.rebalance_stations()
 
         # Increment after we run for the current timestep?
         self.time += timestep
@@ -166,12 +186,13 @@ class ExponentialLogic(SimulationLogic):
         for d in distrs:
             distr_dict[d.station_id][d.year][d.month][d.is_week_day][d.hour] = d
             num_ds += 1
-        print "Loaded %i distributions", num_ds
+        print "Loaded %i distributions" % num_ds
         return distr_dict
 
     def load_dest_distrs(self, start_time, end_time):
         '''
         Caches destination distributions into dictionary of day -> hour -> start_station_id -> [cumulative_distr, corresponding stations]
+        # Change to a list of lists, faster, more space efficient
         '''
         distr_dict = [[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)] for d in range(2)]
 
@@ -179,6 +200,7 @@ class ExponentialLogic(SimulationLogic):
         # Inclusive
         #TODO figure out what to do if timespan > a week -> incline to say ignore it
         #TODO Bug: loading too much data at the moment, by a fair amount
+        num_distrs = 0
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
             
@@ -186,25 +208,26 @@ class ExponentialLogic(SimulationLogic):
             end_hour = end_time.hour if end_time.weekday() == dow else 24
 
             date_distrs = self.session.query(data_model.DestDistr) \
-               .filter(data_model.DestDistr.is_week_day == dow < 5) \
-               .filter(data_model.DestDistr.hour.between(start_hour, end_hour)) \
-               .filter(data_model.DestDistr.prob > 0).yield_per(10000)
+               .filter(DestDistr.year == day.year)\
+               .filter(DestDistr.month == day.month)\
+               .filter(DestDistr.is_week_day == (dow < 5)) \
+               .filter(DestDistr.hour.between(start_hour, end_hour))\
+               .yield_per(10000)
 
             for distr in date_distrs:
-                result = distr_dict[distr.day_of_week < 5][distr.hour][distr.start_station_id]
-                #if distr.start_station_id == 31101:
-                #    print result
+                result = distr_dict[distr.is_week_day][distr.hour][distr.start_station_id]
 
                 # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
                 if len(result) == 0:
-                    distr_dict[distr.day_of_week < 5][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
+                    distr_dict[distr.is_week_day][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
                 else:
                     result[0].append(distr.prob)
                     result[1].append(distr.end_station_id)
+                num_distrs += 1
 
             print "\t\tStarting reductions"
             # Change all of the probability vectors into cumulative probability vectors
-            for hour in distr_dict[dow]:
+            for hour in distr_dict[(dow < 5)]:
                 for s_id, vectors in hour.iteritems():
                     # We have data for choosing destination vector
                     if len(vectors) == 2:
@@ -213,7 +236,9 @@ class ExponentialLogic(SimulationLogic):
                         # for basic accumulator code
                         cum_prob_vector = reduce(lambda a, x: a + [a[-1] + x], prob_vector[1:], [prob_vector[0]])
                         vectors[0] = cum_prob_vector
+        print "Loaded %d distrs" % num_distrs
         return distr_dict
+
 
     def get_trip_duration(self, gamma):
         '''
@@ -227,30 +252,26 @@ class ExponentialLogic(SimulationLogic):
         '''Decrement station count, put in pending_arrivals queue. If station is empty, put it in the disappointments list.'''
         departure_station_ID = trip.start_station_id
 
+        # For some reason this is more apt to develop dissapointments -> ensure perfection
+        for s_id in self.stations.iterkeys():
+            if self.station_counts[s_id] <= 1:
+                self.full_stations_set.add(s_id)
 
-        # Using trip_end_time=None to indicate that we should just generate another trip
-        if not trip.end_date:
-            new_trip = self.generate_trip(departure_station_ID, trip.start_date)
-            #self.add_departure(new_trip)
-            self.pending_departures.put((new_trip.start_date, new_trip))
-        elif self.station_counts[departure_station_ID] == 0:
+        # No bike to depart on, log a dissapointment
+        if self.station_counts[departure_station_ID] == 0:
             new_disappointment = Disappointment(departure_station_ID, trip.start_date, trip_id=None)
             self.session.add(new_disappointment)
             self.disappointment_list.append(new_disappointment)
             self.resolve_sad_departure(trip)
-            new_trip = self.generate_trip(departure_station_ID, trip.start_date)
-            self.pending_departures.put((new_trip.start_date, new_trip))
-        else:
+
+        # Using trip_end_time=None to indicate that we should just generate another trip
+        # -> if it has an end_date then it's a normal trip
+        elif trip.end_date:
             self.station_counts[departure_station_ID] -= 1
             self.pending_arrivals.put((trip.end_date, trip))
-            new_trip = self.generate_trip(departure_station_ID, trip.start_date)
-            self.pending_departures.put((new_trip.start_date, new_trip))
 
-    def resolve_sad_departure(self, trip):
-        '''
-        Currently does nothing. Used to do this: changes trip.start_station_id to the id of the station nearest to it. Updates both trip.start_date and trip.end_date using get_trip_duration(), puts the updated trip into pending_departures. 
-        '''
-        pass
+        new_trip = self.generate_trip(departure_station_ID, trip.start_date)
+        self.pending_departures.put((new_trip.start_date, new_trip))
 
     def resolve_sad_arrival(self, trip):
         '''
@@ -272,12 +293,3 @@ class ExponentialLogic(SimulationLogic):
 
     def clean_up(self):
         pass
-
-def main():
-    connector = Connector()
-    session = connector.getDBSession()
-    p = PoissonLogic(session)
-    print p.get_trip_duration(31100, 31101)
-    print durs
-if __name__ == '__main__':
-    main()
