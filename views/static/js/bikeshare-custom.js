@@ -276,12 +276,12 @@ function processStatsForm() {
         data: { start: from, end: to },
         beforeSend: function() {
             $("#results").hide();
-            $("#loading").show();
+            $("#loading_div").show();
         },
         success: function(data) {
             displaySummaryStats(JSON.parse(data), from, to);
-            $("#loading").hide();
-		    $("#results").show();
+            $("#loading_div").hide();
+            $("#results").show();
         }
     });
 }

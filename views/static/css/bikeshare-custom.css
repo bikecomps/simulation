@@ -211,8 +211,23 @@ form button[type="submit"] {
   display: none;
 }
 
-#loading {
+#loading_div {
+  width: 40%;
+  height: 40%;
   display: none;
+  position: fixed;
+  left: 50%;
+  margin: -35% 0 0 -20%;
+  border-style: solid;
+  border-color: blue;
+  background-color: rgba(0,0,0,.8);
+}
+
+#loading {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  margin: -25px 0 0 -25px;
 }
 
 #overall_trip_stats {

@@ -16,7 +16,6 @@ function SimulationControl(controlDiv) {
     
     var control_form = document.createElement('form');
     control_form.id = 'control_form';
-   // control_form.onsubmit = "processStatsForm(this); return false;";
 
     var from_div = document.createElement('div');
     from_div.id = 'from_div';
@@ -66,15 +65,16 @@ function initialize() {
 
     var simControlDiv = document.createElement('div');
     var simControl = new SimulationControl(simControlDiv);
-
     map.controls[google.maps.ControlPosition.TOP_LEFT].push(simControlDiv);
+
     google.maps.event.addListenerOnce(map, 'idle', function(){
         $('#from_date, #to_date').datetimepicker({
-          closeOnDateSelect: true,
-          yearStart: 2012,
-          yearEnd: 2016,
-          format: 'Y-m-d H:i',
-      });
+            closeOnDateSelect: true,
+            yearStart: 2010,
+            yearEnd: 2016,
+            format: 'Y-m-d H:i',
+        });
+        $('#control_form').attr('onsubmit','processStatsForm(); return false;');
     });
 
     // Draw a logo wherever there is a bike station

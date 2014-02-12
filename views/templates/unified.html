@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 
 {% block css_and_scripts %}
+<!-- Datetime Pickers -->
 <link rel="stylesheet" type="text/css" href="/static/css/jquery.datetimepicker.css" />
 <script src="/static/js/jquery.datetimepicker.js"></script>
 
+<!-- D3.js  -->
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 
+<!-- jQuery -->
 <link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
 <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
 <link rel="stylesheet" href="/static/development-bundle/demos/demos.css">
@@ -17,16 +20,12 @@
 <script type="application/javascript">
     set_coordinates("{{locations}}");
 </script>
-
 {% end %}
 
 {% block content %}
 <!-- <div id="stats_tab"></div> -->
 <div class="row">  
    <div class="large-12 columns">
-      <div id="loading">
-        <img src="/static/img/loading-gif-animation.gif" alt="loading" width=50px />
-      </div>
       <div id="stats_panel">
 	<div class="row">
 	<div id="overall_trip_stats">
@@ -128,10 +127,14 @@
   $(document).foundation();
 </script>
 
-<!--<div class="full-screen-wrapper">-->
-    <div id="map_canvas">
-    </div>
-<!--</div>-->
+
+<div id="map_canvas"></div>
+
+<!-- <div id="loading_div"> -->
+<div id="loading_div">
+  <img id="loading"  src="/static/img/loading-gif-animation.gif" alt="loading" width=50px/>
+</div>
+<!-- </div> -->
 
 <script type="text/javascript">
 $('#stats_tab').click(function() {
