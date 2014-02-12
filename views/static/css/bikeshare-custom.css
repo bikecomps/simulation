@@ -51,3 +51,183 @@ footer p {
     line-height: 22px;
     margin-bottom: 0;
 }
+
+/*Style elements from unified.html*/
+
+#map_canvas {
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+
+#simulation_control {
+  margin-top: 7px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: black;
+  background-color: rgba(125,125,125,0.7);
+  padding: 10px;
+  width: 360px;
+  height: 55px;
+}
+
+#control_form {
+  height: 100%;
+}
+
+#from_div {
+  width: 130px;
+  height: 100%;
+  float: left;
+}
+
+#to_div {
+  width: 130px;
+  height: 100%;
+  margin-left: 10px;
+  float: left;
+}
+
+#from_date {
+  height: 100%;
+}
+
+#to_date {
+  height: 100%;
+}
+
+input[type="text"] {
+  height: 100%;
+  font-size: 12px;
+}
+
+form button[type="submit"] {
+  margin-left: 10px;
+  height: 100%;
+  float: left;
+  line-height: 8px;
+  font-size: 12px;
+}
+
+#stats_tab {
+  width: 500px;
+  height: 400px;
+  position: absolute;
+  left: 95%;
+  top: 150px;
+  border-radius: 10%;
+  background-color: rgba(125, 125, 125, 0.7);
+  border-style: solid;
+  border-color: black;
+  border-width: 1px;
+}
+
+#stats_panel {
+  width: 80%;
+  height: 80px;
+  border-radius: 10%;
+  background-color: rgba(125,125,125,0.7);
+  border-style: solid;
+  border-color: black;
+  border-width: 1px;
+  display: none;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+#summary_stats_results h4 {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: black;
+  padding-bottom: 5px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  clear: both;
+  text-align: center
+}
+
+.chart {
+  background: #b0e0f8;
+  margin: 5px;
+}
+
+.chart rect {
+  stroke: white;
+  fill: steelblue;
+}
+
+.chart text {
+  fill: white;
+}
+
+.chart text.name {
+  fill: #000;
+}
+
+#num_departures_per_station {
+  margin-top: 30px;
+}
+
+#num_departures_per_station div {
+  height: 300px;
+  overflow:scroll;
+}
+
+#num_arrivals_per_station {
+  margin-top: 30px;
+}
+
+#num_arrivals_per_station div {
+  height: 300px;
+  overflow:scroll;
+}
+
+#num_trips_per_hour {
+  margin-top: 30px;
+}
+
+#num_trips_per_hour div {
+  font: 10px sans-serif;
+}
+
+#num_trips_per_hour div
+.axis path,
+#num_trips_per_hour div
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+#num_trips_per_hour .bar {
+  fill: steelblue;
+}
+
+#num_trips_per_hour
+.x.axis path {
+  display: none;
+}
+
+#loading {
+  display: none;
+}
+
+#overall_trip_stats {
+  float: left;
+  width: 36%;
+}
+
+#min_duration_trip {
+  float: left;
+  width: 32%;
+  padding-left: 20px;
+}
+
+#max_duration_trip {
+  float: right;
+  width: 32%;
+  padding-left: 20px;
+}
