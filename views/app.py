@@ -13,7 +13,7 @@ class UnifiedHandler(RequestHandler):
     def get(self):
         
         stations = PlotMap(None, None, None).stations
-        self.render("unified.html",title="SIMBA | Simulation of Bike Availability",locations=stations)
+        self.render("unified.html",title="Simba | Washington DC",locations=stations)
     
     def post(self):
         start_date = datetime.datetime.strptime(self.get_argument("start"),
@@ -66,7 +66,7 @@ if __name__ == "__main__":
         "template_path" : os.path.join(dirname, "templates")
     }
     application = Application([
-        (r"/", IndexHandler),
+        (r"/", UnifiedHandler),
         (r"/base", BaseHandler),
         (r"/about", AboutHandler),
         (r"/stats", StatsHandler),

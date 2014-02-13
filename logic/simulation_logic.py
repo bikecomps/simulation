@@ -85,6 +85,10 @@ class SimulationLogic:
         distributed_bikes = 0
 
         for s in self.session.query(Station):
+            # Ignore stations with capacity of 0.
+            if s.capacity == 0:
+                print s.id, "has no capacity. Ignoring this station."
+                continue
             # The cron_job now has hourly data (more or less)
             bike_counts = list(self.session.query(StationStatus.bike_count)\
                     .filter(StationStatus.station_id == s.id)\
@@ -118,11 +122,7 @@ class SimulationLogic:
         # Don't keep trying to reassign bikes to full stations
         full_stations = set()
         while bike_delta != 0: 
-            station_bike_prop = {s_id : float(s_count)/distributed_bikes
-                                        for s_id, s_count in 
-                                            self.station_counts.iteritems()
-                                            if s_id not in full_stations}
-
+            station_bike_prop = {s_id : float(s_count)/distributed_bikes for s_id, s_count in self.station_counts.iteritems() if s_id not in full_stations}
             for s_id, prop in station_bike_prop.iteritems():
                 added_bikes = round_func(prop * bike_delta) 
                 s = self.stations[s_id]
