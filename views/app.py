@@ -13,7 +13,7 @@ class UnifiedHandler(RequestHandler):
     def get(self):
         
         stations = PlotMap(None, None, None).stations
-        self.render("unified.html",title="SIMBA | Simulation of Bike Availability",locations=stations)
+        self.render("unified.html",title="Simba | Simulation of Bike Availability",locations=stations)
     
     def post(self):
         start_date = datetime.datetime.strptime(self.get_argument("start"),
@@ -72,5 +72,5 @@ if __name__ == "__main__":
         (r"/stats", StatsHandler),
 	(r"/unified", UnifiedHandler)
     ], **settings)
-    application.listen(3000)
+    application.listen(1337)
     tornado.ioloop.IOLoop.instance().start()
