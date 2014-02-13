@@ -1,76 +1,32 @@
 {% extends "base.html" %}
 
 {% block css_and_scripts %}
+<!-- Datetime Pickers -->
 <link rel="stylesheet" type="text/css" href="/static/css/jquery.datetimepicker.css" />
 <script src="/static/js/jquery.datetimepicker.js"></script>
-<script type="text/javascript">
-  $(function() {
-      $("#from_date, #to_date").datetimepicker({
-          format: "Y-m-d H:i",
-      });
-  });
-</script>
+
+<!-- D3.js  -->
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-<style>
-#from_div {
-  float: left;
-}
-#to_div {
-  margin-left: 50px;
-  float: left;
-}
 
-form button[type="submit"] {
-  margin-top: 20px;
-  float: left; 
-  clear: both;
-}
+<!-- jQuery -->
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="/static/development-bundle/demos/demos.css">
 
-#results {
-  float: left;
-  clear: both;
-  display: none;
-}
+<!-- Google Maps script -->    
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+<script src="/static/js/bikeshare-googlemaps.js"></script>
 
-#results h4 {
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: black;
-  padding-bottom: 5px;
-  margin-left: auto;
-  margin-right: auto;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  clear: both;
-  text-align: center
-}
-
-</style>
-
-
+<script type="application/javascript">
+    set_coordinates("{{locations}}");
+</script>
 {% end %}
 
 {% block content %}
-<div class="row">    
-    <div class="large-12 columns">
-      <h2>Summary Statistics</h2>
-      <form onsubmit="processStatsForm(); return false;">
-        <div id="from_div">
-          <h4 class="subheader">From:</h4>
-          <input type="text" id="from_date" />
-        </div>
-        <div id="to_div">
-          <h4 class="subheader">To:</h4>
-          <input type="text" id="to_date" />
-        </div>
-        <br />
-        <button type="submit" class="button">Generate</button>
-      </form>
-      <div id="loading">
-        <img src="/static/img/loading-gif-animation.gif" alt="loading" />
-      </div>
-      <div id="results">
-        <h4></h4>
+<!-- <div id="stats_tab"></div> -->
+<div class="row">  
+   <div class="large-12 columns">
+      <div id="stats_panel">
 	<div class="row">
 	<div id="overall_trip_stats">
         <h5>Overall Statistics</h5>
@@ -164,5 +120,38 @@ form button[type="submit"] {
       </div>
     </div>    
 </div>
+
+<script src="/static/js/foundation.min.js"></script>
+
+<script>
+  $(document).foundation();
+</script>
+
+
+<div id="map_canvas"></div>
+
+<!-- <div id="loading_div"> -->
+<div id="loading_div">
+  <img id="loading"  src="/static/img/loading-gif-animation.gif" alt="loading" width=50px/>
+</div>
+<!-- </div> -->
+
+<script type="text/javascript">
+$('#stats_tab').click(function() {
+  $('#stats_tab').toggle("slide", {
+    direction: 'left',
+    distance: 400,
+  });
+});
+</script>
+
+<script type="text/javascript">
+  function set_map_height() {
+    var screen_height = window.innerHeight;
+    var map_height = screen_height - 45;
+    $("#content").css("height",map_height);
+  }
+</script>
+
 {% end %}
 
