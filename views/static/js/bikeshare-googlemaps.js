@@ -11,42 +11,6 @@ function set_coordinates(val)
     locations=jQuery.parseJSON(j_val);
 }
 
-/*
-function SimulationControl(controlDiv) {
-    controlDiv.id = "simulation_control";
-    
-    var control_form = document.createElement('form');
-    control_form.id = 'control_form';
-
-    var from_div = document.createElement('div');
-    from_div.id = 'from_div';
-    var from_input = document.createElement('input');
-    from_input.type = 'text';
-    from_input.id = 'from_date';
-    from_input.placeholder = 'Start Date';
-    from_div.appendChild(from_input);
-
-    var to_div = document.createElement('div');
-    to_div.id = 'to_div';
-    var to_input = document.createElement('input');
-    to_input.type = 'text';
-    to_input.id = 'to_date';
-    to_input.placeholder = 'End Date';
-    to_div.appendChild(to_input);
-
-    var submit = document.createElement('button');
-    submit.type = 'submit';
-    submit.class = 'button';
-    submit.id = 'submit';
-    submit.innerHTML = 'Go!';
-
-    control_form.appendChild(from_div);
-    control_form.appendChild(to_div);
-    control_form.appendChild(submit);
-
-    controlDiv.appendChild(control_form);
-}
-*/
 
 function initialize() {
     connections = [];
@@ -56,7 +20,7 @@ function initialize() {
                 maxZoom: 17,
                 scrollwheel: false,
                 zoomControlOptions: {
-			position: google.maps.ControlPosition.TOP_LEFT
+			position: google.maps.ControlPosition.RIGHT_TOP
 		},
 		zoom: 12,
 		center: new google.maps.LatLng(38.904, -77.032),
@@ -64,36 +28,11 @@ function initialize() {
 	};
 	map = new google.maps.Map(document.getElementById('map_canvas'),
 			                  mapOptions);
-
-    //var simControlDiv = document.createElement('div');
-    //var simControl = new SimulationControl(simControlDiv);
-    //map.controls[google.maps.ControlPosition.TOP_LEFT].push(simControlDiv);
-
-    /*google.maps.event.addListenerOnce(map, 'idle', function(){
-        $('#from_date, #to_date').datetimepicker({
-            closeOnDateSelect: true,
-            yearStart: 2010,
-            yearEnd: 2016,
-            format: 'Y-m-d H:i',
-        });
-        $('#control_form').attr('onsubmit','processStatsForm(); return false;');
-    });*/
-
-    // Draw a logo wherever there is a bike station
-  	var stationLogo = '/static/img/cbLogo-16.png';
-    //console.log("length="+Object.keys(locations).length);
-
-	// var infoWindow = null;
-	// infoWindow = new google.maps.InfoWindow({
-	//	content: "Hakuna Matata! You clicked a station! G'day!"
-	// });	
-
+    
     // Draw a logo wherever there is a bike station	
 	var stationLogo = '/static/img/cbLogo-16.png';
-    //:console.log("length="+Object.keys(locations).length);
     
     for (station=0; station < Object.keys(locations).length; station++) {
-        // console.log(station + ": " + lat[station] + ", " + lng[station]);
         var stationLatLng = new google.maps.LatLng(locations[station][0], locations[station][1]);
         console.log("lat = " + locations[station][0] + "and lon = " + locations[station][1]);
         var marker = new google.maps.Marker({
@@ -135,13 +74,11 @@ function addLine(fromStation, toStation, color) {
     });
     connections.push(connection);
     connection.setMap(map);
-    // console.log(connections[connections.length-1]);
 }
 
 function removeLines() {
     for (var index in connections) {
         var connection = connections[index];
-        // console.log(connection);
         connection.setMap(null);        
     }
 }

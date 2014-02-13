@@ -72,5 +72,5 @@ if __name__ == "__main__":
         (r"/stats", StatsHandler),
 	(r"/unified", UnifiedHandler)
     ], **settings)
-    application.listen(3000)
+    application.listen(7777)
     tornado.ioloop.IOLoop.instance().start()
