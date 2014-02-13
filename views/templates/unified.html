@@ -28,9 +28,15 @@
 	   var $lefty = $(this);
            $lefty.animate({
 	       left: parseInt($lefty.css('left'), 10) == 0 ?
-		  -480 :
+		  -760 :
 		  0 
 	   }); 
+	});
+	$(function() {
+    	    $('#stats_slider').draggable({
+        	axis: 'x',
+       
+    	    });
 	});
     });
 </script>
@@ -38,7 +44,9 @@
 {% end %}
 
 {% block content %}
-<div id="stats_wrapper"><div id="stats_slider"></div></div>
+<div id="stats_wrapper">
+<div id="stats_slider">
+<div id="stats_button">B<br>U<br>T<br>T<br>O<br>N</div>
 <div class="row">  
    <div class="large-12 columns">
       <div id="stats_panel">
@@ -134,6 +142,8 @@
         </div>
       </div>
     </div>    
+</div>
+</div>
 </div>
 
 <script src="/static/js/foundation.min.js"></script>
