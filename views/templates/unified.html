@@ -20,10 +20,25 @@
 <script type="application/javascript">
     set_coordinates("{{locations}}");
 </script>
+
+
+<script type="application/javascript">
+    $(document).ready(function(){
+	$('#stats_slider').click(function() {
+	   var $lefty = $(this);
+           $lefty.animate({
+	       left: parseInt($lefty.css('left'), 10) == 0 ?
+		  -480 :
+		  0 
+	   }); 
+	});
+    });
+</script>
+
 {% end %}
 
 {% block content %}
-<!-- <div id="stats_tab"></div> -->
+<div id="stats_wrapper"><div id="stats_slider"></div></div>
 <div class="row">  
    <div class="large-12 columns">
       <div id="stats_panel">
