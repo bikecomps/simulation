@@ -106,9 +106,9 @@ form button[type="submit"] {
 
 #stats_wrapper {
   position: absolute;
-  left: 0;
+  left: -780px;
   top: 55px;
-  width: 800px;
+  width: 1580px;
   height: 100%;
   overflow: hidden;
 }
@@ -117,7 +117,7 @@ form button[type="submit"] {
   width: 800px;
   height: 100%;
   position: absolute;
-  left: 0px;
+  left: 780px;
   top: 0px;
   background-color: #ffffff;
   border-right: 2px solid #eeeeee;

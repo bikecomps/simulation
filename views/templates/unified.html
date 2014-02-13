@@ -28,14 +28,14 @@
 	   var $lefty = $(this);
            $lefty.animate({
 	       left: parseInt($lefty.css('left'), 10) == 0 ?
-		  -760 :
+		  780 :
 		  0 
 	   }); 
 	});
 	$(function() {
     	    $('#stats_slider').draggable({
         	axis: 'x',
-       
+       		containment: 'parent'
     	    });
 	});
     });
@@ -46,10 +46,11 @@
 {% block content %}
 <div id="stats_wrapper">
 <div id="stats_slider">
-<div id="stats_button">B<br>U<br>T<br>T<br>O<br>N</div>
+
 <div class="row">  
    <div class="large-12 columns">
       <div id="stats_panel">
+	<div id="stats_button"></div>
 	<div class="row">
 	<div id="overall_trip_stats">
         <h5>Overall Statistics</h5>
