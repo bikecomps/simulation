@@ -126,7 +126,10 @@ def get_census_data(session, attr_name, table_code, val_formula):
 
         # Do stuff
         new_type = AttributeType(attr_name)
-        #session.add(new_type)
+        session.add(new_type)
+
+        # Don't try to set neighborhood info multiple times
+        added_neighbs = set()
 
         for line_idx in xrange(len(census_data) - 1):
             line = census_data[line_idx]
@@ -141,10 +144,11 @@ def get_census_data(session, attr_name, table_code, val_formula):
                     filter(Neighborhood.FIPS_code.like(geo_id)).first()
 
             # If it's a known neighborhood, add the attribute
-            if neighb:
+            if neighb and neighb.id not in added_neighbs:
                 new_attr = NeighborhoodAttr(val, new_type, neighb.id)
-                #session.add(new_attr)
-        #session.commit()
+                added_neighbs.add(neighb.id)
+                session.add(new_attr)
+        session.commit()
         creation_summary = "\nSuccessfully created attribute '{name}' from table '{code}' using formula '{form}': {name},{code},{form}"\
             .format(name=attr_name, code=table_code, form=val_formula)
         return creation_summary
@@ -153,7 +157,7 @@ def get_census_data(session, attr_name, table_code, val_formula):
         #formatted_error = "Error %s" % traceback.format_exception(*sys.exc_info())
         creation_summary = "\nUnable to create attribute '{name}' from table '{code}' using formula '{form}': {name},{code},{form}.\n\
             Error Code:\n{err}"\
-            .format(name=attr_name, code=table_code, form=val_formula, err=traceback.format_exception(*sys.exc_info()))
+            .format(name=attr_name, code=table_code, form=val_formula, err='\n'.join(traceback.format_exception(*sys.exc_info())))
 
         print creation_summary
         return creation_summary
@@ -234,12 +238,12 @@ def pretty_print_json(json_file):
 def main():
     session = Connector().getDBSession()
     #create_known_neighborhoods(session)
-    #read_tables_from_terminal(session, 'attr_summary.csv', 'labels.json')
+    read_tables_from_terminal(session, 'attr_summary.csv', 'data_collection/labels.json')
 
     #census_json = request_census_block(100, 100)
     #pretty_print_json(census_json)
     #get_census_data(session, '1', 'H1', 'H1 + H2')#attr_name, table_code, val_formula):
-    read_tables_from_file(session, 'tables_to_add.csv','attr_summary.csv')
+    #read_tables_from_file(session, 'tables_to_add.csv','attr_summary.csv')
 
 
 

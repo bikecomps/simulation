@@ -100,17 +100,24 @@ form button[type="submit"] {
   font-size: 12px;
 }
 
-#stats_tab {
-  width: 500px;
-  height: 400px;
+#stats_wrapper {
   position: absolute;
-  left: 95%;
-  top: 150px;
-  border-radius: 10%;
-  background-color: rgba(125, 125, 125, 0.7);
-  border-style: solid;
-  border-color: black;
-  border-width: 1px;
+  left: 0;
+  top: 55px;
+  width: 512px;
+  height: 100%;
+  overflow: hidden;
+}
+
+#stats_slider {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: -480px;
+  top: 0px;
+  background-color: #ffffff;
+  border-right: 2px solid #eeeeee;
+  z-index: 999;
 }
 
 #stats_panel {

@@ -2845,10 +2845,13 @@ label.error {
 
 .top-bar {
   overflow: hidden;
-  height: 45px;
+  height: 55px;
   line-height: 45px;
   position: relative;
-  background: #111111;
+  background: #ffffff;
+  border-bottom: solid;
+  border-bottom-color: #eeeeee;
+  border-bottom-width: 2px;
   margin-bottom: 0; }
   .top-bar ul {
     margin-bottom: 0;
@@ -3039,7 +3042,7 @@ label.error {
 
 @media only screen and (min-width: 940px) {
   .top-bar {
-    background: #111111;
+    /*background: #111111;*/
     *zoom: 1;
     overflow: visible; }
     .top-bar:before, .top-bar:after {
