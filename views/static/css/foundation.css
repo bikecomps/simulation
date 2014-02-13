@@ -3086,14 +3086,16 @@ label.error {
         .top-bar-section ul li .js-generated {
           display: none; }
     .top-bar-section li.hover > a:not(.button) {
-      background: black;
-      color: white; }
+      background: white;
+      color: black; }
     .top-bar-section li a:not(.button) {
       padding: 0 15px;
       line-height: 45px;
-      background: #111111; }
+      background: white;
+      position: relative;
+      top: 4px; }
       .top-bar-section li a:not(.button):hover {
-        background: black; }
+        background: white; }
     .top-bar-section .has-dropdown > a {
       padding-right: 35px !important; }
       .top-bar-section .has-dropdown > a:after {
@@ -3154,11 +3156,11 @@ label.error {
         right: 100%; }
 
   .no-js .top-bar-section ul li:hover > a {
-    background: black;
-    color: white; }
+    background: white;
+    color: black; }
   .no-js .top-bar-section ul li:active > a {
-    background: #090909;
-    color: white; }
+    background: white;
+    color: black; }
   .no-js .top-bar-section .has-dropdown:hover > .dropdown {
     display: block; } }
 @-webkit-keyframes rotate {
