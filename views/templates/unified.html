@@ -18,27 +18,27 @@
 <script src="/static/js/bikeshare-googlemaps.js"></script>
 
 <script type="application/javascript">
-    set_coordinates("{{locations}}");
+  set_coordinates("{{locations}}");
 </script>
 
 
 <script type="application/javascript">
-    $(document).ready(function(){
-	$('#stats_slider').click(function() {
-	   var $lefty = $(this);
-           $lefty.animate({
-	       left: parseInt($lefty.css('left'), 10) == 0 ?
-		  780 :
-		  0 
-	   }); 
-	});
-	$(function() {
-    	    $('#stats_slider').draggable({
-        	axis: 'x',
-       		containment: 'parent'
-    	    });
-	});
-    });
+  $(document).ready(function(){
+	  $('#stats_slider').click(function() {
+	    var $lefty = $(this);
+      $lefty.animate({
+	    left: parseInt($lefty.css('left'), 10) == 0 ?
+		    780 :
+		    0 
+	    }); 
+	  });
+	  $(function() {
+      $('#stats_slider').draggable({
+        axis: 'x',
+        containment: 'parent'
+      });
+	  });
+  });
 </script>
 
 {% end %}
@@ -156,26 +156,15 @@
 
 <div id="map_canvas"></div>
 
-<!-- <div id="loading_div"> -->
 <div id="loading_div">
   <img id="loading"  src="/static/img/loading-gif-animation.gif" alt="loading" width=50px/>
 </div>
-<!-- </div> -->
-
-<script type="text/javascript">
-$('#stats_tab').click(function() {
-  $('#stats_tab').toggle("slide", {
-    direction: 'left',
-    distance: 400,
-  });
-});
-</script>
 
 <script type="text/javascript">
   function set_map_height() {
     var screen_height = window.innerHeight;
-    var map_height = screen_height - 45;
-    $("#content").css("height",map_height);
+    var map_height = screen_height - 55;
+    $("#content, #stats_wrapper").css("height",map_height);
   }
 </script>
 
