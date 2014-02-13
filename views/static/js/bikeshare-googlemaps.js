@@ -11,6 +11,7 @@ function set_coordinates(val)
     locations=jQuery.parseJSON(j_val);
 }
 
+/*
 function SimulationControl(controlDiv) {
     controlDiv.id = "simulation_control";
     
@@ -45,6 +46,7 @@ function SimulationControl(controlDiv) {
 
     controlDiv.appendChild(control_form);
 }
+*/
 
 function initialize() {
     connections = [];
@@ -63,11 +65,11 @@ function initialize() {
 	map = new google.maps.Map(document.getElementById('map_canvas'),
 			                  mapOptions);
 
-    var simControlDiv = document.createElement('div');
-    var simControl = new SimulationControl(simControlDiv);
-    map.controls[google.maps.ControlPosition.TOP_LEFT].push(simControlDiv);
+    //var simControlDiv = document.createElement('div');
+    //var simControl = new SimulationControl(simControlDiv);
+    //map.controls[google.maps.ControlPosition.TOP_LEFT].push(simControlDiv);
 
-    google.maps.event.addListenerOnce(map, 'idle', function(){
+    /*google.maps.event.addListenerOnce(map, 'idle', function(){
         $('#from_date, #to_date').datetimepicker({
             closeOnDateSelect: true,
             yearStart: 2010,
@@ -75,7 +77,7 @@ function initialize() {
             format: 'Y-m-d H:i',
         });
         $('#control_form').attr('onsubmit','processStatsForm(); return false;');
-    });
+    });*/
 
     // Draw a logo wherever there is a bike station
   	var stationLogo = '/static/img/cbLogo-16.png';

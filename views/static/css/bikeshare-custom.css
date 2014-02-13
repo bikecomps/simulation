@@ -61,48 +61,40 @@ footer p {
 }
 
 #simulation_control {
-  margin-top: 7px;
-  border-width: 1px;
-  border-style: solid;
-  border-color: black;
-  background-color: rgba(125,125,125,0.7);
-  padding: 10px;
-  height: 55px;
+  height: auto;
 }
 
 #control_form {
-  height: 100%;
+  overflow: hidden;
 }
 
 #from_div {
   width: 130px;
-  height: 100%;
   float: left;
 }
 
 #to_div {
   width: 130px;
-  height: 100%;
+  height: auto;
   margin-left: 10px;
   float: left;
 }
 
 #from_date {
-  height: 100%;
+  height: auto;
 }
 
 #to_date {
-  height: 100%;
+  height: auto;
 }
 
 input[type="text"] {
-  height: 100%;
+  height: auto;
   font-size: 12px;
 }
 
 form button[type="submit"] {
   margin-left: 10px;
-  height: 100%;
   float: left;
   line-height: 8px;
   font-size: 12px;
