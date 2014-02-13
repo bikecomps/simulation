@@ -91,6 +91,8 @@ footer p {
 input[type="text"] {
   height: auto;
   font-size: 12px;
+  position: relative;
+  top: 12px;
 }
 
 form button[type="submit"] {
@@ -98,6 +100,8 @@ form button[type="submit"] {
   float: left;
   line-height: 8px;
   font-size: 12px;
+  position: relative;
+  top: 11px;
 }
 
 #stats_wrapper {
