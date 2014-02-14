@@ -54,6 +54,7 @@ def parse_bike_trips(input_filename ):
         headers = next(reader, None)
 
         for row in reader:
+            if len(row) < 9: continue
             try:
                 start_time = row[1]
                 end_time = row[4]
@@ -64,7 +65,8 @@ def parse_bike_trips(input_filename ):
                 bike_id = row[7]
                 rider_type = "Registered" if row[8] == "Subscriber" else row[8]
 
-                data.append([bike_id, rider_type, 'Training', start_time, end_time, start_station_id, end_station_id])
+                # 'ExtrapolationTesting' -> 8
+                data.append([bike_id, rider_type, 8, start_time, end_time, start_station_id, end_station_id])
             except ValueError:
                 print "Error on row %s", row
                 
