@@ -112,7 +112,6 @@ function groupBarPlot(htmlIdName, data) {
         .attr("dy", ".35em")
         .style("text-anchor", "end")
         .text(function(d) { return d; });
-       
 }
 
 function wrapLabel(labels) {
@@ -188,10 +187,7 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
         .attr("text-anchor", "start")
         .attr('class', 'name')
         .text(String);
-
 }
-
-
 
 function plotKeysVals(htmlIdName, map) {
     console.log(map);
