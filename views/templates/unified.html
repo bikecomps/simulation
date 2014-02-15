@@ -21,23 +21,49 @@
   set_coordinates("{{locations}}");
 </script>
 
-
 <script type="application/javascript">
-  $(document).ready(function(){
-	  $('#stats_slider').click(function() {
-	    var $lefty = $(this);
-      $lefty.animate({
-	    left: parseInt($lefty.css('left'), 10) == 0 ?
-		    780 :
-		    0 
-	    }); 
-	  });
-	  $(function() {
-      $('#stats_slider').draggable({
-        axis: 'x',
-        containment: 'parent'
-      });
-	  });
+    $(document).ready(function(){
+        $(".slide_button").click(function() {
+            var left_pos;
+            switch ($(this).attr('id')) {
+                case "slide_button_1":
+                    left_pos = 0;
+                    break;
+                case "slide_button_2":
+                    left_pos = 620;
+                    break;
+                case "slide_button_3":
+                    left_pos = 1004;
+                    break;
+                }
+            $("#stats_slider").animate({left: left_pos},600);
+        });
+
+        $("#slide_button_1").hover(
+            function() {$("#slide_button_1").css('background-color', 'steelblue');},
+            function() {$("#slide_button_1").css('background-color', 'gray');}
+        );
+
+        $("#slide_button_2").hover(
+            function() {
+                $("#slide_button_1, #slide_button_2").css('background-color', 'steelblue');
+            },
+            function() {
+                $("#slide_button_1, #slide_button_2").css('background-color', 'gray');
+            });
+
+        $("#slide_button_3").hover(
+            function() {
+                $(".slide_button").css('background-color', 'steelblue');
+            },
+            function() {
+                $(".slide_button").css('background-color', 'gray');
+            });
+
+        $('#stats_slider').draggable({
+            axis: 'x',
+            containment: 'parent'
+        });
   });
 </script>
 
@@ -50,7 +76,11 @@
 <div class="row">  
    <div class="large-12 columns">
       <div id="stats_panel">
-	<div id="stats_button"></div>
+	<div id="stats_button">
+            <div class="slide_button" id="slide_button_1"></div>
+            <div class="slide_button" id="slide_button_2"></div>
+            <div class="slide_button" id="slide_button_3"></div>
+        </div>
 	<div class="row">
 	<div id="overall_trip_stats">
         <h5>Overall Statistics</h5>
