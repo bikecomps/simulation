@@ -141,6 +141,8 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
     yRangeBand = bar_height + 2 * gap;
     y = function(i) { return yRangeBand * i; };
 
+    
+
     var div = $("#" + htmlIdName + " div");
     div.empty();
     chart = d3.select(div[0])
@@ -194,9 +196,7 @@ function plotKeysVals(htmlIdName, map) {
 	var ids = Object.keys(map);
     var counts = new Array(ids.length);
     for (var i = 0; i < ids.length; i++) {
-		if (map[ids[i]] != 0) {
-			counts[i] = map[ids[i]];
-		}
+		counts[i] = map[ids[i]];
     }
     nonGroupBarPlot(htmlIdName, ids, counts);
 }
@@ -275,6 +275,10 @@ function processStatsForm() {
             $("#loading_div").show();
         },
         success: function(data) {
+            var d = new Date();
+            var t = d.getTime();
+            var s = t.toString();
+            sessionStorage[s]=data;
             displaySummaryStats(JSON.parse(data), from, to);
             $("#loading_div").hide();
             $("#stats_slider").animate({left: 1004});
