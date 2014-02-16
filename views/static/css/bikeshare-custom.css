@@ -181,7 +181,8 @@ form button[type="submit"] {
 
 #num_departures_per_station div {
   height: 300px;
-  overflow:scroll;
+  overflow-x: hidden;
+  overflow-y: scroll;
 }
 
 #num_arrivals_per_station {
@@ -190,7 +191,8 @@ form button[type="submit"] {
 
 #num_arrivals_per_station div {
   height: 300px;
-  overflow:scroll;
+  overflow-x: hidden;
+  overflow-y: scroll;
 }
 
 #num_trips_per_hour {
