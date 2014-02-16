@@ -240,7 +240,8 @@ form button[type="submit"] {
   top: 50%;
   margin: -25px 0 0 -25px;
 }
-
+/*
+NOTE : DEPRECATING OBSOLETE CSS STYLES. by ahnjo. Feb 16, 2014
 #overall_trip_stats {
   float: left;
   width: auto;
@@ -257,3 +258,4 @@ form button[type="submit"] {
   width: auto;
   padding-left: 20px;
 }
+*/
