@@ -275,6 +275,10 @@ function processStatsForm() {
             $("#loading_div").show();
         },
         success: function(data) {
+            var d = new Date();
+            var t = d.getTime();
+            var s = t.toString();
+            sessionStorage[s]=data;
             displaySummaryStats(JSON.parse(data), from, to);
             $("#loading_div").hide();
             $("#stats_slider").animate({left: 1004});
