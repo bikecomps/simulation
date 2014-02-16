@@ -271,14 +271,13 @@ function processStatsForm() {
         url: "/unified",
         data: { start: from, end: to },
         beforeSend: function() {
-            $("#stats_slider").hide();
+            $("#stats_slider").animate({left: 0});
             $("#loading_div").show();
         },
         success: function(data) {
             displaySummaryStats(JSON.parse(data), from, to);
             $("#loading_div").hide();
-            $("#stats_slider").show();
-	    $("#stats_panel").show();
+            $("#stats_slider").animate({left: 1004});
         }
     });
 }
