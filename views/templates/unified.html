@@ -64,19 +64,14 @@
             axis: 'x',
             containment: 'parent'
         });
-
-        for (var key in localStorage) {
-            localStorage.getItem(key);
-        }
   });
 </script>
-
 {% end %}
 
 {% block content %}
 <div id="stats_wrapper">
 <div id="stats_slider">
-    <div id="stats_picker"></div>
+    <select id="stats_picker"></select>
     <div id="stats_button">
         <div class="slide_button" id="slide_button_1"></div>
         <div class="slide_button" id="slide_button_2"></div>

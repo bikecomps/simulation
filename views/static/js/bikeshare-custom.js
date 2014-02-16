@@ -279,6 +279,10 @@ function processStatsForm() {
             var t = d.getTime();
             var s = t.toString();
             sessionStorage[s]=data;
+            var opt = document.createElement('option');
+            opt.avalue = s;
+            opt.innerHTML = s;
+            $("#stats_picker").append(opt);
             displaySummaryStats(JSON.parse(data), from, to);
             $("#loading_div").hide();
             $("#stats_slider").animate({left: 1004});

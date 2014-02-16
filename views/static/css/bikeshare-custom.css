@@ -1,6 +1,10 @@
 @charset "UTF-8";
 /* CSS Document */
 
+#stats_picker {
+  width: 150px;
+}
+
 #topbar-left-logo img {
     height: 45px;
     margin-top: 5px;
