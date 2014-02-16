@@ -60,6 +60,7 @@ class BaseHandler(RequestHandler):
         self.render("base.html", title="Base File")
 
 if __name__ == "__main__":
+    print "hello!"
     dirname = os.path.dirname(__file__)
     settings = {
         "static_path" : os.path.join(dirname, "static"),
@@ -72,5 +73,6 @@ if __name__ == "__main__":
         (r"/stats", StatsHandler),
 	(r"/unified", UnifiedHandler)
     ], **settings)
-    application.listen(3000)
+    application.listen(1337)
+    print "listening"
     tornado.ioloop.IOLoop.instance().start()
