@@ -193,11 +193,16 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
 
 function plotKeysVals(htmlIdName, map) {
     console.log(map);
-	var ids = Object.keys(map);
-    var counts = new Array(ids.length);
-    for (var i = 0; i < ids.length; i++) {
-		counts[i] = map[ids[i]];
+	var ids = new Array();
+    var counts = new Array();
+    for (var key in map) {
+		if (map[key] > 0) {
+			ids.push(key);
+			counts.push(map[key]);
+		}
     }
+	console.log(ids);
+	console.log(counts);
     nonGroupBarPlot(htmlIdName, ids, counts);
 }
 
