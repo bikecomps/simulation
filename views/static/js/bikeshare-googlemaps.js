@@ -36,8 +36,8 @@ function initialize() {
 							  mapOptions);
 	
 	station_markers = {};
-	marker_colors = ["red","green","CornflowerBlue","orange", "purple"];
-	color_index = 2;
+	marker_colors = ["CornflowerBlue","orange", "purple", "red","green"];
+	color_index = 0;
 
 	clusters = {"orange": [31016, 31017, 31018, 31019, 31020, 31021, 31022, 31023,
 		31024, 31025, 31026, 31027, 31028, 31029, 31030, 31031, 31032, 31033, 31034, 31035, 

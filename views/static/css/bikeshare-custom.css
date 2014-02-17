@@ -113,8 +113,8 @@ form button[type="submit"] {
   top: 11px;
 }
 
-#change_color_markers {
-  height:auto;
+#cluster_markers {
+  margin: 10px;
 }
 
 #stats_wrapper {

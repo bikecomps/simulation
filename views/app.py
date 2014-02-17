@@ -34,7 +34,18 @@ class StatsHandler(RequestHandler):
                                               "%Y-%m-%d %H:%M")
         
         sstats = SummaryStats(start_date, end_date)
-        self.write(sstats.get_stats()) 
+        self.write(sstats.get_stats())
+
+class ClusterHandler(RequestHandler):
+    def get(self):
+        stations = PlotMap().stations
+        self.render("clustering.html", title="Clustering", locations=stations)
+
+    def post(self):
+        start_date = datetime.datetime.strptime(self.get_argument("start"),
+                                                "%Y-%m-%d %H:%M")
+        end_date = datetime.datetime.strptime(self.get_argument("end"),
+                                              "%Y-%m-%d %H:%M")
 
 '''    
 # Now defunct. Doesn't use PlotMap correctly
@@ -68,7 +79,8 @@ if __name__ == "__main__":
         (r"/base", BaseHandler),
         (r"/about", AboutHandler),
         (r"/stats", StatsHandler),
-	(r"/unified", UnifiedHandler)
+        (r"/unified", UnifiedHandler),
+    (r"/clustering", ClusterHandler)
     ], **settings)
     port_num = 1337
     application.listen(port_num)
