@@ -47,19 +47,6 @@ class ClusterHandler(RequestHandler):
         end_date = datetime.datetime.strptime(self.get_argument("end"),
                                               "%Y-%m-%d %H:%M")
 
-'''    
-# Now defunct. Doesn't use PlotMap correctly
-class IndexHandler(RequestHandler):
-    def get(self):
-        day = 1
-        start_time = datetime.datetime.strptime('06:00',
-                                            '%H:%M')
-        end_time = datetime.datetime.strptime('20:00',
-                                          '%H:%M')
-        stations = PlotMap(day, start_time, end_time).stations
-        self.render("home.html", title="BikeShare Comps", locations=stations)
-'''
-
 class AboutHandler(RequestHandler):
     def get(self):
         self.render("about.html", title="About Us")
@@ -82,7 +69,7 @@ if __name__ == "__main__":
         (r"/unified", UnifiedHandler),
     (r"/clustering", ClusterHandler)
     ], **settings)
-    port_num = 1337
+    port_num = 3000
     application.listen(port_num)
     print "listening on port", port_num
     tornado.ioloop.IOLoop.instance().start()
