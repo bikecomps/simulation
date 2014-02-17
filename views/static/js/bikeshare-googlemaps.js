@@ -30,7 +30,7 @@ function initialize() {
 			                  mapOptions);
     
     // Draw a logo wherever there is a bike station	
-	var stationLogo = '/static/img/blueDot-16.png';
+	// var stationLogo = '/static/img/blueDot-16.png';
     
     for (station=0; station < Object.keys(locations).length; station++) {
         var stationLatLng = new google.maps.LatLng(locations[station][0], locations[station][1]);
@@ -38,9 +38,16 @@ function initialize() {
         var marker = new google.maps.Marker({
             position: stationLatLng,
             map: map,
-            icon: stationLogo,
-	    id: locations[station][2],
-	    title: locations[station][3],
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                fillColor: 'CornflowerBlue',
+                fillOpacity: 1.0,
+                scale: 6,
+                strokeColor: 'Navy',
+                strokeWeight: 1
+            },
+	        id: locations[station][2],
+	        title: locations[station][3],
             capacity: locations[station][4]
         });
 	var infoWindow = new google.maps.InfoWindow({
