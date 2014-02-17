@@ -60,6 +60,14 @@ class Clusterer:
             if dow in day_range:
                 departures[s_id_map[s_id]][int(hour)] += count 
                 arrivals[s_id_map[e_id]][int(hour)] += count 
+        if week_day:
+            num_days = num_weekdays
+        else:
+            num_days = num_weekend_days
+
+        # Want averages
+        departures = [[x/num_days for x in station] for station in  departures]
+        arrivals = [[x/num_days for x in station] for station in arrivals]
         totals = [x + y for x,y in itertools.izip(departures, arrivals)]
 
         return s_ids, departures, arrivals, totals
