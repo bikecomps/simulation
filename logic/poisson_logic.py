@@ -8,23 +8,32 @@
 from utils import Connector
 from models import *
 from scipy.stats import poisson
+from scipy import stats
 import numpy
 import random
 from simulation_logic import SimulationLogic
 import datetime
 from dateutil import rrule
 from collections import defaultdict
+import math
+from sqlalchemy.sql import func,label
+
+LINEAR = 0
+LOG1 = 1
+LOG2 = 2
+
 
 class PoissonLogic(SimulationLogic):
+    #TODO: Don't just hard-code the last day of data
 
     def __init__(self, session):
         SimulationLogic.__init__(self, session)
 
     def initialize(self, start_time, end_time):
         SimulationLogic.initialize(self, start_time, end_time)
+        self.time_of_last_data = datetime.datetime(2013, 07, 01)
         self.lambda_distrs = self.load_lambdas(start_time, end_time)
         self.duration_distrs = self.load_gammas()
-
         # Retrieve StationDistance objects representing the five closest
         # stations for each stations.
         self.nearest_station_dists = {}
@@ -34,6 +43,61 @@ class PoissonLogic(SimulationLogic):
                     .filter(data_model.StationDistance.station1_id == station.id)\
                     .order_by(data_model.StationDistance.distance)[:8]
             self.nearest_station_dists[station.id] = nearest_distances
+        if end_time > self.time_of_last_data:
+            regression_data = self.init_regression()
+            self.monthly_slope = regression_data[0]
+            self.monthly_intercept = regression_data[1]
+
+
+    def init_regression(self):
+        # Returns slope and y-intercept for regression line for each month
+        monthly_slope = []
+        monthly_intercept = []
+        for month in range(12):
+            print "Calculated regression for month", month+1
+            x_years = []
+            y_counts = []
+            month_data = self.session.query(func.count(Trip.id),
+                         label('year', func.date_part('year', Trip.start_date)))\
+                         .group_by(func.date_part('year', Trip.start_date))\
+                         .filter(func.date_part('month', Trip.start_date)==month+1)\
+                         .filter(Trip.trip_type_id == 1)
+            for entry in month_data:
+                # Entries look like (count, year)
+                x_years.append(entry[1])
+                y_counts.append(entry[0])
+
+            slope, intercept = self.linear_regression(x_years, y_counts)
+            monthly_slope.append(slope)
+            monthly_intercept.append(intercept)
+        return monthly_slope, monthly_intercept
+
+
+    def linear_regression(self, x_list, y_list):
+        slope, intercept, r_val, p_val, std_err = stats.linregress(x_list, y_list)
+#        print "X", x_list
+#        print "Y", y_list
+#        print "Slope", slope
+#        print "Intercept", intercept
+#        print "R val", r_val, "\t P val", p_val, "\t Std err", std_err
+        return slope, intercept
+
+
+    def log_regression(self, x_list, y_list):
+        # Using years as given                                                             
+        log_x_list = []
+        for x in x_list:
+            log_x_list.append(math.log(x))
+        return self.linear_regression(log_x_list, y_list)
+
+
+    def log_regression_with_year_deltas(self, x_list, y_list):
+        # Using log of 2, 3, 4, 5 as x instead of log of 2010, 2011, 2012, 2013, since log graphs are constrained by (0,undefined) and (1,0)
+        log_x_list = []
+        for x in x_list:
+            log_x_list.append(math.log(x-2010+2))
+        return self.linear_regression(log_x_list, y_list)
+
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
@@ -70,13 +134,19 @@ class PoissonLogic(SimulationLogic):
         # Increment after we run for the current timestep?
         self.time += timestep
 
+
     def generate_new_trips(self, start_time):
         # Note that Monday is day 0 and Sunday is day 6. Is this the same for data_model?
+#        self.print_lambda_dict()
         for start_station_id in self.station_counts:
             for end_station_id in self.station_counts:
-                lam = self.get_lambda(start_time.year, start_time.month,
-                                      start_time.weekday(), start_time.hour,
-                                      start_station_id, end_station_id)
+                # Check if predicting a future date 
+                if start_time > self.time_of_last_data:
+                    lam = self.predict_future_lambda(start_time, start_station_id, end_station_id)
+                else:    
+                    lam = self.get_lambda(start_time.year, start_time.month,
+                                          start_time.weekday(), start_time.hour,
+                                          start_station_id, end_station_id)
                 gamma = self.duration_distrs.get((start_station_id, end_station_id), None)
                 # Check for invalid queries
                 if lam and gamma:
@@ -87,11 +157,51 @@ class PoissonLogic(SimulationLogic):
                         trip_start_time = start_time + added_time
                         trip_duration = self.get_trip_duration(gamma)
                         trip_end_time = trip_start_time + trip_duration
-                        new_trip = data_model.Trip(str(random.randint(1,500)), "Casual", 2, \
-                                trip_start_time, trip_end_time, start_station_id, end_station_id)
+                        new_trip = data_model.Trip(str(random.randint(1,500)), "Casual", 2, trip_start_time, trip_end_time, start_station_id, end_station_id)
                         self.pending_departures.put((start_time, new_trip))
+                                
 
-                
+    # This function should only be for testing, prints lambda counts for each year and hour given a weekend day in June
+    def print_lambda_dict(self):
+        for year in range(2010, 2015):
+            month = 6
+            is_week_day = False
+            for hour in range(0,24):
+                print year, month, hour, "--", len(self.lambda_distrs[year][month][is_week_day][hour])
+
+
+    def predict_future_lambda(self, start_time, start_station_id, end_station_id):
+        month = start_time.month
+        slope = self.monthly_slope[month-1]
+        intercept = self.monthly_intercept[month-1]
+        lam_prediction = 0
+        # TODO Delete prints
+#        print "Month", month, "hour", start_time.hour
+        for prev_year in self.get_year_range_of_data(month):
+            prev_year_lambda = self.get_lambda(prev_year, month, start_time.day, start_time.hour, start_station_id, end_station_id) 
+#            print "Year", prev_year, ":", prev_year_lambda.value if prev_year_lambda else None
+            if not prev_year_lambda: continue
+            prev_year_trips = slope * prev_year + intercept
+            future_year_trips = slope * start_time.year + intercept
+            lam_prediction += prev_year_lambda.value * future_year_trips / prev_year_trips
+#            print "prev trips", prev_year_trips, "\t future trips", future_year_trips
+        lam_prediction /= len(self.get_year_range_of_data(month))
+#        print "Prediction", lam_prediction
+        return Lambda(start_station_id, end_station_id, start_time.hour, start_time.weekday()<5, start_time.year, month, lam_prediction)
+
+    def get_year_range_of_data(self, month):
+        #TODO: Don't just hard-code dates of existing data
+        if month >= 10:
+            return [2010, 2011, 2012]
+        elif month <= 6:
+            return [2011, 2012, 2013]
+        else:
+            return [2011, 2012]
+
+    def avg_lambda(self, lam_list):
+        # TODO this will underestimate the average because 2010 or 2013 may not have data
+        return 1.0*sum(lam_list)/len(lam_list)
+
 
     def get_num_trips(self, lam):
         """
@@ -141,12 +251,38 @@ class PoissonLogic(SimulationLogic):
         '''
         Caches lambdas into dictionary of year -> is_week_day -> hour -> (start_id, end_id) -> lambda
         '''
-
         # kind of gross but makes for easy housekeeping
         distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(float)))))
         num_added = 0
         # Inclusive
+        
         print start_time, end_time
+        
+        # If some part of the simulation is in the future, load lambdas for that time
+        # every year so regression can be done later
+        if end_time > self.time_of_last_data:
+            if start_time > self.time_of_last_data: dt_start = start_time
+            else: dt_start = self.time_of_last_data            
+            print "The future is now"
+            for day in rrule.rrule(rrule.DAILY, dtstart=dt_start, until=end_time):
+                dow = day.weekday()
+                
+                start_hour = dt_start.hour if dt_start.weekday() == dow else 0
+                end_hour = end_time.hour if end_time.weekday() == dow else 24
+    
+                month = start_time.month
+                is_week_day = dow < 5
+                
+                lambda_poisson = self.session.query(data_model.Lambda) \
+                    .filter(data_model.Lambda.is_week_day == is_week_day) \
+                    .filter(data_model.Lambda.month == month) \
+                    .filter(data_model.Lambda.hour.between(start_hour, end_hour))
+  
+                for lam in lambda_poisson:
+#                    print num_added, ":", lam.year, month, lam.is_week_day, lam.hour, lam.value
+                    distr_dict[lam.year][month][lam.is_week_day][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
+                    num_added += 1
+
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
             
@@ -161,7 +297,7 @@ class PoissonLogic(SimulationLogic):
             # We'll assume zero value if it's not in the dictionary
             lambda_poisson = self.session.query(data_model.Lambda) \
                 .filter(data_model.Lambda.is_week_day == is_week_day) \
-                .filter(data_model.Lambda.year ==  year) \
+                .filter(data_model.Lambda.year == year) \
                 .filter(data_model.Lambda.month == month) \
                 .filter(data_model.Lambda.hour.between(start_hour, end_hour))
         
@@ -169,7 +305,6 @@ class PoissonLogic(SimulationLogic):
                 distr_dict[year][month][lam.is_week_day][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
                 num_added += 1
 
-        print "Loaded %s lambdas" % num_added
         return distr_dict
 
     def get_trip_duration(self, gamma):
@@ -219,7 +354,6 @@ def main():
     connector = Connector()
     session = connector.getDBSession()
     p = PoissonLogic(session)
-    print p.get_trip_duration(31100, 31101)
-    print durs
+
 if __name__ == '__main__':
     main()

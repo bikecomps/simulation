@@ -232,7 +232,7 @@ class Lambda(Base):
         self.value = val
     
     def __repr__(self):
-        return 'start station id: %s, end station id: %s, hour: %s, is_week_day: %s, year: %d, value: %.2f'\
+        return 'start station id: %s, end station id: %s, year: %s, is_week_day: %s, hour: %d, value: %.2f'\
                  % (self.start_station_id, 
                     self.end_station_id, 
                     self.year,

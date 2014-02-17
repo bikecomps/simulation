@@ -25,11 +25,11 @@ def num_departures_distributions(results):
     x = np.array(freqs)
 
     mean = np.mean(x)
-    std = np.std(x)
+    var = np.var(x)
     allmeans.append(mean)
-    allstds.append(std)
-    print "mean=", np.mean(x)
-    print "std=", np.std(x)
+    allstds.append(var)
+    print "mean=", mean
+    print "var=", var
 
 def num_arrivals_distributions(results):
     pass
