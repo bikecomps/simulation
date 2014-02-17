@@ -113,6 +113,10 @@ form button[type="submit"] {
   top: 11px;
 }
 
+#change_color_markers {
+  height:auto;
+}
+
 #stats_wrapper {
   position: absolute;
   left: -1004px;
