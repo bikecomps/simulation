@@ -23,7 +23,7 @@ function formatDate(dateStr) {
 
 function groupBarPlot(htmlIdName, data) {
     var margin = {top: 20, right: 20, bottom: 30, left: 40},
-        width = 960 - margin.left - margin.right,
+        width = 878, // 800 - margin.left - margin.right,
         height = 500 - margin.top - margin.bottom;
     
     var x0 = d3.scale.ordinal()
@@ -126,7 +126,7 @@ function wrapLabel(labels) {
 function nonGroupBarPlot(htmlIdName, labels, counts) {
 
 	var chart,
-        width = 750,
+        width = 500, //750,
         bar_height = 20,
         height = bar_height * labels.length,
         x, y, yRangeBand,
@@ -148,10 +148,10 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
     chart = d3.select(div[0])
         .append('svg')
         .attr('class', 'chart')
-        .attr('width', left_width + width + 40 + extra_width)
+        .attr('width', 878) // left_width + width + 40 + extra_width)
         .attr('height', (bar_height + gap * 2) * (labels.length + 1))
         .append("g")
-        .attr("transform", "translate(10, 10)")
+        .attr("transform", "translate(10, 10)");
     
     chart.selectAll("line")
         .data(x.ticks(d3.max(counts)))
@@ -172,7 +172,7 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
     chart.selectAll("text.score")
         .data(counts)
         .enter().append("text")
-        .attr("x", function(d) { return x(d) + left_width; })
+        .attr("x", function(d) { return x(d) + left_width + 17; })
         .attr("y", function(d, i){ return y(i) + yRangeBand/2; } )
         .attr("dx", -5)
         .attr("dy", ".36em")
@@ -193,17 +193,13 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
 
 function plotKeysVals(htmlIdName, map) {
     console.log(map);
-	var ids = new Array();
+    var names = new Array();
     var counts = new Array();
     for (var key in map) {
-		if (map[key] > 0) {
-			ids.push(key);
-			counts.push(map[key]);
-		}
+	names.push(key);
+	counts.push(map[key]);
     }
-	console.log(ids);
-	console.log(counts);
-    nonGroupBarPlot(htmlIdName, ids, counts);
+    nonGroupBarPlot(htmlIdName, names, counts);
 }
 
 function displaySummaryStats(data, from, to) {
