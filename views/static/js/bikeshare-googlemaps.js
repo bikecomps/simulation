@@ -30,7 +30,7 @@ function initialize() {
 			                  mapOptions);
     
     // Draw a logo wherever there is a bike station	
-	var stationLogo = '/static/img/cbLogo-16.png';
+	var stationLogo = '/static/img/blueDot-16.png';
     
     for (station=0; station < Object.keys(locations).length; station++) {
         var stationLatLng = new google.maps.LatLng(locations[station][0], locations[station][1]);
