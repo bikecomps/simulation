@@ -84,8 +84,8 @@ class SummaryStats:
         self.stats['total_num_disappointments'] = len(self.disappointments)
         self.stats['avg_trip_time'] = numpy.average(trip_times)
         self.stats['std_trip_time'] = numpy.std(trip_times)        
-        min_trip = min(trips_and_times)[1]
-        max_trip = max(trips_and_times)[1]
+        min_trip = 0 if len(trips_and_times) == 0 else min(trips_and_times)[1]
+        max_trip = 0 if len(trips_and_times) == 0 else max(trips_and_times)[1]
         
         self.stats['min_duration_trip'] = {
             'start_station_name' : self.station_name_dict[min_trip.start_station_id].encode('ascii', 'ignore'),

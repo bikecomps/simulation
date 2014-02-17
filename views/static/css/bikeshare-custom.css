@@ -1,6 +1,10 @@
 @charset "UTF-8";
 /* CSS Document */
 
+#stats_picker {
+  width: 150px;
+}
+
 #topbar-left-logo img {
     height: 45px;
     margin-top: 5px;
@@ -181,7 +185,8 @@ form button[type="submit"] {
 
 #num_departures_per_station div {
   height: 300px;
-  overflow:scroll;
+  overflow-x: hidden;
+  overflow-y: scroll;
 }
 
 #num_arrivals_per_station {
@@ -190,7 +195,8 @@ form button[type="submit"] {
 
 #num_arrivals_per_station div {
   height: 300px;
-  overflow:scroll;
+  overflow-x: hidden;
+  overflow-y: scroll;
 }
 
 #num_trips_per_hour {
@@ -240,7 +246,8 @@ form button[type="submit"] {
   top: 50%;
   margin: -25px 0 0 -25px;
 }
-
+/*
+NOTE : DEPRECATING OBSOLETE CSS STYLES. by ahnjo. Feb 16, 2014
 #overall_trip_stats {
   float: left;
   width: auto;
@@ -257,3 +264,4 @@ form button[type="submit"] {
   width: auto;
   padding-left: 20px;
 }
+*/
