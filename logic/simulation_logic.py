@@ -142,8 +142,8 @@ class SimulationLogic:
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        self.time += timestep
         self.generate_new_trips(self.time)
+        self.time += timestep
         self.resolve_trips()
 
         
@@ -176,14 +176,12 @@ class SimulationLogic:
                     self.pending_departures.put((trip.start_date, trip))
                     break
                 else:
-                    # print "Resolving departure for \t", printTrip(trip)
                     self.resolve_departure(trip)
             elif eventType == ARRIVAL_TYPE:
                 if trip.end_date > self.time:
                     self.pending_arrivals.put((trip.end_date, trip))
                     break
                 else:
-                    # print "Resolving arrival for \t\t", printPoisson.ppf(.3,mu)rip(trip)
                     self.resolve_arrival(trip)
                     # print "If dock shortage, new trip is", printTrip(trip)
 

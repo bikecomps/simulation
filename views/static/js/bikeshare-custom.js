@@ -14,7 +14,17 @@ function sliderSetup() {
 }
 
 function toHours(d)  {
-    return (d/3600.0).toFixed(2) + " hours";
+	var returnString = "";
+	if ((d/3600.0) > 1) {
+		returnString = returnString.concat((d/3600).toFixed() + " hours ");
+		d = d - d/3600;
+	}
+	console.log(returnString);
+	console.log(d);
+	returnString = returnString.concat((d/60.0).toFixed() + " minutes");
+	console.log(returnString);
+	return returnString;
+    // return (d/3600.0).toFixed(2) + " hours";
 }
 
 function formatDate(dateStr) {
@@ -201,8 +211,8 @@ function plotKeysVals(htmlIdName, map) {
 			counts.push(map[key]);
 		}
     }
-	console.log(ids);
-	console.log(counts);
+	// console.log(ids);
+	// console.log(counts);
     nonGroupBarPlot(htmlIdName, ids, counts);
 }
 
@@ -216,6 +226,7 @@ function displaySummaryStats(data, from, to) {
     // 'avg_trip_time', and 'std_trip_time' 
     $("#total_num_trips").text(data["total_num_trips"]);
     $("#total_num_disappointments").text(data["total_num_disappointments"]);
+	console.log(data["avg_trip_time"]);
     $("#avg_trip_time").text(toHours(data["avg_trip_time"]));
     $("#std_trip_time").text(toHours(data["std_trip_time"]));
 

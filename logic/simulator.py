@@ -23,6 +23,7 @@ class Simulator:
     def run(self, start_time, end_time, timestep=datetime.timedelta(seconds=3600)):
         self.sim_logic.initialize(start_time, end_time)
         cur_time = start_time
+        print "cur time:", cur_time, "start time:", start_time, "end time:", end_time
         while cur_time < end_time:
             self.sim_logic.update(timestep)
             cur_time += timestep
@@ -129,10 +130,10 @@ def main():
     for t in results['trips']:
         hours[t.start_date.weekday()][t.start_date.hour] += 1
 
-    print "Times?"
-    for d in range(7):
-        for i in range(24):
-            print d,i,": ",hours[d][i]
+    # print "Times?"
+    # for d in range(7):
+    #    for i in range(24):
+    #        print d,i,": ",hours[d][i]
 
     
     """

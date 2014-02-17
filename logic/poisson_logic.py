@@ -70,10 +70,8 @@ class PoissonLogic(SimulationLogic):
         self.generate_new_trips(self.time)
         if self.rebalancing:
             self.rebalance_stations()
+        self.time+=timestep
         self.resolve_trips()
-
-        # Increment after we run for the current timestep?
-        self.time += timestep
 
     def generate_new_trips(self, start_time):
 
