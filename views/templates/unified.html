@@ -11,7 +11,6 @@
 <!-- jQuery -->
 <link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
 <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
-<link rel="stylesheet" href="/static/development-bundle/demos/demos.css">
 
 <!-- Google Maps script -->    
 <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
@@ -21,130 +20,183 @@
   set_coordinates("{{locations}}");
 </script>
 
-
 <script type="application/javascript">
-  $(document).ready(function(){
-	  $('#stats_slider').click(function() {
-	    var $lefty = $(this);
-      $lefty.animate({
-	    left: parseInt($lefty.css('left'), 10) == 0 ?
-		    780 :
-		    0 
-	    }); 
-	  });
-	  $(function() {
-      $('#stats_slider').draggable({
-        axis: 'x',
-        containment: 'parent'
-      });
-	  });
+    $(document).ready(function(){
+        $(".slide_button").click(function() {
+            var left_pos;
+            switch ($(this).attr('id')) {
+                case "slide_button_1":
+                    left_pos = 0;
+                    break;
+                case "slide_button_2":
+                    left_pos = 620;
+                    map.panBy(-310,0);
+                    break;
+                case "slide_button_3":
+                    left_pos = 1004;
+                    break;
+                }
+            $("#stats_slider").animate({left: left_pos},600);
+        });
+
+        $("#slide_button_1").hover(
+            function() {$("#slide_button_1").css('background-color', 'steelblue');},
+            function() {$("#slide_button_1").css('background-color', 'gray');}
+        );
+
+        $("#slide_button_2").hover(
+            function() {
+                $("#slide_button_1, #slide_button_2").css('background-color', 'steelblue');
+            },
+            function() {
+                $("#slide_button_1, #slide_button_2").css('background-color', 'gray');
+            });
+
+        $("#slide_button_3").hover(
+            function() {
+                $(".slide_button").css('background-color', 'steelblue');
+            },
+            function() {
+                $(".slide_button").css('background-color', 'gray');
+            });
+
+        $('#stats_slider').draggable({
+            axis: 'x',
+            containment: 'parent'
+        });
   });
 </script>
-
 {% end %}
 
 {% block content %}
 <div id="stats_wrapper">
-<div id="stats_slider">
-
-<div class="row">  
-   <div class="large-12 columns">
+  <div id="stats_slider">
+      <div id="stats_button">
+          <div class="slide_button" id="slide_button_1"></div>
+          <div class="slide_button" id="slide_button_2"></div>
+          <div class="slide_button" id="slide_button_3"></div>
+      </div>
       <div id="stats_panel">
-	<div id="stats_button"></div>
-	<div class="row">
-	<div id="overall_trip_stats">
-        <h5>Overall Statistics</h5>
-        <table>
-          <tr>
-            <td>Total Number of Trips Completed</td>
-            <td id="total_num_trips"></td>
-          </tr>
-          <tr>
-            <td>Total Number of Disappointments</td>
-            <td id="total_num_disappointments"></td>
-          </tr>
-          <tr>
-            <td>Average Trip Time</td>
-            <td id="avg_trip_time"></td>
-          </tr>
-          <tr>
-            <td>Standard Deviation of Trip Times</td>
-            <td id="std_trip_time"></td>
-          </tr>
-        </table>
-	</div>
-        <div id="min_duration_trip">
-          <h5>Minimum Duration Trip</h5>
-          <table>
-            <tr>
-              <td>Start Station</td>
-              <td class="start_station_name"></td>
-            </tr>
-            <tr>
-              <td>End Station</td>
-              <td class="end_station_name"></td>              
-            </tr>
-            <tr>
-              <td>Duration</td>
-              <td class="duration"></td>
-            </tr>
-            <tr>
-              <td>Trip Start Time</td>
-              <td class="start_datetime"></td>
-            </tr>
-            <tr>
-              <td>Trip End Time</td>
-              <td class="end_datetime"></td>
-            </tr>
-          </table>
-        </div>
-        <div id="max_duration_trip">
-          <h5>Maximum Duration Trip</h5>
-          <table>
-            <tr>
-              <td>Start Station</td>
-              <td class="start_station_name"></td>
-            </tr>
-            <tr>
-              <td>End Station</td>
-              <td class="end_station_name"></td>              
-            </tr>
-            <tr>
-              <td>Duration</td>
-              <td class="duration"></td>
-            </tr>
-            <tr>
-              <td>Trip Start Time</td>
-              <td class="start_datetime"></td>
-            </tr>
-            <tr>
-              <td>Trip End Time</td>
-              <td class="end_datetime"></td>
-            </tr>
-          </table>
-        </div>
-	</div>
-	<br />
-        <div id="num_departures_per_station">
-          <h5>Number of Departures per Station</h5>
-          <div>
+        <div class="row">
+          <div class="small-6 columns" id="overall_trip_stats">
+            <h5>Overall Statistics</h5>
+            <table>
+              <tr>
+                <td>Total Number of Trips Completed</td>
+                <td id="total_num_trips"></td>
+              </tr>
+              <tr>
+                <td>Total Number of Disappointments</td>
+                <td id="total_num_disappointments"></td>
+              </tr>
+              <tr>
+                <td>Average Trip Time</td>
+                <td id="avg_trip_time"></td>
+              </tr>
+              <tr>
+                <td>Standard Deviation of Trip Times</td>
+                <td id="std_trip_time"></td>
+              </tr>
+            </table>
+          </div>
+          <div class="small-6 columns" id="disappointment_stats">
+            <h5>Disappointment Statistics</h5>
+            <table>
+              <tr>
+                <td>Total Number of Disappointments</td>
+                <td id="total_num_disappointments"></td>
+              </tr>
+              <tr>
+                <td>Number of Departure Disappointments</td>
+                <td id="total_num_disappointments"></td>
+              </tr>
+              <tr>
+                <td>Number of Arrival Disappointments</td>
+                <td id="avg_trip_time"></td>
+              </tr>
+              <tr>
+                <td>Most Disappointing Station</td>
+                <td id="std_trip_time"></td>
+              </tr>
+            </table>
           </div>
         </div>
-        <br />
-        <div id="num_arrivals_per_station">
-          <h5>Number of Arrivals per Station</h5>
-          <div>
+
+        <div class="row">
+          <div class="small-6 columns" id="min_duration_trip">
+            <h5>Minimum Duration Trip</h5>
+            <table>
+              <tr>
+                <td>Start Station</td>
+                <td class="start_station_name"></td>
+              </tr>
+              <tr>
+                <td>End Station</td>
+                <td class="end_station_name"></td>              
+              </tr>
+              <tr>
+                <td>Duration</td>
+                <td class="duration"></td>
+              </tr>
+              <tr>
+                <td>Trip Start Time</td>
+                <td class="start_datetime"></td>
+              </tr>
+              <tr>
+                <td>Trip End Time</td>
+                <td class="end_datetime"></td>
+              </tr>
+            </table>
+          </div>
+          <div class="small-6 columns" id="max_duration_trip">
+            <h5>Maximum Duration Trip</h5>
+            <table>
+              <tr>
+                <td>Start Station</td>
+                <td class="start_station_name"></td>
+              </tr>
+              <tr>
+                <td>End Station</td>
+                <td class="end_station_name"></td>              
+              </tr>
+              <tr>
+                <td>Duration</td>
+                <td class="duration"></td>
+              </tr>
+              <tr>
+                <td>Trip Start Time</td>
+                <td class="start_datetime"></td>
+              </tr>
+              <tr>
+                <td>Trip End Time</td>
+                <td class="end_datetime"></td>
+              </tr>
+            </table>
           </div>
         </div>
-        <div id="num_trips_per_hour">
-          <h5>Number of Trips per Hour</h5>
-          <div>
+
+        <div class="row">
+          <div class="small-12 columns" id="num_departures_per_station">
+            <h5>Number of Departures per Station</h5>
+            <div></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="small-12 columns" id="num_arrivals_per_station">
+            <h5>Number of Arrivals per Station</h5>
+            <div></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="small-12 columns" id="num_trips_per_hour">
+            <h5>Number of Trips per Hour</h5>
+            <div></div>
           </div>
         </div>
       </div>
-    </div>    
-</div>
-</div>
+  </div>
 </div>
 
 <script src="/static/js/foundation.min.js"></script>

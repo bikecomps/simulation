@@ -34,7 +34,7 @@ import sys
 import random
 
 class SummaryStats:
-    def __init__(self, start_date, end_date, dummy = False):
+    def __init__(self, start_date, end_date):
         self.start_date = start_date
         self.end_date = end_date
 
@@ -43,13 +43,9 @@ class SummaryStats:
         self.disappointments = None
         self.stats = {}
     	self.station_name_dict = {}
-        self.dummy = dummy
         self.indent = False
 
-        if not dummy:
-            self.run_simulation()
-        else:
-            self.get_dummy_simulation()
+        self.run_simulation()
         self.calculate_stats()
 
     def run_simulation(self):
@@ -84,8 +80,8 @@ class SummaryStats:
         self.stats['total_num_disappointments'] = len(self.disappointments)
         self.stats['avg_trip_time'] = numpy.average(trip_times)
         self.stats['std_trip_time'] = numpy.std(trip_times)        
-        min_trip = min(trips_and_times)[1]
-        max_trip = max(trips_and_times)[1]
+        min_trip = 0 if len(trips_and_times) == 0 else min(trips_and_times)[1]
+        max_trip = 0 if len(trips_and_times) == 0 else max(trips_and_times)[1]
         
         self.stats['min_duration_trip'] = {
             'start_station_name' : self.station_name_dict[min_trip.start_station_id].encode('ascii', 'ignore'),
@@ -106,19 +102,13 @@ class SummaryStats:
         dep_counts = {}
         arr_counts = {}
         station_list = []
-        if self.dummy:
-            self.station_name_dict = {0:"17 & H Street",1:"Federal Circle Metro Station",2:"NW Hall Ave & 17th St",3:"SE 10th St & Minnesota",4:"Hell"}
-            for s in self.station_name_dict:
-                station_list.append(Station(s,self.station_name_dict[s],20,None))
-                dep_counts[self.station_name_dict[s]] = 0
-                arr_counts[self.station_name_dict[s]] = 0
-        else:
-            station_list = self.session.query(Station)
 
-            for station in station_list:
-                dep_counts[station.name.encode('ascii','ignore')] = 0
-                arr_counts[station.name.encode('ascii','ignore')] = 0
-                self.station_name_dict[station.id] = station.name
+        station_list = self.session.query(Station)
+
+        for station in station_list:
+            dep_counts[station.name.encode('ascii','ignore')] = 0
+            arr_counts[station.name.encode('ascii','ignore')] = 0
+            self.station_name_dict[station.id] = station.name
 
         for trip in self.trips:
             dep_counts[self.station_name_dict[trip.start_station_id]] += 1

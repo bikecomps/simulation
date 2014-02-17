@@ -361,7 +361,7 @@ class TripType(Base):
     '''
     __tablename__ = 'trip_types'
     id = Column(Integer, Sequence('trip_type_id_seq'), primary_key=True)
-    trip_type = Column(Enum(u'Training', u'Testing', u'Produced', u'Removed', name='trip_type'), 
+    trip_type = Column(Enum(u'Training', u'Produced', u'Testing', u'Removed', u'ExtrapolationTesting', name='trip_type'), 
              default=u'Produced')
 
     produced_on = Column(DateTime)
@@ -503,16 +503,17 @@ def main():
 
     # Indices that we've created so far
     # Lambda Indexes
-    lambda_index = Index('lambda_day_hour_index', Lambda.is_week_day, Lambda.hour)
+    lambda_index = Index('lambda_day_hour_index', Lambda.is_week_day, Lambda.hour, Lambda.month)
     lambda_day_index = Index('lambda_day_index', Lambda.is_week_day)
     lambda_hour_index = Index('lambda_hour_index', Lambda.hour)
+    lambda_month_index = Index('lambda_month_index', Lambda.month)
     lambda_year_index = Index('lambda_year_index', Lambda.year)
 
     dd_day_index = Index('dest_distr_day_index', DestDistr.is_week_day)
     dd_hour_index = Index('dest_distr_hour_index', DestDistr.hour)
 
-    dd_day_index.create(engine)
-    dd_hour_index.create(engine)
+    #dd_day_index.create(engine)
+    #dd_hour_index.create(engine)
 
     # For increasing speed of training
     trip_date_index = Index('trip_date_index', Trip.start_date)
