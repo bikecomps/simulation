@@ -186,7 +186,7 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
 		.attr("y", function(d, i){ return y(i) + yRangeBand/2; } )
 		.attr("dx", -5)
 		.attr("dy", ".36em")
-		.attr("text-anchor", "end")
+		.attr("text-anchor", "start")
 		.attr('class', 'score')
 		.text(String);
 	
