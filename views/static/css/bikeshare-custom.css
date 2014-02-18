@@ -269,3 +269,24 @@ NOTE : DEPRECATING OBSOLETE CSS STYLES. by ahnjo. Feb 16, 2014
   padding-left: 20px;
 }
 */
+
+
+.infoWindow_wrapper {
+    overflow-y: hidden;
+}
+
+.infoWindow_id {
+    font-size: 1.5em !important;
+    margin-bottom: 0.2em;
+}
+
+.infoWindow_title {
+    font-size: 1.1em !important;
+    margin-bottom: 0.2em;
+}
+
+.infoWindow_capacity {
+}
+
+.infoWindow_capacity_label { 
+}
