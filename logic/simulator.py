@@ -22,9 +22,15 @@ class Simulator:
         self.sim_logic = sim_logic
         self.session = sim_logic.getDBSession()
 
+    def run(self, start_time, end_time, 
+            timestep=datetime.timedelta(seconds=3600),
+            logic_options={}):
+        '''
+        logic_options must have keywords EXACTLY the sim_logic's named params
+        '''
 
-    def run(self, start_time, end_time, timestep=datetime.timedelta(seconds=3600)):
-        self.sim_logic.initialize(start_time, end_time)
+        self.sim_logic.initialize(start_time, end_time, **logic_options)
+
         cur_time = start_time
         print "cur time:", cur_time, "start time:", start_time, "end time:", end_time
         progress_buffer = {}
@@ -96,7 +102,7 @@ def main():
     if len(sys.argv) == 1:
         # defaults
         raw_start_date = "2012-6-2 00:00:00"
-        raw_end_date = "2012-6-8 00:00:00"
+        raw_end_date = "2012-6-3 00:00:00"
         file_name = "/tmp/test.csv"
         logic = ExponentialLogic
         #logic = AltPoissonLogic
@@ -129,7 +135,9 @@ def main():
     session = Connector().getDBSession()
     logic = logic(session)
     simulator = Simulator(logic) 
-    results = simulator.run(start_date, end_date)
+    print start_date, end_date
+    logic_options = {'station_caps':{31237:0}, 'drop_stations':[31704]}
+    results = simulator.run(start_date, end_date, logic_options=logic_options)
     print "trips:", len(results['trips'])
     ds = results['disappointments']
     print "disappointments:", len(ds)

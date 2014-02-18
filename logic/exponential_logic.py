@@ -19,10 +19,8 @@ class ExponentialLogic(SimulationLogic):
     def __init__(self, session):
         SimulationLogic.__init__(self, session)
 
-        self.loading_times = []
-
-    def initialize(self, start_time, end_time):
-        SimulationLogic.initialize(self, start_time, end_time)
+    def initialize(self, start_time, end_time, **kwargs):
+        SimulationLogic.initialize(self, start_time, end_time, **kwargs)
         print "\tLoading Exp Distributions"
         self.exp_distrs = self.load_exp_lambdas(start_time, end_time)
         print "\tLoading gamma distributions"
@@ -30,42 +28,13 @@ class ExponentialLogic(SimulationLogic):
         print "\tLoading dest_distrs distributions"
         self.dest_distrs = self.load_dest_distrs(start_time, end_time)
 
-        # Retrieve StationDistance objects representing the five closest
-        # stations for each stations.
-        self.nearest_station_dists = {}
-        station_list = self.session.query(data_model.Station) 
-        for station in station_list:
-            nearest_distances = self.session.query(data_model.StationDistance)\
-                    .filter(data_model.StationDistance.station1_id == station.id)\
-                    .order_by(data_model.StationDistance.distance)[:8]
-            self.nearest_station_dists[station.id] = nearest_distances
-
         print "\tInitializing Trips"
-        #TODO Generate initial trips for every station
         self.initialize_trips()
         self.moving_bikes = 0
 
-
-
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        not_full = []
-        not_empty = []
-        for s_id in self.station_counts:
-            if self.station_counts[s_id] > 0 and s_id in self.empty_stations_set:
-                not_empty.append(s_id)
-                self.empty_stations_set.remove(s_id)      
-            elif self.station_counts[s_id] != self.stations[s_id].capacity and s_id in self.full_stations_set:
-                not_full.append(s_id)
-                self.full_stations_set.remove(s_id)
-            elif self.station_counts[s_id] == self.stations[s_id].capacity and s_id not in self.full_stations_set:
-                self.full_stations_set.add(s_id)
-            elif self.station_counts[s_id] == 0 and s_id not in self.empty_stations_set:
-                self.empty_stations_set.add(s_id)
-
-        if self.rebalancing:
-            self.rebalance_stations()
- 
+        self.update_rebalance() 
         self.resolve_trips()
 
         if self.rebalancing:
@@ -109,7 +78,6 @@ class ExponentialLogic(SimulationLogic):
         #                None, s_id, s_id)
 
         trip_start_time = time + datetime.timedelta(seconds=wait_time)
-        self.loading_times.append((s_id, wait_time, time))
         # It should go somewhere depending on when the hour of its start_time (could be far in the future)
         end_station_id = self.get_destination(s_id, trip_start_time)
 
@@ -180,6 +148,7 @@ class ExponentialLogic(SimulationLogic):
                              .filter(ExpLambda.month >= start_time.month)\
                              .filter(ExpLambda.year <= end_time.year)\
                              .filter(ExpLambda.month <= end_time.month)\
+                             .filter(ExpLambda.station_id.in_(self.stations.keys()))\
                              .yield_per(5000)
 
         num_ds = 0 
@@ -197,6 +166,7 @@ class ExponentialLogic(SimulationLogic):
         distr_dict = [[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)] for d in range(2)]
 
 
+        station_list = self.stations.keys()
         # Inclusive
         #TODO figure out what to do if timespan > a week -> incline to say ignore it
         #TODO Bug: loading too much data at the moment, by a fair amount
@@ -213,6 +183,8 @@ class ExponentialLogic(SimulationLogic):
                .filter(DestDistr.is_week_day == (dow < 5)) \
                .filter(DestDistr.hour.between(start_hour, end_hour))\
                .yield_per(10000)
+               # Actually faster to just load extra data...
+               #.filter(DestDistr.start_station_id.in_(station_list))\
 
             for distr in date_distrs:
                 result = distr_dict[distr.is_week_day][distr.hour][distr.start_station_id]

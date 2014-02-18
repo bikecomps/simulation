@@ -81,7 +81,8 @@ function initialize() {
 		});
 		station_markers[locations[station][2]] = marker;
 		var infoWindow = new google.maps.InfoWindow({
-			content: "Hakuna Matata?"
+			content: "Hakuna Matata?",
+			maxWidth: 200
 		});
 		openWindow = infoWindow;
 		bindInfoWindow(marker, map, infoWindow);
@@ -91,7 +92,16 @@ function initialize() {
 function bindInfoWindow(marker, map, infoWindow) {
 	google.maps.event.addListener(marker, 'click', function() {
 		openWindow.close();
-		infoWindow.setContent(marker.title);
+
+		var contentString = '<div class="infoWindow_wrapper">' + 
+			'<div class="infoWindow_id">' + marker.id + '</div>' +
+			'<div class="infoWindow_title">' + marker.title + '</div>' +
+			'<div class="infoWindow_capacity">Capacity : <div class="infoWindow_capacity_label">' + marker.capacity +
+			'</div></div>' +
+			'</div>';
+
+		//console.log("MARKER CAPACITY FOR STA #" + marker.id + " = " + marker.capacity);
+		infoWindow.setContent(contentString);
 		infoWindow.open(map, marker);
 		openWindow = infoWindow;	
 	});
