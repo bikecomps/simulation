@@ -18,10 +18,12 @@ from collections import defaultdict
 import math
 from sqlalchemy.sql import func,label
 
+# Linear regression
 LINEAR = 0
+# Log regression using years as given
 LOG1 = 1
+# Log regression using year-2010+2
 LOG2 = 2
-
 
 class PoissonLogic(SimulationLogic):
 
@@ -41,6 +43,7 @@ class PoissonLogic(SimulationLogic):
         print "Loaded Gammas"
         self.moving_bikes = 0
         if end_time > self.time_of_last_data:
+            self.regression_type = LOG2
             regression_data = self.init_regression()
             self.monthly_slope = regression_data[0]
             self.monthly_intercept = regression_data[1]
@@ -64,10 +67,19 @@ class PoissonLogic(SimulationLogic):
                 x_years.append(entry[1])
                 y_counts.append(entry[0])
 
-            slope, intercept = self.log_regression_with_year_deltas(x_years, y_counts)
+            slope, intercept = self.get_regression(x_years, y_counts)
             monthly_slope.append(slope)
             monthly_intercept.append(intercept)
         return monthly_slope, monthly_intercept
+
+
+    def get_regression(self, x_list, y_list):
+        if self.regression_type == LINEAR:
+            return self.linear_regression(x_list, y_list)
+        elif self.regression_type == LOG1:
+            return self.log_regression(x_list, y_list)
+        elif self.regression_type == LOG2:
+            return self.log_regression_with_year_deltas(x_list, y_list)
 
 
     def linear_regression(self, x_list, y_list):
@@ -150,12 +162,21 @@ class PoissonLogic(SimulationLogic):
         for prev_year in self.get_year_range_of_data(month):
             prev_year_lambda = self.get_lambda(prev_year, month, start_time.weekday(), start_time.hour, start_station_id, end_station_id) 
             if not prev_year_lambda: continue
-            lam_prediction += self.log_predict_with_year_deltas(prev_year, prev_year_lambda, slope, intercept, start_time)
+            lam_prediction += self.predict_from_one_year(prev_year, prev_year_lambda, slope, intercept, start_time)
 
         lam_prediction /= len(self.get_year_range_of_data(month))
         if lam_prediction <= 0:
             return None
         return Lambda(start_station_id, end_station_id, start_time.hour, start_time.weekday()<5, start_time.year, month, lam_prediction)
+
+
+    def predict_from_one_year(self, prev_year, prev_year_lambda, slope, intercept, start_time):
+        if self.regression_type == LINEAR:
+            return self.linear_predict(prev_year, prev_year_lambda, slope, intercept, start_time)
+        elif self.regression_type == LOG1:
+            return self.log_predict(prev_year, prev_year_lambda, slope, intercept, start_time)
+        elif self.regression_type == LOG2:
+            return self.log_predict_with_year_deltas(prev_year, prev_year_lambda, slope, intercept, start_time)
 
 
     def linear_predict(self, prev_year, prev_year_lambda, slope, intercept, start_time):
@@ -277,9 +298,10 @@ class PoissonLogic(SimulationLogic):
                     .filter(data_model.Lambda.is_week_day == is_week_day) \
                     .filter(data_model.Lambda.month == month) \
                     .filter(data_model.Lambda.hour.between(start_hour, end_hour))
-                
-                distr_dict[lam.year][month][lam.is_week_day][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
-                num_added += 1
+  
+                for lam in lambda_poisson:
+                    distr_dict[lam.year][month][lam.is_week_day][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
+                    num_added += 1
 
         station_list = self.stations.keys()
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
