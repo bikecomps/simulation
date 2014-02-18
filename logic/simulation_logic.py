@@ -75,6 +75,7 @@ class SimulationLogic:
         print "\tInitializing stations"
         self._initialize_stations(start_time, bike_total,
                                   station_caps, drop_stations)
+        self._initialize_station_distances()
         self.rebalancing = rebalancing
 
     def _get_total_num_bikes(self):
@@ -82,14 +83,27 @@ class SimulationLogic:
         Given a way to access the DB grab the max number of bikes at the stations
         that we've checked so far.
         '''
-        # Check the days we have  and grab the most count
+        # Check the days we have  and grab the largest count
         # provides a good upperbound on the total number of bikes
         max_bike_count= max(self.session.query(func.sum(StationStatus.bike_count))\
                 .group_by(StationStatus.status_group_id).all())[0]
         return max_bike_count
      
     def _get_station_cap(self, s_id):
-            return self.station_caps[s_id]
+        return self.station_caps[s_id]
+
+    def _initialize_station_distances(self, nearest=8):
+        # Retrieve StationDistance objects representing the five closest
+        # stations for each stations.
+        self.nearest_station_dists = {}
+        station_list = self.session.query(Station)\
+                           .filter(Station.id.in_(self.stations.keys()))
+        for station in station_list:
+            nearest_distances = self.session.query(StationDistance)\
+                    .filter(StationDistance.station1_id == station.id)\
+                    .order_by(StationDistance.distance)[:8]
+            self.nearest_station_dists[station.id] = nearest_distances
+
 
     def _initialize_stations(self, start_time, bike_total, 
                              station_caps, drop_stations):

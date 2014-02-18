@@ -85,9 +85,9 @@ def main():
         raw_start_date = "2012-6-2 00:00:00"
         raw_end_date = "2012-6-3 00:00:00"
         file_name = "/tmp/test.csv"
-        #logic = ExponentialLogic
+        logic = ExponentialLogic
         #logic = AltPoissonLogic
-        logic = PoissonLogic
+        #logic = PoissonLogic
         start_date = datetime.datetime.strptime(raw_start_date, '%Y-%m-%d %H:%M:%S')
         end_date = datetime.datetime.strptime(raw_end_date, '%Y-%m-%d %H:%M:%S')
     else:

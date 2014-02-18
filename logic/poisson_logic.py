@@ -27,17 +27,6 @@ class PoissonLogic(SimulationLogic):
         print "Loaded Lambdas"
         self.duration_distrs = self.load_gammas()
         print "Loaded Gammas"
-
-        # Retrieve StationDistance objects representing the five closest
-        # stations for each stations.
-        self.nearest_station_dists = {}
-        station_list = self.session.query(Station)\
-                           .filter(Station.id.in_(self.stations.keys()))
-        for station in station_list:
-            nearest_distances = self.session.query(StationDistance)\
-                    .filter(StationDistance.station1_id == station.id)\
-                    .order_by(StationDistance.distance)[:8]
-            self.nearest_station_dists[station.id] = nearest_distances
         self.moving_bikes = 0
 
 
