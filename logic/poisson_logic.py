@@ -47,7 +47,8 @@ class PoissonLogic(SimulationLogic):
             regression_data = self.init_regression()
             self.monthly_slope = regression_data[0]
             self.monthly_intercept = regression_data[1]
-
+        self.moving_bikes = 0
+        
 
     def init_regression(self):
         # Returns slope and y-intercept for regression line for each month
@@ -67,7 +68,7 @@ class PoissonLogic(SimulationLogic):
                 x_years.append(entry[1])
                 y_counts.append(entry[0])
 
-            slope, intercept = self.linear_regression(x_years, y_counts)
+            slope, intercept = self.log_regression_with_year_deltas(x_years, y_counts)
             monthly_slope.append(slope)
             monthly_intercept.append(intercept)
         return monthly_slope, monthly_intercept
@@ -103,32 +104,35 @@ class PoissonLogic(SimulationLogic):
         '''Moves the simulation forward one timestep from given time'''
         not_full = []
         not_empty = []
-        full = []
-        empty = [] 
         for s_id in self.station_counts:
-            if s_id in self.empty_full_stations:
-	        if self.station_counts[s_id] > 0 and self.empty_full_stations[s_id] == "empty":
-                    not_empty.append(s_id)
-                    del self.empty_full_stations[s_id]      
-                elif self.station_counts[s_id] != self.stations[s_id].capacity:
-		    not_full.append(s_id)
-                    del self.empty_full_stations[s_id]
-            else:
-                if self.station_counts[s_id] == self.stations[s_id].capacity:
-                    full.append(s_id)
-                    self.empty_full_stations[s_id] = "full"
-                if self.station_counts[s_id] == 0:
-                    empty.append(s_id)
-                    self.empty_full_stations[s_id] = "empty"
-	if len(not_full) > 0:
-            print "\tNo longer full:\n" + "\t\t" + str(not_full)
-	if len(not_empty) > 0:
-            print "\tNo longer empty:\n" + "\t\t" + str(not_empty)
- 	if len(full) > 0:
-            print "\tNow full:\n" + "\t\t" + str(full)       
-	if len(empty) > 0:
-            print "\tNow empty:\n" + "\t\t" + str(empty)
+            if self.station_counts[s_id] > 0 and s_id in self.empty_stations_set:
+                not_empty.append(s_id)
+                self.empty_stations_set.remove(s_id)      
+            elif self.station_counts[s_id] != self.stations[s_id].capacity and s_id in self.full_stations_set:
+                not_full.append(s_id)
+                self.full_stations_set.remove(s_id)
+            elif self.station_counts[s_id] == self.stations[s_id].capacity and s_id not in self.full_stations_set:
+                self.full_stations_set.add(s_id)
+            elif self.station_counts[s_id] == 0 and s_id not in self.empty_stations_set:
+                self.empty_stations_set.add(s_id)
+        if len(not_full) > 0:
+            print "\tNo longer full:\n" + "\t\t" + str(list(not_full))
+        if len(not_empty) > 0:
+                print "\tNo longer empty:\n" + "\t\t" + str(list(not_empty))
+        if len(self.full_stations_set) > 0:
+                print "\tNow full:\n" + "\t\t" + str(list(self.full_stations_set))
+        if len(self.empty_stations_set) > 0:
+            print "\tNow empty:\n" + "\t\t" + str(list(self.empty_stations_set))
+        if self.rebalancing:
+            self.rebalance_stations()
+        # print "\tPost rebalance. Moving bikes:", self.moving_bikes
+        #if len(self.full_stations_set) > 0:
+        #        print "\t\tNow full:\n" + "\t\t" + str(self.full_stations_set)
+        #if len(self.empty_stations_set) > 0:
+        #    print "\t\tNow empty:\n" + "\t\t" + str(self.empty_stations_set)
         self.generate_new_trips(self.time)
+        if self.rebalancing:
+            self.rebalance_stations()
         self.resolve_trips()
 
         # Increment after we run for the current timestep?
@@ -136,9 +140,12 @@ class PoissonLogic(SimulationLogic):
 
 
     def generate_new_trips(self, start_time):
+
         # Note that Monday is day 0 and Sunday is day 6. Is this the same for data_model?
 #        self.print_lambda_dict()
+        station_count = 0
         for start_station_id in self.station_counts:
+            station_count += 1
             for end_station_id in self.station_counts:
                 # Check if predicting a future date 
                 if start_time > self.time_of_last_data:
@@ -151,15 +158,18 @@ class PoissonLogic(SimulationLogic):
                 # Check for invalid queries
                 if lam and gamma:
                     num_trips = self.get_num_trips(lam)
+ #                   print "lambda =", lam, " & ", num_trips, "trips during", start_time
                     for i in range(num_trips):
                         # Starting time of the trip is randomly chosen within the Lambda's time range, which is hard-coded to be an hour.
-                        added_time = datetime.timedelta(0, random.randint(0, 59), 0, 0, random.randint(0, 59), 0, 0)
+                        added_time = datetime.timedelta(0, random.randint(0, 59),
+                                                        0, 0, random.randint(0, 59), 
+                                                        0, 0)
                         trip_start_time = start_time + added_time
                         trip_duration = self.get_trip_duration(gamma)
                         trip_end_time = trip_start_time + trip_duration
                         new_trip = data_model.Trip(str(random.randint(1,500)), "Casual", 2, trip_start_time, trip_end_time, start_station_id, end_station_id)
                         self.pending_departures.put((start_time, new_trip))
-                                
+        print self.pending_departures.qsize()
 
     # This function should only be for testing, prints lambda counts for each year and hour given a weekend day in June
     def print_lambda_dict(self):
@@ -178,16 +188,44 @@ class PoissonLogic(SimulationLogic):
         # TODO Delete prints
 #        print "Month", month, "hour", start_time.hour
         for prev_year in self.get_year_range_of_data(month):
-            prev_year_lambda = self.get_lambda(prev_year, month, start_time.day, start_time.hour, start_station_id, end_station_id) 
+            prev_year_lambda = self.get_lambda(prev_year, month, start_time.weekday(), start_time.hour, start_station_id, end_station_id) 
 #            print "Year", prev_year, ":", prev_year_lambda.value if prev_year_lambda else None
             if not prev_year_lambda: continue
-            prev_year_trips = slope * prev_year + intercept
-            future_year_trips = slope * start_time.year + intercept
-            lam_prediction += prev_year_lambda.value * future_year_trips / prev_year_trips
+#            else: print "Year", prev_year, ":", prev_year_lambda.value
+#            prev_year_trips = slope * prev_year + intercept
+#            future_year_trips = slope * start_time.year + intercept
+#            lam_prediction += prev_year_lambda.value * future_year_trips / prev_year_trips
 #            print "prev trips", prev_year_trips, "\t future trips", future_year_trips
+            lam_prediction += self.log_predict_with_year_deltas(prev_year, prev_year_lambda, slope, intercept, start_time)
         lam_prediction /= len(self.get_year_range_of_data(month))
 #        print "Prediction", lam_prediction
+        if lam_prediction <= 0:
+            return None
+#        print "Prediction", lam_prediction
         return Lambda(start_station_id, end_station_id, start_time.hour, start_time.weekday()<5, start_time.year, month, lam_prediction)
+
+
+    def linear_predict(self, prev_year, prev_year_lambda, slope, intercept, start_time):
+        prev_year_trips = slope * prev_year + intercept
+        future_year_trips = slope * start_time.year + intercept
+        lam_prediction = prev_year_lambda.value * future_year_trips / prev_year_trips
+        return lam_prediction
+
+
+    def log_predict(self, prev_year, prev_year_lambda, slope, intercept, start_time):
+        prev_year_trips = slope * math.log(prev_year) + intercept
+        future_year_trips = slope * math.log(start_time.year) + intercept
+        lam_prediction = prev_year_lambda.value * future_year_trips / prev_year_trips
+        return lam_prediction
+
+    
+    def log_predict_with_year_deltas(self, prev_year, prev_year_lambda, slope, intercept, start_time):
+        # Hopefully these are reasonable???
+        prev_year_trips = slope * math.log(prev_year-2010+2) + intercept
+        future_year_trips = slope * math.log(start_time.year-2010+2) + intercept
+        lam_prediction = prev_year_lambda.value * future_year_trips / prev_year_trips
+        return lam_prediction
+
 
     def get_year_range_of_data(self, month):
         #TODO: Don't just hard-code dates of existing data
@@ -211,8 +249,12 @@ class PoissonLogic(SimulationLogic):
         probability = random.random()
         while probability == 0:
             probability = random.random()
+            
+        # when using all data (training + testing)
+        # num_trips = poisson.ppf(probability, lam.value)
 
-        num_trips = poisson.ppf(probability, lam.value)
+        # when using only training data
+        num_trips = poisson.ppf(probability, lam.value * (4./3))
 
         if numpy.isnan(num_trips):
             num_trips = -1
@@ -249,10 +291,15 @@ class PoissonLogic(SimulationLogic):
 
     def load_lambdas(self, start_time, end_time):
         '''
-        Caches lambdas into dictionary of year -> is_week_day -> hour -> (start_id, end_id) -> lambda
+        Caches lambdas into dictionary of day -> hour -> (start_id, end_id) -> lambda
+        Note: DB only has values > 0.
         '''
         # kind of gross but makes for easy housekeeping
         distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(float)))))
+
+        # keep track of when we've hit the database for a particular request
+        requested_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(bool))))
+
         num_added = 0
         # Inclusive
         
@@ -283,14 +330,15 @@ class PoissonLogic(SimulationLogic):
                     distr_dict[lam.year][month][lam.is_week_day][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
                     num_added += 1
 
+
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
             
             start_hour = start_time.hour if start_time.weekday() == dow else 0
             end_hour = end_time.hour if end_time.weekday() == dow else 24
 
-            year = start_time.year
-            month = start_time.month
+            year = day.year
+            month = day.month
             is_week_day = dow < 5
 
             # For now we're only loading in lambdas that have non-zero values. 
@@ -299,10 +347,19 @@ class PoissonLogic(SimulationLogic):
                 .filter(data_model.Lambda.is_week_day == is_week_day) \
                 .filter(data_model.Lambda.year == year) \
                 .filter(data_model.Lambda.month == month) \
-                .filter(data_model.Lambda.hour.between(start_hour, end_hour))
-        
+                .filter(data_model.Lambda.hour.between(start_hour, end_hour))        
+            
+            if not requested_dict[month][year][is_week_day][(start_hour, end_hour)]:
+                lambda_poisson = self.session \
+                                     .query(data_model.Lambda) \
+                                     .filter(data_model.Lambda.month == month) \
+                                     .filter(data_model.Lambda.year == year) \
+                                     .filter(data_model.Lambda.is_week_day == is_week_day) \
+                                     .filter(data_model.Lambda.hour.between(start_hour, end_hour))
+                requested_dict[month][year][is_week_day][(start_hour, end_hour)] = True
+                
             for lam in lambda_poisson:
-                distr_dict[year][month][lam.is_week_day][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
+                distr_dict[lam.year][lam.month][lam.is_week_day][lam.hour][(lam.start_station_id, lam.end_station_id)] = lam
                 num_added += 1
 
         return distr_dict
@@ -354,6 +411,7 @@ def main():
     connector = Connector()
     session = connector.getDBSession()
     p = PoissonLogic(session)
+
 
 if __name__ == '__main__':
     main()

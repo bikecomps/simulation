@@ -1,36 +1,7 @@
 #! /usr/bin/env python
 
-'''
-Basic demo of SQL-Alchemy ORM. Can be found on:
-
-http://docs.sqlalchemy.org/en/rel_0_8/orm/tutorial.html
-
-Sample output after done:
-
-test_orm=# \dt
-             List of relations
- Schema |     Name      | Type  |   Owner   
---------+---------------+-------+-----------
- public | intersections | table | bikecomps
- public | stations      | table | bikecomps
-(2 rows)
-
-test_orm=# select * from intersections
-test_orm-# ;
- id | lat | lon 
-----+-----+-----
-  1 |  50 |  50
-(1 row)
-
-test_orm=# select * from stations;
- id |      name       | capacity | intersection_id 
-----+-----------------+----------+-----------------
-  1 | Fifth and Union |        5 |               1
-(1 row)
-'''
-
 import datetime
-from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, Boolean, ForeignKey, Sequence, Index
+from sqlalchemy import create_engine, Column, DateTime, Enum, Float, Integer, String, ForeignKey, Sequence, Index, Boolean, Sequence
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
 
@@ -259,23 +230,28 @@ class ExpLambda(Base):
     '''
     __tablename__ = 'exp_lambda_distrs'
     id = Column(Integer, Sequence('exp_lambda_id_seq'), primary_key=True)
-    station_id = Column(Integer, ForeignKey('stations.id'))
+    station_id = Column(Integer, ForeignKey('stations.id'), nullable=False)
     station = relationship('Station', foreign_keys=[station_id],
                                  backref=backref('exp_lambdas'))
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    is_week_day = Column(Boolean, nullable=False)
+    hour = Column(Integer, nullable=False) # range 0-23
+    rate = Column(Float, nullable=False)
 
-    hour = Column(Integer) # range 0-23
-    day_of_week = Column(Integer) # range 0-6
-    rate = Column(Float)
-
-    def __init__(self, station_id, hour, day, val):
+    def __init__(self, station_id, year, month, is_week_day, hour, rate):
         self.station_id = station_id
+        self.year = year
+        self.month = month
+        self.is_week_day = is_week_day
         self.hour = hour
-        self.day_of_week = day
-        self.value = val
+        self.rate = rate
     
     def __repr__(self):
-        return 'ExpLambda: station id: %s, hour: %s, day of week: %s, value: %.2f'\
-                 % (self.station_id, self.hour, self.day_of_week, self.value)
+        return 'ExpLambda: station id: %s, year %r, month %r, weekday %r,\
+                    hour: %s, rate: %.2f'\
+                 % (self.station_id, self.year, self.month, 
+                    self.is_week_day, self.hour, self.rate)
 
 class DestDistr(Base):
     '''
@@ -291,25 +267,33 @@ class DestDistr(Base):
     end_station_id = Column(Integer, ForeignKey('stations.id'))
     end_station = relationship('Station', foreign_keys=[end_station_id], 
                                backref=backref('dest_distr_end'))
-    hour = Column(Integer) # range 0-23
-    day_of_week = Column(Integer) # range 0-6
-    prob = Column(Float)
 
-    def __init__(self, start_station_id, end_station_id, hour, day, probability):
+
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    is_week_day = Column(Boolean, nullable=False)
+    hour = Column(Integer, nullable=False) # range 0-23
+    prob = Column(Float, nullable=False)
+
+    def __init__(self, start_station_id, end_station_id, year, month, 
+                 is_week_day, hour, prob):
         self.start_station_id = start_station_id
         self.end_station_id = end_station_id
+        self.year = year
+        self.month = month
+        self.is_week_day = is_week_day
         self.hour = hour
-        self.day_of_week = day
-        self.prob = probability
+        self.prob = prob
     
     def __repr__(self):
-        return 'Destination distribution: start station id: %s, end station id: %s, hour: %s, day of week: %s, prob: %.2f'\
-                 % (self.start_station_id, self.end_station_id, self.hour, self.day_of_week, self.prob)
+        return 'Destination distribution: start station id: %s, end station id: %s, hour: %s, is week day?: %r, prob: %.4f'\
+                 % (self.start_station_id, self.end_station_id, self.hour, self.is_week_day, self.prob)
 
 class Gamma(Base):
     '''
     Table stores gamma distributions for each pairwise station.
     Important: Based on seconds!
+    More Important: No gammas if there are no training data between the stations!
     '''
     __tablename__ = 'gamma_distrs'
     id = Column(Integer, Sequence('gamma_id_seq'), primary_key=True)
@@ -377,7 +361,7 @@ class TripType(Base):
     '''
     __tablename__ = 'trip_types'
     id = Column(Integer, Sequence('trip_type_id_seq'), primary_key=True)
-    trip_type = Column(Enum(u'Training', u'Testing', u'Produced', u'Removed', name='trip_type'), 
+    trip_type = Column(Enum(u'Training', u'Produced', u'Testing', u'Removed', u'ExtrapolationTesting', name='trip_type'), 
              default=u'Produced')
 
     produced_on = Column(DateTime)
@@ -517,22 +501,24 @@ def main():
     # Create all tables if we haven't already
     Base.metadata.create_all(engine)
 
+    # Indices that we've created so far
     # Lambda Indexes
-    lambda_index = Index('lambda_day_hour_index', Lambda.is_week_day, Lambda.hour)
+    lambda_index = Index('lambda_day_hour_index', Lambda.is_week_day, Lambda.hour, Lambda.month)
     lambda_day_index = Index('lambda_day_index', Lambda.is_week_day)
     lambda_hour_index = Index('lambda_hour_index', Lambda.hour)
+    lambda_month_index = Index('lambda_month_index', Lambda.month)
     lambda_year_index = Index('lambda_year_index', Lambda.year)
 
-    # Not working?
-    lambda_non_zero_index = Index('lambda_non_zero_index', Lambda.value.isnot(0)) 
+    dd_day_index = Index('dest_distr_day_index', DestDistr.is_week_day)
+    dd_hour_index = Index('dest_distr_hour_index', DestDistr.hour)
 
-    #TODO CREATE INDEX ON NON NULLS?
-    # Created indexes, doesn't need to be created again
-    #lambda_index.create(engine)
-    #lambda_day_index.create(engine)
-    #lambda_hour_index.create(engine)
-    #lambda_non_zero_index.create(engine)
+    #dd_day_index.create(engine)
+    #dd_hour_index.create(engine)
 
+    # For increasing speed of training
+    trip_date_index = Index('trip_date_index', Trip.start_date)
+    trip_start_station_index = Index('trip_start_station_index', Trip.start_station_id)
+    trip_end_station_index = Index('trip_end_station_index', Trip.end_station_id)
 
 if __name__ == '__main__':
     main()

@@ -12,11 +12,6 @@ def calc_outliers(session, s_id):
                 .filter(TripType.trip_type != "Produced").all():
         trip_times[t.end_station_id].append(t)
 
-    '''
-    trip_times =  {t.id:t.duration().total_seconds() for t in 
-                            session.query(Trip)\
-                            .filter(Trip.start_station_id == s_id).all()}
-    '''
     return trip_times
 
 def classify_outliers(data, m=3, verbose=False): 
@@ -46,8 +41,25 @@ def classify_outliers(data, m=3, verbose=False):
         #    print "\t",rejected
     return rejected
 
-def main():
-    session = Connector().getDBSession()
+def reinsert_outliers(session):
+    rem_type = session.query(TripType)\
+        .filter(TripType.trip_type == 'Removed').first()
+    for t in session.query(Trip)\
+            .join(TripType, aliased=True)\
+            .filter(TripType.id == rem_type.id).all():
+        # The first week of every month is test
+        # Just hard code it in for now
+        if t.start_date.day < 8:
+            t.trip_type_id = 3
+        # Second week of every month is training
+        else:
+            t.trip_type_id = 1
+        session.add(t)
+    session.query(TripType).filter(TripType.id == rem_type.id).delete()
+    session.commit()
+
+
+def remove_outliers(session):
     s_ids = list(session.query(Station.id).all())
     count = 0
     new_trip_type = TripType("Removed")
@@ -64,6 +76,11 @@ def main():
         count += 1
         if count % 10 == 0:
             print "Finished with %s stations" % count
+
+def main():
+    session = Connector().getDBSession()
+    #reinsert_outliers(session)
+    remove_outliers(session)
 
 if __name__ == '__main__':
     main()

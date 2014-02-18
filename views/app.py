@@ -9,6 +9,21 @@ from analytics import PlotMap
 from tornado.web import RequestHandler, Application
 from analytics import SummaryStats
 
+class UnifiedHandler(RequestHandler):
+    def get(self):
+        
+        stations = PlotMap(None, None, None).stations
+        self.render("unified.html",title="Simba | Washington DC",locations=stations)
+    
+    def post(self):
+        start_date = datetime.datetime.strptime(self.get_argument("start"),
+                                                "%Y-%m-%d %H:%M")
+        end_date = datetime.datetime.strptime(self.get_argument("end"),
+                                              "%Y-%m-%d %H:%M")
+ 
+        sstats = SummaryStats(start_date, end_date)
+        self.write(sstats.get_stats())        
+         
 
 class StatsHandler(RequestHandler):
     def get(self):
@@ -33,8 +48,8 @@ class IndexHandler(RequestHandler):
                                             '%H:%M')
         end_time = datetime.datetime.strptime('20:00',
                                           '%H:%M')
-        intersections = PlotMap(day, start_time, end_time).intersections
-        self.render("home.html", title="BikeShare Comps", locations=intersections)
+        stations = PlotMap(day, start_time, end_time).stations
+        self.render("home.html", title="BikeShare Comps", locations=stations)
 
 class AboutHandler(RequestHandler):
     def get(self):
@@ -45,16 +60,19 @@ class BaseHandler(RequestHandler):
         self.render("base.html", title="Base File")
 
 if __name__ == "__main__":
+    print "hello!"
     dirname = os.path.dirname(__file__)
     settings = {
         "static_path" : os.path.join(dirname, "static"),
         "template_path" : os.path.join(dirname, "templates")
     }
     application = Application([
-        (r"/", IndexHandler),
+        (r"/", UnifiedHandler),
         (r"/base", BaseHandler),
         (r"/about", AboutHandler),
-        (r"/stats", StatsHandler)
+        (r"/stats", StatsHandler),
+	(r"/unified", UnifiedHandler)
     ], **settings)
     application.listen(3000)
+    print "listening"
     tornado.ioloop.IOLoop.instance().start()

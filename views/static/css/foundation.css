@@ -26,6 +26,7 @@ body {
   color: #222222;
   padding: 0;
   margin: 0;
+  height: 100%;
   font-family: "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
   font-weight: normal;
   font-style: normal;
@@ -2844,10 +2845,13 @@ label.error {
 
 .top-bar {
   overflow: hidden;
-  height: 45px;
+  height: 55px;
   line-height: 45px;
   position: relative;
-  background: #111111;
+  background: #ffffff;
+  border-bottom: solid;
+  border-bottom-color: #eeeeee;
+  border-bottom-width: 2px;
   margin-bottom: 0; }
   .top-bar ul {
     margin-bottom: 0;
@@ -2936,7 +2940,7 @@ label.error {
     width: 100%;
     height: auto;
     display: block;
-    background: #222222;
+    background: #FFFFFF;
     font-size: 16px;
     margin: 0; }
   .top-bar-section .divider,
@@ -2949,7 +2953,7 @@ label.error {
   .top-bar-section ul li > a {
     display: block;
     width: 100%;
-    color: white;
+    color: black;
     padding: 12px 0 12px 0;
     padding-left: 15px;
     font-size: 0.8125em;
@@ -3038,7 +3042,7 @@ label.error {
 
 @media only screen and (min-width: 940px) {
   .top-bar {
-    background: #111111;
+    /*background: #111111;*/
     *zoom: 1;
     overflow: visible; }
     .top-bar:before, .top-bar:after {
@@ -3082,14 +3086,16 @@ label.error {
         .top-bar-section ul li .js-generated {
           display: none; }
     .top-bar-section li.hover > a:not(.button) {
-      background: black;
-      color: white; }
+      background: white;
+      color: black; }
     .top-bar-section li a:not(.button) {
       padding: 0 15px;
       line-height: 45px;
-      background: #111111; }
+      background: white;
+      position: relative;
+      top: 4px; }
       .top-bar-section li a:not(.button):hover {
-        background: black; }
+        background: white; }
     .top-bar-section .has-dropdown > a {
       padding-right: 35px !important; }
       .top-bar-section .has-dropdown > a:after {
@@ -3150,11 +3156,11 @@ label.error {
         right: 100%; }
 
   .no-js .top-bar-section ul li:hover > a {
-    background: black;
-    color: white; }
+    background: white;
+    color: black; }
   .no-js .top-bar-section ul li:active > a {
-    background: #090909;
-    color: white; }
+    background: white;
+    color: black; }
   .no-js .top-bar-section .has-dropdown:hover > .dropdown {
     display: block; } }
 @-webkit-keyframes rotate {

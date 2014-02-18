@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--[if IE 8]>  <html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" style="height: 100%;"> <!--<![endif]-->
 <html>
   <head>
   <meta charset="utf-8">
@@ -9,7 +9,7 @@
   
   <link rel="stylesheet" href="/static/css/foundation.css">
   <link rel="stylesheet" href="/static/css/bikeshare-custom.css">
-  
+
   <script type="text/javascript" src="/static/js/bikeshare-custom.js">
     <!--Modernizr.js-->
     <script src="/static/js/vendor/custom.modernizr.js"></script>
@@ -17,20 +17,25 @@
     {% block css_and_scripts %}{% end %}
   </head>
   
-  <body>
+  <body onresize="set_map_height()">
     <nav class="top-bar" data-top-bar>
       <ul class="title-area">
-        <li class="name">
-	      <h1><a href="/"><img src="/static/img/cbLogo-sm.png" /></a></h1>
-        </li>
+        <div id="topbar-left-logo"><a href="/"><img src="/static/img/simbaLogo-320.png" /></a></div>
       </ul>
       
       <section class="top-bar-section">
         <!-- Left Nav Section -->
-        <ul class="left">
-          <li><a href="/">Home</a></li>
-	      <li><a href="/stats">Summary Stats</a></li>
-        </ul>
+        <div class="left" id="simulation_control">
+            <form id="control_form" onsubmit="processStatsForm(); return false;">
+                <div id="from_div">
+                    <input type="text" id="from_date" placeholder="Start Date">
+                </div>
+                <div id="to_div">
+                    <input type="text" id="to_date" placeholder="End Date">
+                </div> 
+                <button type="submit" id="submit">Go!</button>
+            </form> 
+        </div>
         
         <!-- Right Nav Section -->
         <ul class="right">
@@ -42,19 +47,19 @@
     <div id="content">
       {% block content %}{% end %}
     </div>
-    <footer>
-      <p>
-        Created with love by the 
-        <a href="/about">BikeShare Comps Group</a>
-        &nbsp;&copy; 2013
-      </p>
-    </footer>
-    
+   
     <script src="/static/js/foundation.min.js"></script>
     
     <script>
       $(document).foundation();
     </script>
-    
+	<script>
+		$('#from_date, #to_date').datetimepicker({
+			closeOnDateSelect: true,
+			yearStart: 2010,
+			yearEnd: 2015,
+			format: 'Y-m-d H:i'
+		});
+	</script> 
   </body>
 </html>

@@ -5,7 +5,7 @@ distance between the vector of produced trips and the vector of
 real trips.
 """
 
-from logic import PoissonLogic, Simulator
+from logic import ExponentialLogic, PoissonLogic, Simulator, AltPoissonLogic
 from utils import Connector
 from models import Trip, Station
 
@@ -15,6 +15,7 @@ from dateutil import rrule
 import numpy as np
 
 import sys
+import random
 
 class RangeEvaluator:
     def __init__(self, start_date, end_date):
@@ -30,8 +31,16 @@ class RangeEvaluator:
 
         # store produced and real trips in dictionaries
         # station id -> [number of departures, number of arrivals]
-        self.produced, total_produced, total_dp = self.get_produced_trips()
-        self.real, total_real = self.get_real_trips()
+        produced, total_produced, total_dp = self.get_produced_trips()
+        real, total_real = self.get_real_trips()
+
+        self.station_ids = []
+        self.produced = []
+        self.real = []
+        for k in produced:
+            self.station_ids.append(k)
+            self.produced.append(produced[k])
+            self.real.append(real[k])
         
         print "----------------------------------------------"
         print "From:", datetime.strftime(start_date, "%Y-%m-%d %H:%M")
@@ -42,6 +51,8 @@ class RangeEvaluator:
 
     def get_produced_trips(self):
         logic = PoissonLogic(self.session)
+        #logic = ExponentialLogic(self.session)
+        #logic = AltPoissonLogic(self.session)
         simulator = Simulator(logic)
         results = simulator.run(self.start_date, self.end_date)
         
@@ -95,25 +106,84 @@ class RangeEvaluator:
 
         return trips, total_trips
 
+    
+    def calc_p_value_perm(self, metric):
+        '''
+        Returns the P-value using permutation tests.
+        For a large number of times, it permutes the rows of the 
+        produced trips and calculates metric on the 'new' data.
+        It returns the proportion of times the permuted data produced better 
+        results than the observed.
+        '''
+        dist_observed = metric()
+        shuffle_times = 10**5
+        perm_results = []
+
+        for i in range(shuffle_times):
+            random.shuffle(self.produced)
+            dist_new = metric()
+            perm_results.append(dist_new)
+            
+        # number of results greater than observed
+        gtobserved = sum([1 for res in perm_results if res >= dist_observed])
+
+        return float(gtobserved + 1) / (shuffle_times + 1)
+
     def eval_man_dist(self):
         total_diff = 0
         total_real = 0
 
         if self.verbose:
             print "\nManhattan Distance Calculations ---->"
-            print "\n\n\n%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
-
+            print "\n\n\n%15s | %15s | %15s | %15s | %15s | %15s" %("station id",
+                                                                    "produced dep", 
+                                                                    "real dep",
+                                                                    "produced arr",
+                                                                    "real arr",
+                                                                    "difference")
+            
         total_departures = 0
         total_arrivals = 0
-        for k in self.produced:
-            diff = abs(self.produced[k][0] - self.real[k][0]) + \
-                   abs(self.produced[k][1] - self.real[k][1])
+
+        for i in range(len(self.station_ids)):
+
+            diff = abs(self.produced[i][0] - self.real[i][0]) + \
+                   abs(self.produced[i][1] - self.real[i][1])
+
+            if self.verbose:
+                print "%15s | %15s | %15s | %15s | %15s | %15s" %(self.station_ids[i],
+                                                                  self.produced[i][0],
+                                                                  self.real[i][0],
+                                                                  self.produced[i][1],
+                                                                  self.real[i][1],
+                                                                  diff)
+                
+            total_diff += diff
+            total_real += max(sum(self.real[i]), sum(self.produced[i]))
+
+        return (1-(float(total_diff)/total_real))*100
+
+    def eval_man_indiv_dist(self, get_arrivals):
+        total_diff = 0
+        total_real = 0
+
+        if self.verbose:
+            if get_arrivals:
+                print "\nArrivals Manhattan Distance Calculations ---->"
+            else:
+                print "\nDepartures Manhattan Distance Calculations ---->"
+
+            print "\n\n\n%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
+
+        for i in range(len(self.produced)):
+            diff = abs(self.produced[i][get_arrivals] - self.real[i][get_arrivals])
+
             if self.verbose:
                 print "%15s | %15s | %15s | %15s" \
-                %(k, self.produced[k], self.real[k], diff)
+                %(self.station_ids[i], self.produced[i][get_arrivals], self.real[i][get_arrivals], diff)
 
             total_diff += diff
-            total_real += max(sum(self.real[k]), sum(self.produced[k]))
+            total_real += max(self.real[i][get_arrivals], self.produced[i][get_arrivals])
 
         return (1-(float(total_diff)/total_real))*100
 
@@ -123,19 +193,28 @@ class RangeEvaluator:
         
         if self.verbose:
             print "\nEuclidean Distance Calculations ---->"
-            print "\n\n\n%15s | %15s | %15s | %15s" %("id", "produced", "real", "difference")
+            print "\n\n\n%15s | %15s | %15s | %15s | %15s | %15s" %("station id",
+                                                                    "produced dep", 
+                                                                    "real dep",
+                                                                    "produced arr",
+                                                                    "real arr",
+                                                                    "difference")
         
-        for k in self.produced:
-            diff = (self.produced[k][0] - self.real[k][0])**2 \
-                   + (self.produced[k][1] - self.real[k][1])**2
+        for i in range(len(self.produced)):
+            diff = (self.produced[i][0] - self.real[i][0])**2 \
+                   + (self.produced[i][1] - self.real[i][1])**2
 
             if self.verbose:
-                print "%15s | %15s | %15s | %15s" \
-                %(k, self.produced[k], self.real[k], diff)
+                print "%15s | %15s | %15s | %15s | %15s | %15s" %(self.station_ids[i], 
+                                                                  self.produced[i][0],
+                                                                  self.real[i][0],
+                                                                  self.produced[i][1],
+                                                                  self.real[i][1],
+                                                                  diff)
             
             total_diff += diff
-            total_real += max(self.real[k][0]**2 + self.real[k][1]**2,
-                              self.produced[k][0]**2 + self.produced[k][1]**2)
+            total_real += max(self.real[i][0]**2 + self.real[i][1]**2,
+                              self.produced[i][0]**2 + self.produced[i][1]**2)
             
         return (1-(float(total_diff)/total_real))*100
 
@@ -144,7 +223,7 @@ def main():
     run_all = False
     
     if run_all:
-        start_date = datetime.strptime("2010-09-15",
+        start_date = datetime.strptime("2011-01-01",
                                        '%Y-%m-%d')
         end_date = datetime.strptime("2013-06-30",
                                      '%Y-%m-%d')
@@ -155,7 +234,10 @@ def main():
         for i in range(len(all_dates)-1):
             date_ranges.append((all_dates[i], all_dates[i+1]))
 
-        outfile = open("results.txt", "w")
+        man_accuracies = []
+        eucl_accuracies = []
+
+        outfile = open("results2.txt", "w")
 
         for (start, end) in date_ranges:
             re = RangeEvaluator(start, end)
@@ -168,15 +250,24 @@ def main():
             outfile.write("To: " + end_date_string+"\n")
             outfile.write("Accuracy based on Manhattan distance: %.2f %%\n" % (man))
             outfile.write("Accuracy based on Euclidean distance: %.2f %%\n" % (eucl))
-            
-        outfile.close()
+            man_accuracies.append(man)
+            eucl_accuracies.append(eucl)
+
+        man_accuracies = np.array(man_accuracies)
+        eucl_accuracies = np.array(eucl_accuracies)
+
+        outfile.write("\n\nMean of Manhattan Accuracies: %.2f %%\n" % (np.mean(man_accuracies)))
+        outfile.write("Standard Error of Manhattan Accuracies: %.2f %%\n" % (np.std(man_accuracies)))
+        outfile.write("\n\nMean of Euclidean Accuracies: %.2f %%\n" % (np.mean(eucl_accuracies)))
+        outfile.write("Standard Error of Euclidean Accuracies: %.2f %%\n" % (np.std(eucl_accuracies)))
+
         sys.exit()
         
 
     if len(sys.argv) == 1:
-        start_date = datetime.strptime('2012-1-1',
+        start_date = datetime.strptime('2012-6-8',
                                        '%Y-%m-%d')
-        end_date = datetime.strptime('2012-1-2',
+        end_date = datetime.strptime('2012-6-10',
                                      '%Y-%m-%d')
     elif len(sys.argv) == 3:
         start_date = datetime.strptime(sys.argv[1], 
@@ -187,10 +278,17 @@ def main():
         sys.exit("You need a start date and an end date")
 
     re = RangeEvaluator(start_date, end_date)
+    re.verbose = False
     man = re.eval_man_dist()
     eucl = re.eval_eucl_dist()
+    man_arr = re.eval_man_indiv_dist(True)
+    man_dep = re.eval_man_indiv_dist(False)
+
     print "accuracy based on manhattan distance: ", man, "%"
     print "accuracy based on euclidean distance: ", eucl, "%"
+    print "accuracy of arrivals by m-distance: ",man_arr, "%"
+    print "accuracy of departures by m-distance: ",man_dep, "%"
+    print "p-value: ", re.calc_p_value_perm(re.eval_man_dist)
 
 if __name__ == "__main__":
     main()

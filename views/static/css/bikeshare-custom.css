@@ -1,30 +1,49 @@
 @charset "UTF-8";
 /* CSS Document */
 
+#stats_picker {
+  width: 150px;
+}
+
+#topbar-left-logo img {
+    height: 45px;
+    margin-top: 5px;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
 .left-overall-title {
     line-height: 1.5em;
     font-weight: bold;
 }
 
 footer {
-    border-top-style: solid;
-    border-top-width: 2px;
-    border-top-color: black;
-    padding-top: 5px;
-    margin-left: auto;
-    margin-right: auto;
-    clear: both;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #959595;
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 330px;
+    height: 20px;
+    font-size: 12px;
+    background-color: #ffffff;
+    z-index: 99999;
+    display: none;
 }
 
 footer p {
     text-align: center;
 }
 
+#content {
+    height: 100%;
+}
 
-.full-width-wrapper {
+.full-screen-wrapper {
     width: 100%;
     max-width: 100%;
-    min-height: 600px;
+    height: 100%;
 }
 
 #time-slider {
@@ -41,3 +60,208 @@ footer p {
     line-height: 22px;
     margin-bottom: 0;
 }
+
+/*Style elements from unified.html*/
+
+#map_canvas {
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+
+#simulation_control {
+  height: auto;
+}
+
+#control_form {
+  overflow: hidden;
+}
+
+#from_div {
+  width: 130px;
+  float: left;
+}
+
+#to_div {
+  width: 130px;
+  height: auto;
+  margin-left: 10px;
+  float: left;
+}
+
+#from_date {
+  height: auto;
+}
+
+#to_date {
+  height: auto;
+}
+
+input[type="text"] {
+  height: auto;
+  font-size: 12px;
+  position: relative;
+  top: 12px;
+}
+
+form button[type="submit"] {
+  margin-left: 10px;
+  float: left;
+  line-height: 8px;
+  font-size: 12px;
+  position: relative;
+  top: 11px;
+}
+
+#stats_wrapper {
+  position: absolute;
+  left: -1004px;
+  top: 55px;
+  width: 2028px;
+  height: 100%;
+  overflow: hidden;
+}
+
+#stats_slider {
+  width: 1024px;
+  height: 100%;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background-color: #ffffff;
+  z-index: 999;
+  overflow-y: scroll;
+}
+
+#stats_button {
+  width: 20px;
+  height: 100%;
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  background-color: #959595;
+  cursor: ew-resize;
+}
+
+.slide_button {
+  width: 14px;
+  height: 14px;
+  margin: 3px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: white;
+  border-radius: 100%;
+  background-color: gray;
+  cursor: initial;
+}
+
+#stats_panel {
+  margin-top: 10px;
+  width: 100%;
+  height: 100%;
+}
+
+.chart {
+  background: #b0e0f8;
+  margin: 5px;
+}
+
+.chart rect {
+  stroke: white;
+  fill: steelblue;
+}
+
+.chart text {
+  fill: white;
+}
+
+.chart text.name {
+  fill: #000;
+}
+
+#num_departures_per_station {
+  margin-top: 30px;
+}
+
+#num_departures_per_station div {
+  height: 300px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+#num_arrivals_per_station {
+  margin-top: 30px;
+}
+
+#num_arrivals_per_station div {
+  height: 300px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+#num_trips_per_hour {
+  margin-top: 30px;
+}
+
+#num_trips_per_hour div {
+  font: 10px sans-serif;
+}
+
+#num_trips_per_hour div
+.axis path,
+#num_trips_per_hour div
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+#num_trips_per_hour .bar {
+  fill: steelblue;
+}
+
+#num_trips_per_hour
+.x.axis path {
+  display: none;
+}
+
+#loading_div {
+  width: 40%;
+  height: 40%;
+  display: none;
+  position: fixed;
+  left: 50%;
+  top: 25%;
+  margin: 0 0 0 -20%;
+  border-style: solid;
+  border-color: steelblue;
+  border-width: 5px;
+  border-radius: 10%;
+  background-color: rgba(0,0,0,.8);
+}
+
+#loading {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: -25px 0 0 -25px;
+}
+/*
+NOTE : DEPRECATING OBSOLETE CSS STYLES. by ahnjo. Feb 16, 2014
+#overall_trip_stats {
+  float: left;
+  width: auto;
+}
+
+#min_duration_trip {
+  float: left;
+  width: auto;
+  padding-left: 20px;
+}
+
+#max_duration_trip {
+  float: left;
+  width: auto;
+  padding-left: 20px;
+}
+*/

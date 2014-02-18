@@ -23,7 +23,7 @@ function formatDate(dateStr) {
 
 function groupBarPlot(htmlIdName, data) {
     var margin = {top: 20, right: 20, bottom: 30, left: 40},
-        width = 960 - margin.left - margin.right,
+        width = 878, // 800 - margin.left - margin.right,
         height = 500 - margin.top - margin.bottom;
     
     var x0 = d3.scale.ordinal()
@@ -112,7 +112,6 @@ function groupBarPlot(htmlIdName, data) {
         .attr("dy", ".35em")
         .style("text-anchor", "end")
         .text(function(d) { return d; });
-       
 }
 
 function wrapLabel(labels) {
@@ -127,7 +126,7 @@ function wrapLabel(labels) {
 function nonGroupBarPlot(htmlIdName, labels, counts) {
 
 	var chart,
-        width = 750,
+        width = 500, //750,
         bar_height = 20,
         height = bar_height * labels.length,
         x, y, yRangeBand,
@@ -142,15 +141,17 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
     yRangeBand = bar_height + 2 * gap;
     y = function(i) { return yRangeBand * i; };
 
+    
+
     var div = $("#" + htmlIdName + " div");
     div.empty();
     chart = d3.select(div[0])
         .append('svg')
         .attr('class', 'chart')
-        .attr('width', left_width + width + 40 + extra_width)
+        .attr('width', 878) // left_width + width + 40 + extra_width)
         .attr('height', (bar_height + gap * 2) * (labels.length + 1))
         .append("g")
-        .attr("transform", "translate(10, 10)")
+        .attr("transform", "translate(10, 10)");
     
     chart.selectAll("line")
         .data(x.ticks(d3.max(counts)))
@@ -171,7 +172,7 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
     chart.selectAll("text.score")
         .data(counts)
         .enter().append("text")
-        .attr("x", function(d) { return x(d) + left_width; })
+        .attr("x", function(d) { return x(d) + left_width + 17; })
         .attr("y", function(d, i){ return y(i) + yRangeBand/2; } )
         .attr("dx", -5)
         .attr("dy", ".36em")
@@ -188,21 +189,17 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
         .attr("text-anchor", "start")
         .attr('class', 'name')
         .text(String);
-
 }
-
-
 
 function plotKeysVals(htmlIdName, map) {
     console.log(map);
-	var ids = Object.keys(map);
-    var counts = new Array(ids.length);
-    for (var i = 0; i < ids.length; i++) {
-		if (map[ids[i]] != 0) {
-			counts[i] = map[ids[i]];
-		}
+    var names = new Array();
+    var counts = new Array();
+    for (var key in map) {
+	names.push(key);
+	counts.push(map[key]);
     }
-    nonGroupBarPlot(htmlIdName, ids, counts);
+    nonGroupBarPlot(htmlIdName, names, counts);
 }
 
 function displaySummaryStats(data, from, to) {
@@ -272,16 +269,24 @@ function processStatsForm() {
 
     $.ajax({
         type: "POST",
-        url: "/stats",
+        url: "/unified",
         data: { start: from, end: to },
         beforeSend: function() {
-            $("#results").hide();
-            $("#loading").show();
+            $("#stats_slider").animate({left: 0});
+            $("#loading_div").show();
         },
         success: function(data) {
+            var d = new Date();
+            var t = d.getTime();
+            var s = t.toString();
+            sessionStorage[s]=data;
+            var opt = document.createElement('option');
+            opt.avalue = s;
+            opt.innerHTML = s;
+            $("#stats_picker").append(opt);
             displaySummaryStats(JSON.parse(data), from, to);
-            $("#loading").hide();
-		    $("#results").show();
+            $("#loading_div").hide();
+            $("#stats_slider").animate({left: 1004});
         }
     });
 }

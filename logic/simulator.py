@@ -11,6 +11,8 @@ random.seed(23526)
 from models import *
 from simulation_logic import SimulationLogic
 from poisson_logic import PoissonLogic
+from exponential_logic import ExponentialLogic
+from alt_poisson_logic import AltPoissonLogic
 from utils import Connector
 
 class Simulator:
@@ -38,8 +40,8 @@ class Simulator:
         '''
         with open(file_name, 'w') as f:
             f.write(Trip.csv_header() + "\n")
-            for line in results:
-                f.write(line + "\n")
+            for line in results['trips']:
+                f.write(line.to_csv()+"\n")
 
     def save_to_db(self, trips, disappointments):
         '''
@@ -66,16 +68,19 @@ def print_usage():
 def main():
     logic_options = {
         "SimulationLogic" : SimulationLogic,
-        "PoissonLogic" : PoissonLogic
+        "PoissonLogic" : PoissonLogic,
+        "ExponentialLogic" : ExponentialLogic
     }
     
     # For testing
     if len(sys.argv) == 1:
         # defaults
-        raw_start_date = "2012-6-1 00:00:00"
-        raw_end_date = "2012-6-2 00:00:00"
+        raw_start_date = "2012-6-2 00:00:00"
+        raw_end_date = "2012-6-8 00:00:00"
         file_name = "/tmp/test.csv"
-        logic = PoissonLogic
+        logic = ExponentialLogic
+        #logic = AltPoissonLogic
+        #logic = PoissonLogic
         start_date = datetime.datetime.strptime(raw_start_date, '%Y-%m-%d %H:%M:%S')
         end_date = datetime.datetime.strptime(raw_end_date, '%Y-%m-%d %H:%M:%S')
     else:
@@ -99,7 +104,8 @@ def main():
             return 
     
         logic = logic_options[sys.argv[1]]
-
+    
+    print start_date,"-",end_date
     session = Connector().getDBSession()
     logic = logic(session)
     simulator = Simulator(logic) 
@@ -110,8 +116,39 @@ def main():
     num_ds = len([x for x in ds if x.trip == None])
     print "Empty diss", num_ds
     print "Full diss", len(ds) - num_ds
+    print "Arrival dis stations:"
+    print results['arr_dis_stations']
+    print "Departure dis stations:"
+    print results['dep_dis_stations']
+    
     # simulator.write_out(results, file_name)
     # simulator.save_to_db(results['trips'])
+    #simulator.write_out(results, file_name)
+    #simulator.save_to_db(results['trips'])
+    hours = [[0]*24 for d in range(7)]
+    for t in results['trips']:
+        hours[t.start_date.weekday()][t.start_date.hour] += 1
+
+    print "Times?"
+    for d in range(7):
+        for i in range(24):
+            print d,i,": ",hours[d][i]
+
+    
+    """
+    stations = {}
+    for t in results['trips']:
+        if t.start_station_id in stations:
+            stations[t.start_station_id] += 1
+        else:
+            stations[t.start_station_id] = 1
+
+    print "Stations?"
+    print len(stations.keys())
+    for s_id, count in stations.iteritems():
+        print s_id,count
+    """
+
     session.close()
     
 

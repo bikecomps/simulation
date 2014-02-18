@@ -3,45 +3,61 @@ var locations;
 var connections;
 var map;
 
+var openWindow;
+
 function set_coordinates(val)
 {
     j_val = val.replace(/&quot;/g,'"');
     locations=jQuery.parseJSON(j_val);
 }
 
+
 function initialize() {
     connections = [];
 	var mapOptions = {
+		panControl: false,
+		minZoom: 4,
+                maxZoom: 17,
+                scrollwheel: false,
+                zoomControlOptions: {
+			position: google.maps.ControlPosition.RIGHT_TOP
+		},
 		zoom: 12,
 		center: new google.maps.LatLng(38.904, -77.032),
-		mapTypeId: google.maps.MapTypeId.ROADMAP
+		mapTypeId: google.maps.MapTypeId.ROADMAP,
 	};
-	map = new google.maps.Map(document.getElementById('map-canvas'),
+	map = new google.maps.Map(document.getElementById('map_canvas'),
 			                  mapOptions);
     
-    // Draw a logo wherever there is a bike station
-  	var stationLogo = '/static/img/cbLogo-16.png';
-    console.log("length="+Object.keys(locations).length);
+    // Draw a logo wherever there is a bike station	
+	var stationLogo = '/static/img/cbLogo-16.png';
+    
     for (station=0; station < Object.keys(locations).length; station++) {
-        // console.log(station + ": " + lat[station] + ", " + lng[station]);
         var stationLatLng = new google.maps.LatLng(locations[station][0], locations[station][1]);
         console.log("lat = " + locations[station][0] + "and lon = " + locations[station][1]);
         var marker = new google.maps.Marker({
             position: stationLatLng,
             map: map,
             icon: stationLogo,
-			title: 'This is a station, as you can see.'
+	    id: locations[station][2],
+	    title: locations[station][3],
+            capacity: locations[station][4]
         });
-		
-		var infowindow = new google.maps.InfoWindow({
-			position: stationLatLng,
-			content: marker.title
-		});
-		
-		google.maps.event.addListener(marker, 'click', function() {
-			infowindow.open(map, marker);
-		});	
+	var infoWindow = new google.maps.InfoWindow({
+		content: "Hakuna Matata?"
+	});
+	openWindow = infoWindow;
+	bindInfoWindow(marker, map, infoWindow);
     }
+}
+
+function bindInfoWindow(marker, map, infoWindow) {
+	google.maps.event.addListener(marker, 'click', function() {
+		openWindow.close();
+		infoWindow.setContent(marker.title);
+		infoWindow.open(map, marker);
+		openWindow = infoWindow;	
+	});
 }
 
 function addLine(fromStation, toStation, color) {
@@ -58,13 +74,11 @@ function addLine(fromStation, toStation, color) {
     });
     connections.push(connection);
     connection.setMap(map);
-    // console.log(connections[connections.length-1]);
 }
 
 function removeLines() {
     for (var index in connections) {
         var connection = connections[index];
-        // console.log(connection);
         connection.setMap(null);        
     }
 }
