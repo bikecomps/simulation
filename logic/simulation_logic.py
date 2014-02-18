@@ -23,8 +23,17 @@ class SimulationLogic:
         self.session = session
         # self.time is a datetime, representing the current time in the simulator.
         self.time = None
-        # {stID : station's bike count at self.time}
+
+        # STATION STATES
+        # s_id -> station object
         self.stations = {}
+        # {stID : station's bike count at self.time}
+        self.station_counts = {}
+        # Another dictionary?! YES. Rather than accidentally mess up the 
+        # capacities in the database we will store off capacities here.
+        # Too easy for a commit to overwrite DB.
+        self.station_caps = {}
+        
         # Pending departures/arrivals includes tuples (endTime, trip)
         self.pending_departures = Queue.PriorityQueue()
         self.pending_arrivals = Queue.PriorityQueue()
@@ -34,61 +43,104 @@ class SimulationLogic:
         # List of trips that didn't end at the desired station due to a shortage
         self.bike_shortages = []
         self.dock_shortages = []
+        self.total_rebalances = 0
         # Keys: all currently empty/full station ids. Values: empty or full
         self.empty_stations_set = set()
         self.full_stations_set = set()
         self.arr_dis_stations = {}
         self.dep_dis_stations = {}
 
+        self.total_num_bikes = -1
+
     def getDBSession(self):
         return self.session
 
-    def initialize(self, start_time, end_time,rebalancing=True):
-        '''Sets states of stations at the start_time'''
+    def initialize(self, start_time, end_time, 
+                    rebalancing=True, bike_total=None,
+                    station_caps={}, drop_stations=[]):
+        '''
+        Sets states of stations at the start_time
+        '''
         print "Initializing"
         self.time = start_time
 
         self.start_time = start_time
         self.end_time = end_time
+    
         # Stations should eventually be gotten from the database
         self.pending_departures = Queue.PriorityQueue()
         self.pending_arrivals = Queue.PriorityQueue()
         self.disappointment_list = []
         self.trip_list = []
-        self.station_counts = {}
-        self.stations = {}
         print "\tInitializing stations"
-        self.initialize_stations(start_time)
+        self._initialize_stations(start_time, bike_total,
+                                  station_caps, drop_stations)
+        self._initialize_station_distances()
         self.rebalancing = rebalancing
 
-
-    def get_total_num_bikes(self):
+    def _get_total_num_bikes(self):
         '''
         Given a way to access the DB grab the max number of bikes at the stations
         that we've checked so far.
         '''
-        # Check the days we have  and grab the most count
+        # Check the days we have  and grab the largest count
         # provides a good upperbound on the total number of bikes
         max_bike_count= max(self.session.query(func.sum(StationStatus.bike_count))\
                 .group_by(StationStatus.status_group_id).all())[0]
         return max_bike_count
      
+    def _get_station_cap(self, s_id):
+        return self.station_caps[s_id]
 
-    def initialize_stations(self, start_time):
+    def _initialize_station_distances(self, nearest=8):
+        # Retrieve StationDistance objects representing the five closest
+        # stations for each stations.
+        self.nearest_station_dists = {}
+        station_list = self.session.query(Station)\
+                           .filter(Station.id.in_(self.stations.keys()))
+        for station in station_list:
+            nearest_distances = self.session.query(StationDistance)\
+                    .filter(StationDistance.station1_id == station.id)\
+                    .order_by(StationDistance.distance)[:8]
+            self.nearest_station_dists[station.id] = nearest_distances
+
+
+    def _initialize_stations(self, start_time, bike_total, 
+                             station_caps, drop_stations):
         '''
-        Loads the starting conditions of the stations from a csv.
-        Grossly hardcoded for now
+        bike_total: Optional argument defining the number of bikes in the system.
+            If none is supplied, takes Max from DB.
+        station_caps: List of altered station caps. IMPORTANT: only stations 
+            explicitely listed in station_caps will have capacity altered!
+            {} != {31101:0}
+        drop_stations: List of station ids that should be removed from the simulation
         '''
-        bike_total = self.get_total_num_bikes()
-        # Get the closest hour for now
-        start_hour = int(round(start_time.hour + start_time.minute/60.0) )
+        # Only initialize bikes if nothing was supplied
+        if not bike_total:
+            bike_total = self._get_total_num_bikes()
+        self.total_num_bikes = bike_total
+        # Get the closest hour from current time
+        start_hour = int(round(start_time.hour + start_time.minute/60.0))
         distributed_bikes = 0
 
-        for s in self.session.query(Station):
+        # For performance reasons don't do unnecessarily complex query if empty list
+        if drop_stations:
+            stations = self.session.query(Station)\
+                                   .filter(~Station.id.in_(drop_stations))
+        else:
+            stations = self.session.query(Station)
+
+        for s in stations:
+            # Initialize capacity
+            if s.id in station_caps:
+                s_cap = station_caps[s.id]
+            else:
+                s_cap = s.capacity
+            
             # Ignore stations with capacity of 0.
-            if s.capacity == 0:
-                print s.id, "has no capacity. Ignoring this station."
-                continue
+            #if s_cap < 1:
+            #    print s.id, "has no capacity. Ignoring this station."
+
             # The cron_job now has hourly data (more or less)
             bike_counts = list(self.session.query(StationStatus.bike_count)\
                     .filter(StationStatus.station_id == s.id)\
@@ -100,16 +152,17 @@ class SimulationLogic:
 
             if len(bike_counts) > 0:
                 count = int(random.gauss(avg_count, std_count))
-                if count > s.capacity:
-                    count = s.capacity
+                if count > s_cap:
+                    count = s_cap
                 elif count < 0:
                     count = 0
             else:
                 print 'Error initializing stations, unknown station'
-                count = random.randint(0, s.capacity)
+                count = random.randint(0, s_cap)
             distributed_bikes += count
-            self.station_counts[s.id] = count
             self.stations[s.id] = s
+            self.station_counts[s.id] = count
+            self.station_caps[s.id] = s_cap
         
         bike_delta = bike_total - distributed_bikes
 
@@ -121,29 +174,34 @@ class SimulationLogic:
         
         # Don't keep trying to reassign bikes to full stations
         full_stations = set()
-        while bike_delta != 0: 
-            station_bike_prop = {s_id : float(s_count)/distributed_bikes for s_id, s_count in self.station_counts.iteritems() if s_id not in full_stations}
+        while bike_delta != 0 and len(full_stations) < len(self.stations): 
+            station_bike_prop = {s_id : float(s_count)/distributed_bikes 
+                                    for s_id, s_count in self.station_counts.iteritems()
+                                         if s_id not in full_stations}
             for s_id, prop in station_bike_prop.iteritems():
                 added_bikes = round_func(prop * bike_delta) 
                 s = self.stations[s_id]
-                if added_bikes + self.station_counts[s.id] >= s.capacity:
+                if added_bikes + self.station_counts[s.id] >= self._get_station_cap(s_id):
                     # Full station
                     if added_bikes == 0:
                         full_stations.add(s.id)
-                    added_bikes = s.capacity - self.station_counts[s.id]
+                    added_bikes = self._get_station_cap(s_id)  - self.station_counts[s.id]
 
                 bike_delta -= added_bikes
                 self.station_counts[s.id] += added_bikes
 
+        if bike_delta > 0:
+            print "WARNING: Number bikes exceed summed capacities across all stations"
+    
         for s_id, s in self.stations.iteritems():
-            if s.capacity <= self.station_counts[s_id]:
-                print "\t\tFull station ",s_id, s.capacity, self.station_counts[s.id]
+            if self._get_station_cap(s_id) <= self.station_counts[s_id]:
+                print "\t\tFull station ",s_id, self._get_station_cap(s_id), self.station_counts[s.id]
 
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        self.time += timestep
         self.generate_new_trips(self.time)
+        self.time += timestep
         self.resolve_trips()
 
         
@@ -176,14 +234,12 @@ class SimulationLogic:
                     self.pending_departures.put((trip.start_date, trip))
                     break
                 else:
-                    # print "Resolving departure for \t", printTrip(trip)
                     self.resolve_departure(trip)
             elif eventType == ARRIVAL_TYPE:
                 if trip.end_date > self.time:
                     self.pending_arrivals.put((trip.end_date, trip))
                     break
                 else:
-                    # print "Resolving arrival for \t\t", printPoisson.ppf(.3,mu)rip(trip)
                     self.resolve_arrival(trip)
                     # print "If dock shortage, new trip is", printTrip(trip)
 
@@ -220,7 +276,7 @@ class SimulationLogic:
         '''Increment station count, put in trips list. If desired station is full, add a disappointment, set a new end station, and try again.'''
         arrival_station_ID = trip.end_station_id
 
-        capacity = self.stations[arrival_station_ID].capacity
+        capacity = self._get_station_cap(arrival_station_ID)
         if self.station_counts[arrival_station_ID] == capacity:
             self.full_stations_set.add(arrival_station_ID)
             new_disappointment = Disappointment(arrival_station_ID, trip.end_date, trip_id=None)
@@ -269,17 +325,47 @@ class SimulationLogic:
                 self.pending_departures.put((first_departure.start_date, first_departure))
         return (eventType, trip)
 
+
+    def update_rebalance(self):
+        not_full = []
+        not_empty = []
+        for s_id in self.station_counts:
+            if self.station_counts[s_id] > 0 and s_id in self.empty_stations_set:
+                not_empty.append(s_id)
+                self.empty_stations_set.remove(s_id)      
+            elif self.station_counts[s_id] != self._get_station_cap(s_id) and s_id in self.full_stations_set:
+                not_full.append(s_id)
+                self.full_stations_set.remove(s_id)
+            elif self.station_counts[s_id] == self._get_station_cap(s_id) and s_id not in self.full_stations_set:
+                self.full_stations_set.add(s_id)
+            elif self.station_counts[s_id] == 0 and s_id not in self.empty_stations_set:
+                self.empty_stations_set.add(s_id)
+        """
+        if len(not_full) > 0:
+            print "\tNo longer full:\n" + "\t\t" + str(list(not_full))
+        if len(not_empty) > 0:
+                print "\tNo longer empty:\n" + "\t\t" + str(list(not_empty))
+        if len(self.full_stations_set) > 0:
+                print "\tNow full:\n" + "\t\t" + str(list(self.full_stations_set))
+        if len(self.empty_stations_set) > 0:
+            print "\tNow empty:\n" + "\t\t" + str(list(self.empty_stations_set))
+        """
+        if self.rebalancing:
+            self.rebalance_stations()
+
     def rebalance_stations(self):		
 
         remove_from_full = []
         for station_id in self.full_stations_set:
-            to_remove = self.stations[station_id].capacity/2
+            to_remove = self._get_station_cap(station_id)/2
             self.station_counts[station_id] -= to_remove
             self.moving_bikes += to_remove
+            self.total_rebalances += to_remove
             remove_from_full.append(station_id)
         for s in remove_from_full:
             self.full_stations_set.remove(s)
 
+        # Explanation?
         while self.moving_bikes < len(self.empty_stations_set):
             random_station = random.choice(self.station_counts.keys())
             if self.station_counts[random_station] > 1:
@@ -292,6 +378,7 @@ class SimulationLogic:
             for station_id in self.empty_stations_set:
                 self.station_counts[station_id] = bikes_per_station
                 self.moving_bikes -= bikes_per_station
+                self.total_rebalances += bikes_per_station
                 remove_from_empty.append(station_id)
             for s in remove_from_empty:    
                 self.empty_stations_set.remove(s)
@@ -305,7 +392,9 @@ class SimulationLogic:
         return {'trips':self.trip_list,
                 'disappointments':self.disappointment_list,
                 'arr_dis_stations':self.arr_dis_stations,
-                'dep_dis_stations':self.dep_dis_stations}
+                'dep_dis_stations':self.dep_dis_stations,
+                'total_rebalances':self.total_rebalances,
+                'total_num_bikes':self.total_num_bikes}
         
 
     def cleanup(self):

@@ -12,14 +12,12 @@ from analytics import SummaryStats
 class UnifiedHandler(RequestHandler):
     def get(self):
         
-        stations = PlotMap(None, None, None).stations
+        stations = PlotMap().stations
         self.render("unified.html",title="Simba | Washington DC",locations=stations)
     
     def post(self):
-        start_date = datetime.datetime.strptime(self.get_argument("start"),
-                                                "%Y-%m-%d %H:%M")
-        end_date = datetime.datetime.strptime(self.get_argument("end"),
-                                              "%Y-%m-%d %H:%M")
+        start_date = datetime.datetime.strptime(self.get_argument("start"), "%Y-%m-%d %H:%M")
+        end_date = datetime.datetime.strptime(self.get_argument("end"), "%Y-%m-%d %H:%M")
  
         sstats = SummaryStats(start_date, end_date)
         self.write(sstats.get_stats())        
@@ -36,20 +34,18 @@ class StatsHandler(RequestHandler):
                                               "%Y-%m-%d %H:%M")
         
         sstats = SummaryStats(start_date, end_date)
-        self.write(sstats.get_stats())        
-    
-class IndexHandler(RequestHandler):
+        self.write(sstats.get_stats())
+
+class ClusterHandler(RequestHandler):
     def get(self):
-        '''
-        Dummy data for Google Maps. Queries Monday 6am-8pm for testing purposes.
-        '''
-        day = 1
-        start_time = datetime.datetime.strptime('06:00',
-                                            '%H:%M')
-        end_time = datetime.datetime.strptime('20:00',
-                                          '%H:%M')
-        stations = PlotMap(day, start_time, end_time).stations
-        self.render("home.html", title="BikeShare Comps", locations=stations)
+        stations = PlotMap().stations
+        self.render("clustering.html", title="Clustering", locations=stations)
+
+    def post(self):
+        start_date = datetime.datetime.strptime(self.get_argument("start"),
+                                                "%Y-%m-%d %H:%M")
+        end_date = datetime.datetime.strptime(self.get_argument("end"),
+                                              "%Y-%m-%d %H:%M")
 
 class AboutHandler(RequestHandler):
     def get(self):
@@ -60,7 +56,6 @@ class BaseHandler(RequestHandler):
         self.render("base.html", title="Base File")
 
 if __name__ == "__main__":
-    print "hello!"
     dirname = os.path.dirname(__file__)
     settings = {
         "static_path" : os.path.join(dirname, "static"),
@@ -71,8 +66,10 @@ if __name__ == "__main__":
         (r"/base", BaseHandler),
         (r"/about", AboutHandler),
         (r"/stats", StatsHandler),
-	(r"/unified", UnifiedHandler)
+        (r"/unified", UnifiedHandler),
+    (r"/clustering", ClusterHandler)
     ], **settings)
-    application.listen(3000)
-    print "listening"
+    port_num = 3000
+    application.listen(port_num)
+    print "listening on port", port_num
     tornado.ioloop.IOLoop.instance().start()

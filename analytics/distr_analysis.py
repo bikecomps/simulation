@@ -7,10 +7,10 @@ from collections import defaultdict
 
 import numpy as np
 import scipy.stats as stats
-import matplotlib
 from operator import itemgetter
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+#import matplotlib
+#matplotlib.use('Agg')
+#import matplotlib.pyplot as plt
 
 allmeans = []
 allstds = []
