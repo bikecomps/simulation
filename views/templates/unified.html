@@ -78,6 +78,10 @@
 {% block content %}
 <div id="stats_wrapper">
   <div id="stats_slider">
+      <div id="stats_name_div">
+        <div>Now Displaying: <text id="stats_name">No results. Run a simulation already!</text></div>
+      </div>
+
       <div id="save_load_div">
          <form id="save_load_form">
             <button type="button" class="button tiny" id="load_stats" onclick="load_trans()">Load Results</button>
@@ -86,11 +90,13 @@
             <select id="stats_picker"></select>
          </form>
       </div>
+      
       <div id="stats_button">
           <div class="slide_button" id="slide_button_1"></div>
           <div class="slide_button" id="slide_button_2"></div>
           <div class="slide_button" id="slide_button_3"></div>
       </div>
+      
       <div id="stats_panel">
         <div class="row">
           <div class="small-6 columns" id="overall_trip_stats">

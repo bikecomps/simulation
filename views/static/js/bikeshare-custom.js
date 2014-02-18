@@ -36,6 +36,7 @@ function load_results() {
     var from = desired_unpacked[1]
     var to = desired_unpacked[2];
     displaySummaryStats(JSON.parse(desired),from,to);
+    $("#stats_name").html(stats_name);
     $("#load_stats").animate({width: '100px'}, function() {$(this).html('Load Results')})
         .attr('onclick', 'load_trans()');
     $("#stats_picker").animate({left: '-165px'});
@@ -416,6 +417,7 @@ function processStatsForm() {
                     */
                     displaySummaryStats(jsond, from, to);
 
+                    $("#stats_name").html('Most recent simulation.');
                     $("#loading_div").hide();
                     $("#stats_slider").animate({left: 1004});
                 },
