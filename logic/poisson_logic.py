@@ -20,8 +20,8 @@ class PoissonLogic(SimulationLogic):
     def __init__(self, session):
         SimulationLogic.__init__(self, session)
 
-    def initialize(self, start_time, end_time):
-        SimulationLogic.initialize(self, start_time, end_time)
+    def initialize(self, start_time, end_time, **kwargs):
+        SimulationLogic.initialize(self, start_time, end_time, kwargs)
         self.lambda_distrs = self.load_lambdas(start_time, end_time)
         self.duration_distrs = self.load_gammas()
 
@@ -39,29 +39,7 @@ class PoissonLogic(SimulationLogic):
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        not_full = []
-        not_empty = []
-        for s_id in self.station_counts:
-            if self.station_counts[s_id] > 0 and s_id in self.empty_stations_set:
-                not_empty.append(s_id)
-                self.empty_stations_set.remove(s_id)      
-            elif self.station_counts[s_id] != self.stations[s_id].capacity and s_id in self.full_stations_set:
-                not_full.append(s_id)
-                self.full_stations_set.remove(s_id)
-            elif self.station_counts[s_id] == self.stations[s_id].capacity and s_id not in self.full_stations_set:
-                self.full_stations_set.add(s_id)
-            elif self.station_counts[s_id] == 0 and s_id not in self.empty_stations_set:
-                self.empty_stations_set.add(s_id)
-        if len(not_full) > 0:
-            print "\tNo longer full:\n" + "\t\t" + str(list(not_full))
-        if len(not_empty) > 0:
-                print "\tNo longer empty:\n" + "\t\t" + str(list(not_empty))
-        if len(self.full_stations_set) > 0:
-                print "\tNow full:\n" + "\t\t" + str(list(self.full_stations_set))
-        if len(self.empty_stations_set) > 0:
-            print "\tNow empty:\n" + "\t\t" + str(list(self.empty_stations_set))
-        if self.rebalancing:
-            self.rebalance_stations()
+        self.update_rebalance()
         # print "\tPost rebalance. Moving bikes:", self.moving_bikes
         #if len(self.full_stations_set) > 0:
         #        print "\t\tNow full:\n" + "\t\t" + str(self.full_stations_set)
@@ -153,6 +131,7 @@ class PoissonLogic(SimulationLogic):
         Caches lambdas into dictionary of day -> hour -> (start_id, end_id) -> lambda
         Note: DB only has values > 0.
         '''
+        print "Start time",start_time, "End time",end_time
         # kind of gross but makes for easy housekeeping
         distr_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(float)))))
 

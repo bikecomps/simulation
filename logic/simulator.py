@@ -20,8 +20,14 @@ class Simulator:
         self.sim_logic = sim_logic
         self.session = sim_logic.getDBSession()
 
-    def run(self, start_time, end_time, timestep=datetime.timedelta(seconds=3600)):
-        self.sim_logic.initialize(start_time, end_time)
+    def run(self, start_time, end_time, 
+            timestep=datetime.timedelta(seconds=3600),
+            logic_options={}):
+        '''
+        logic_options must have keywords EXACTLY the sim_logic's named params
+        '''
+        print logic_options
+        self.sim_logic.initialize(start_time, end_time, **logic_options)
         cur_time = start_time
         print "cur time:", cur_time, "start time:", start_time, "end time:", end_time
         while cur_time < end_time:
@@ -79,9 +85,9 @@ def main():
         raw_start_date = "2012-6-2 00:00:00"
         raw_end_date = "2012-6-8 00:00:00"
         file_name = "/tmp/test.csv"
-        logic = ExponentialLogic
+        #logic = ExponentialLogic
         #logic = AltPoissonLogic
-        #logic = PoissonLogic
+        logic = PoissonLogic
         start_date = datetime.datetime.strptime(raw_start_date, '%Y-%m-%d %H:%M:%S')
         end_date = datetime.datetime.strptime(raw_end_date, '%Y-%m-%d %H:%M:%S')
     else:
@@ -110,6 +116,7 @@ def main():
     session = Connector().getDBSession()
     logic = logic(session)
     simulator = Simulator(logic) 
+    print start_date, end_date
     results = simulator.run(start_date, end_date)
     print "trips:", len(results['trips'])
     ds = results['disappointments']
