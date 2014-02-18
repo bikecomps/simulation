@@ -9,7 +9,7 @@ import datetime
 class PollingHandler(RequestHandler):
 
     def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "http://localhost:3000")    
+        self.set_header("Access-Control-Allow-Origin", "http://cmc307-04.mathcs.carleton.edu:3000")
 
     def get(self):
         pb = pickle.load(open("progress_buffer.dat")) 

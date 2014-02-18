@@ -23,7 +23,8 @@ class UnifiedHandler(RequestHandler):
         try:
             sstats = SummaryStats(start_date, end_date)
             self.write(sstats.get_stats())
-        except:
+        except Exception as e:
+            print e
             # some error occurred
             self.write("{}")
 
