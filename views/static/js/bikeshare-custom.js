@@ -289,12 +289,12 @@ function updateProgressBar(currentTime, percentProgress, isError) {
     
 }
 
-function pollProgress(hasZero) {
+function pollProgress(hasZero, currentUrl) {
     var hasHundred = false;
     var hasError = false;
     setTimeout(function() {
         $.ajax({
-            url: "http://localhost:3001",
+            url: currentUrl,
             type: "GET",
             success: function(data) {
                 if (data.percent_progress == 0) {
@@ -307,7 +307,7 @@ function pollProgress(hasZero) {
             },
             complete: function() {
                 if (!hasHundred && !hasError) {
-                    pollProgress(hasZero);
+                    pollProgress(hasZero, currentUrl);
                 }
             }
             , error: function() {
@@ -346,7 +346,8 @@ function processStatsForm() {
             loadingDiv.find("#error_alert").hide();
 			loadingDiv.show();
 
-            pollProgress(false);
+		    pollProgress(false, "http://cmc307-04.mathcs.carleton.edu:3001");
+		    // pollProgress(false, "http://localhost:3001");
 		},
 		success: function(data) {
             var jsond = JSON.parse(data);
