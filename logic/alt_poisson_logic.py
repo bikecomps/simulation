@@ -21,8 +21,8 @@ class AltPoissonLogic(SimulationLogic):
     def __init__(self, session):
         SimulationLogic.__init__(self, session)
 
-    def initialize(self, start_time, end_time):
-        SimulationLogic.initialize(self, start_time, end_time)
+    def initialize(self, start_time, end_time, **kwargs):
+        SimulationLogic.initialize(self, start_time, end_time, **kwargs)
         print "Loading Lambdas"
         self.lambda_distrs = self.load_lambdas(start_time, end_time)
         print "Loading Gammas"
@@ -30,37 +30,12 @@ class AltPoissonLogic(SimulationLogic):
         print "Loading Destination Distrs"
         self.dest_distrs = self.load_dest_distrs(start_time, end_time)
 
-        # Retrieve StationDistance objects representing the five closest
-        # stations for each stations.
-        self.nearest_station_dists = {}
-        station_list = self.session.query(data_model.Station) 
-        for station in station_list:
-            nearest_distances = self.session.query(data_model.StationDistance)\
-                    .filter(data_model.StationDistance.station1_id == station.id)\
-                    .order_by(data_model.StationDistance.distance)[:8]
-            self.nearest_station_dists[station.id] = nearest_distances
         self.moving_bikes = 0
 
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        not_full = []
-        not_empty = []
-        for s_id in self.station_counts:
-            if self.station_counts[s_id] > 0 and s_id in self.empty_stations_set:
-                not_empty.append(s_id)
-                self.empty_stations_set.remove(s_id)      
-            elif self.station_counts[s_id] != self.stations[s_id].capacity and s_id in self.full_stations_set:
-                not_full.append(s_id)
-                self.full_stations_set.remove(s_id)
-            elif self.station_counts[s_id] == self.stations[s_id].capacity and s_id not in self.full_stations_set:
-                self.full_stations_set.add(s_id)
-            elif self.station_counts[s_id] == 0 and s_id not in self.empty_stations_set:
-                self.empty_stations_set.add(s_id)
-
-        if self.rebalancing:
-            self.rebalance_stations()
- 
+        self.update_rebalance() 
         self.generate_new_trips(self.time)
         if self.rebalancing:
             self.rebalance_stations()
@@ -78,6 +53,7 @@ class AltPoissonLogic(SimulationLogic):
         distr_dict = [[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)] for d in range(2)]
 
 
+        station_list = self.stations.keys()
         # Inclusive
         #TODO figure out what to do if timespan > a week -> incline to say ignore it
         #TODO Bug: loading too much data at the moment, by a fair amount
@@ -94,6 +70,7 @@ class AltPoissonLogic(SimulationLogic):
                .filter(DestDistr.is_week_day == (dow < 5)) \
                .filter(DestDistr.hour.between(start_hour, end_hour))\
                .yield_per(10000)
+               #.filter(DestDistr.start_station_id.in_(station_list))\
 
             for distr in date_distrs:
                 result = distr_dict[distr.is_week_day][distr.hour][distr.start_station_id]
@@ -219,7 +196,7 @@ class AltPoissonLogic(SimulationLogic):
         requested_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(bool))))
 
         num_added = 0
-
+        station_list = self.stations.keys()
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
             
@@ -236,7 +213,8 @@ class AltPoissonLogic(SimulationLogic):
                                      .filter(ExpLambda.month == month) \
                                      .filter(ExpLambda.year == year) \
                                      .filter(ExpLambda.is_week_day == is_week_day) \
-                                     .filter(ExpLambda.hour.between(start_hour, end_hour))
+                                     .filter(ExpLambda.hour.between(start_hour, end_hour))\
+                                     .filter(ExpLambda.station_id.in_(station_list))
                 requested_dict[month][year][is_week_day][(start_hour, end_hour)] = True
                 
             for lam in lambda_poisson:

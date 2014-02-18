@@ -111,7 +111,12 @@ form button[type="submit"] {
 }
 
 #cluster_markers {
-  margin: 10px;
+  margin-left: 10px;
+  float: left;
+  line-height: 8px;
+  font-size: 12px;
+  position: relative;
+  top: 11px;
 }
 
 #stats_wrapper {
@@ -280,6 +285,8 @@ form button[type="submit"] {
   border-width: 5px;
   border-radius: 10%;
   background-color: rgba(0,0,0,.8);
+  padding: 20px;
+  color: #fff;
 }
 
 #loading {
@@ -288,6 +295,19 @@ form button[type="submit"] {
   top: 50%;
   margin: -25px 0 0 -25px;
 }
+
+.ui-progressbar {
+  position: relative;
+}
+
+.progress-label {
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  font-weight: bold;
+  text-shadow: 1px 1px 0 #fff;
+}
+
 /*
 NOTE : DEPRECATING OBSOLETE CSS STYLES. by ahnjo. Feb 16, 2014
 #overall_trip_stats {
@@ -307,3 +327,24 @@ NOTE : DEPRECATING OBSOLETE CSS STYLES. by ahnjo. Feb 16, 2014
   padding-left: 20px;
 }
 */
+
+
+.infoWindow_wrapper {
+    overflow-y: hidden;
+}
+
+.infoWindow_id {
+    font-size: 1.5em !important;
+    margin-bottom: 0.2em;
+}
+
+.infoWindow_title {
+    font-size: 1.1em !important;
+    margin-bottom: 0.2em;
+}
+
+.infoWindow_capacity {
+}
+
+.infoWindow_capacity_label { 
+}

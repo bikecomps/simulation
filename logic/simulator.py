@@ -15,19 +15,44 @@ from exponential_logic import ExponentialLogic
 from alt_poisson_logic import AltPoissonLogic
 from utils import Connector
 
+import pickle
+
 class Simulator:
     def __init__(self, sim_logic):
         self.sim_logic = sim_logic
         self.session = sim_logic.getDBSession()
 
-    def run(self, start_time, end_time, timestep=datetime.timedelta(seconds=3600)):
-        self.sim_logic.initialize(start_time, end_time)
+    def run(self, start_time, end_time, 
+            timestep=datetime.timedelta(seconds=3600),
+            logic_options={}):
+        '''
+        logic_options must have keywords EXACTLY the sim_logic's named params
+        '''
+
+        self.sim_logic.initialize(start_time, end_time, **logic_options)
+
         cur_time = start_time
         print "cur time:", cur_time, "start time:", start_time, "end time:", end_time
+        progress_buffer = {}
+        progress_buffer["total_steps"] = (end_time - start_time).total_seconds()/timestep.seconds
+        progress_buffer["done_steps"] = 0
+        progress_buffer["current_time"] = start_time
+
+        nfile = open("progress_buffer.dat", "w")
+        pickle.dump(progress_buffer, nfile)       
+        nfile.close()
+
         while cur_time < end_time:
             self.sim_logic.update(timestep)
             cur_time += timestep
             print "Finished time step ", cur_time
+            
+            progress_buffer["done_steps"] += 1
+            progress_buffer["current_time"] = cur_time
+
+            nfile = open("progress_buffer.dat", "w")
+            pickle.dump(progress_buffer, nfile)       
+            nfile.close()
 
         results = self.sim_logic.flush()
         self.sim_logic.clean_up()
@@ -77,7 +102,7 @@ def main():
     if len(sys.argv) == 1:
         # defaults
         raw_start_date = "2012-6-2 00:00:00"
-        raw_end_date = "2012-6-8 00:00:00"
+        raw_end_date = "2012-6-3 00:00:00"
         file_name = "/tmp/test.csv"
         logic = ExponentialLogic
         #logic = AltPoissonLogic
@@ -110,7 +135,9 @@ def main():
     session = Connector().getDBSession()
     logic = logic(session)
     simulator = Simulator(logic) 
-    results = simulator.run(start_date, end_date)
+    print start_date, end_date
+    logic_options = {'station_caps':{31237:0}, 'drop_stations':[31704]}
+    results = simulator.run(start_date, end_date, logic_options=logic_options)
     print "trips:", len(results['trips'])
     ds = results['disappointments']
     print "disappointments:", len(ds)

@@ -53,16 +53,24 @@ function sliderSetup() {
 }
 
 function toHours(d)  {
-	var returnString = "";
-	if ((d/3600.0) > 1) {
-		returnString = returnString.concat((d/3600).toFixed() + " hours ");
-		d = d - d/3600;
-	}
-	console.log(returnString);
 	console.log(d);
-	returnString = returnString.concat((d/60.0).toFixed() + " minutes");
-	console.log(returnString);
-	return returnString;
+	var hours = parseInt(d/3600) % 24;
+	var minutes = parseInt(d/60) % 60;
+	var result = (hours > 0 ? hours + " hours " : "") + (minutes > 0? minutes : "0") + " minutes";
+	return result;
+
+
+
+//	var returnString = "";
+//	if ((d/3600.0) > 1) {
+//		returnString = returnString.concat((d/3600).toFixed() + " hours ");
+//		d = d - d/3600;
+//	}
+//	console.log(returnString);
+//	console.log(d);
+//	returnString = returnString.concat((d/60.0).toFixed() + " minutes");
+//	console.log(returnString);
+//	return returnString;
 	// return (d/3600.0).toFixed(2) + " hours";
 }
 
@@ -310,6 +318,54 @@ function displaySummaryStats(data, from, to) {
 				 data["num_trips_per_hour"]);
 }
 
+function updateProgressBar(currentTime, percentProgress, isError) {
+    var loadingDiv = $("#loading_div");
+    if (isError) {
+        loadingDiv.find("#error_alert").show();
+        return;
+    }
+
+    loadingDiv.find("#error_alert").hide();
+    
+    // update simulation time
+    loadingDiv.find("#current_time").html(currentTime);
+
+    // update progress bar
+    var progressbar = $( "#progressbar" );
+    progressbar.progressbar( "value", parseInt(percentProgress));
+    
+}
+
+function pollProgress(hasZero, currentUrl) {
+    var hasHundred = false;
+    var hasError = false;
+    setTimeout(function() {
+        $.ajax({
+            url: currentUrl,
+            type: "GET",
+            success: function(data) {
+                if (data.percent_progress == 0) {
+                    hasZero = true;
+                }
+                if (hasZero) {
+                    updateProgressBar(data.current_time, data.percent_progress);
+                    hasHundred = data.percent_progress == 100;
+                }
+            },
+            complete: function() {
+                if (!hasHundred && !hasError) {
+                    pollProgress(hasZero, currentUrl);
+                }
+            }
+            , error: function() {
+                hasError = true;
+                updateProgressBar(null, null, true);
+            }
+        });
+    }, 100);
+}
+
+
 function processStatsForm() {
 	var from = $("#from_date").val().trim(),
 		to = $("#to_date").val().trim(),
@@ -328,20 +384,41 @@ function processStatsForm() {
 		data: { start: from, end: to },
 		beforeSend: function() {
 			$("#stats_slider").animate({left: 0});
-			$("#loading_div").show();
-		},
+
+                // initialize 'loading_div'
+                var loadingDiv = $("#loading_div");            
+                var progressbar = $("#progressbar");
+                progressbar.progressbar("value", 0);            
+                loadingDiv.find("#current_time").html("");
+                loadingDiv.find("#error_alert").hide();
+                loadingDiv.show();
+                pollProgress(false, "http://cmc307-04.mathcs.carleton.edu:3001");
+                // pollProgress(false, "http://localhost:3001");
+                },
 		success: function(data) {
-                        res = data;
-			var d = new Date();
-			var t = d.getTime();
-			var s = t.toString();
-			sessionStorage[s]=data;
-			var opt = document.createElement('option');
-			opt.innerHTML = s;
-			$("#stats_picker").append(opt);
-			displaySummaryStats(JSON.parse(data), from, to);
-			$("#loading_div").hide();
-			$("#stats_slider").animate({left: 1004});
-		}
+                    res = data;
+                    var jsond = JSON.parse(data);
+
+                    if (Object.keys(jsond).length == 0) {
+                        updateProgressBar(null, null, true);
+                        return;
+                    }
+            
+                    var d = new Date();
+                    var t = d.getTime();
+                    var s = t.toString();
+                    sessionStorage[s]=data;
+                    var opt = document.createElement('option');
+                    opt.innerHTML = s;
+                    $("#stats_picker").append(opt);
+
+                    displaySummaryStats(jsond, from, to);
+
+                    $("#loading_div").hide();
+                    $("#stats_slider").animate({left: 1004});
+                },
+                error: function() {
+                    updateProgressBar(null, null, true);
+                }
 	});
 }

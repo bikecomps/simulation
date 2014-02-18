@@ -224,7 +224,14 @@
 <div id="map_canvas"></div>
 
 <div id="loading_div">
-  <img id="loading"  src="/static/img/loading-gif-animation.gif" alt="loading" width=50px/>
+  <div id="progressbar"><div class="progress-label">Loading...</div></div>
+  <p>Simulation Time at <b id="current_time"></b></p>
+  <div id="error_alert" style="background-color: #f11; display:none;" data-alert class="alert-box warning round">
+    An error might have occurred in the back-end!
+    <a href="#" class="close">&times;</a>
+  </div>
+
+  <!-- <img id="loading"  src="/static/img/loading-gif-animation.gif" alt="loading" width=50px/> -->
 </div>
 
 <script type="text/javascript">
@@ -233,6 +240,20 @@
     var map_height = screen_height - 55;
     $("#content, #stats_wrapper").css("height",map_height);
   }
+
+  var progressbar = $( "#progressbar" ),
+  progressLabel = $( ".progress-label" );
+  
+  progressbar.progressbar({
+    value: false,
+    change: function() {
+      progressLabel.text( progressbar.progressbar( "value" ) + "%" );
+    },
+    complete: function() {
+      progressLabel.text( "Complete!" );
+    }
+  });
+  
 </script>
 
 {% end %}
