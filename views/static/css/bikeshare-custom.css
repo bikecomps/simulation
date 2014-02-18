@@ -1,10 +1,6 @@
 @charset "UTF-8";
 /* CSS Document */
 
-#stats_picker {
-  width: 150px;
-}
-
 #topbar-left-logo img {
     height: 45px;
     margin-top: 5px;
@@ -38,6 +34,7 @@ footer p {
 
 #content {
     height: 100%;
+    /* width: 100%;*/
 }
 
 .full-screen-wrapper {
@@ -119,15 +116,15 @@ form button[type="submit"] {
 
 #stats_wrapper {
   position: absolute;
-  left: -1004px;
+  left: -1004px;/*-99%;???*/
   top: 55px;
-  width: 2028px;
+  width: 2028px;/*200%;*/
   height: 100%;
   overflow: hidden;
 }
 
 #stats_slider {
-  width: 1024px;
+  width: 1024px;/*50%;*/
   height: 100%;
   position: absolute;
   left: 0px;
@@ -160,9 +157,50 @@ form button[type="submit"] {
 }
 
 #stats_panel {
-  margin-top: 10px;
+  margin-top: 35px;
   width: 100%;
   height: 100%;
+}
+
+#save_load_div {
+  margin-top: 5px;
+  margin-right: 30px;
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  height: 30px;
+  width: 205px;
+  overflow: hidden;
+}
+
+#save_load_form {
+  height: 100%;
+  width: 100%;
+}
+
+#save_stats,
+#load_stats {
+  height: 100%;
+  width: 100px;
+  background-color: green;
+  position: absolute;
+}
+
+#save_stats {
+  left: 0px;
+}
+
+#load_stats {
+  right: 0px;
+}
+
+#stats_namer,
+#stats_picker {
+  height: 100%;
+  width: 155px;
+  position: absolute;
+  left: -160px;
+  top: 0px;
 }
 
 .chart {

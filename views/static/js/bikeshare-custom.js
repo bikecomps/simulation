@@ -1,3 +1,43 @@
+var res;
+
+function save_trans() {
+    $("#load_stats").animate({right: "-100px"});
+    $("#save_stats").html('Save')
+        .animate({width: "40px", left: "165px"})
+        .attr('onclick', 'save_results()');
+    $("#stats_namer").animate({left: "0px"});
+}
+
+function save_results() {
+    var stats_name = $("#stats_namer").val();
+    sessionStorage[stats_name] = res;
+    var opt = document.createElement('option');
+    opt.innerHTML = stats_name;
+    $("#stats_picker").append(opt);
+    $("#stats_namer").animate({left: "-165px"});
+    $("#save_stats").animate({width: "100px", left: "0px"}, function() {$(this).html('Save Results')})
+        .attr('onclick', 'save_trans()');
+    $("#load_stats").animate({right: "0px"});
+}
+
+function load_trans() {
+    $("#save_stats").animate({top: '35px'});
+    $("#load_stats").html('Load')
+        .animate({width: '40px'})
+        .attr('onclick', 'load_results()');
+    $("#stats_picker").animate({left: '0px'});
+}
+
+function load_results() {
+    var stats_name = $("#stats_picker").val();
+    var desired = sessionStorage[stats_name];
+    //displaySummaryStats(JSON.parse(desired),foo,bar);
+    $("#load_stats").animate({width: '100px'}, function() {$(this).html('Load Results')})
+        .attr('onclick', 'load_trans()');
+    $("#stats_picker").animate({left: '-165px'});
+    $("#save_stats").animate({top: '0px'});
+}
+
 function sliderSetup() {
 	$( "#slider-range" ).slider({
 		range: true,
@@ -10,7 +50,6 @@ function sliderSetup() {
 		}
 	});
 	$( "#amount" ).val( $( "#slider-range" ).slider( "values", 0 ) + ":00 - " + $( "#slider-range" ).slider( "values", 1 ) + ":00");
-
 }
 
 function toHours(d)  {
@@ -292,12 +331,12 @@ function processStatsForm() {
 			$("#loading_div").show();
 		},
 		success: function(data) {
+                        res = data;
 			var d = new Date();
 			var t = d.getTime();
 			var s = t.toString();
 			sessionStorage[s]=data;
 			var opt = document.createElement('option');
-			opt.avalue = s;
 			opt.innerHTML = s;
 			$("#stats_picker").append(opt);
 			displaySummaryStats(JSON.parse(data), from, to);
