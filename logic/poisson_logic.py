@@ -22,17 +22,21 @@ class PoissonLogic(SimulationLogic):
 
     def initialize(self, start_time, end_time, **kwargs):
         SimulationLogic.initialize(self, start_time, end_time, **kwargs)
+        print "Starting to load lambdas"
         self.lambda_distrs = self.load_lambdas(start_time, end_time)
+        print "Loaded Lambdas"
         self.duration_distrs = self.load_gammas()
+        print "Loaded Gammas"
 
         # Retrieve StationDistance objects representing the five closest
         # stations for each stations.
         self.nearest_station_dists = {}
-        station_list = self.session.query(data_model.Station) 
+        station_list = self.session.query(Station)\
+                           .filter(Station.id.in_(self.stations.keys()))
         for station in station_list:
-            nearest_distances = self.session.query(data_model.StationDistance)\
-                    .filter(data_model.StationDistance.station1_id == station.id)\
-                    .order_by(data_model.StationDistance.distance)[:8]
+            nearest_distances = self.session.query(StationDistance)\
+                    .filter(StationDistance.station1_id == station.id)\
+                    .order_by(StationDistance.distance)[:8]
             self.nearest_station_dists[station.id] = nearest_distances
         self.moving_bikes = 0
 
@@ -73,7 +77,7 @@ class PoissonLogic(SimulationLogic):
                         trip_start_time = start_time + added_time
                         trip_duration = self.get_trip_duration(gamma)
                         trip_end_time = trip_start_time + trip_duration
-                        new_trip = data_model.Trip(str(random.randint(1,500)), "Casual", 2, \
+                        new_trip = Trip(str(random.randint(1,500)), "Casual", 2, \
                                 trip_start_time, trip_end_time, start_station_id, end_station_id)
                         self.pending_departures.put((start_time, new_trip))
 
@@ -102,7 +106,8 @@ class PoissonLogic(SimulationLogic):
         """
         Caches gaussian distribution values into a dictionary.
         """
-        gaussian_distr = self.session.query(data_model.GaussianDistr)
+        gaussian_distr = self.session.query(GaussianDistr)\
+                             .filter(GaussianDistr.start_station_id.in_(self.stations.keys()))
 
         distr_dict = {}
         for gauss in gaussian_distr:
@@ -113,7 +118,9 @@ class PoissonLogic(SimulationLogic):
         '''
         Caches gaussian distribution variables into a dictionary.
         '''
-        gamma_distr = self.session.query(data_model.Gamma)
+        gamma_distr = self.session.query(Gamma)\
+                          .filter(Gamma.start_station_id.in_(self.stations.keys()))
+
         distr_dict = {}
         for gamma in gamma_distr:
             distr_dict[(gamma.start_station_id, gamma.end_station_id)] = gamma 
@@ -140,6 +147,7 @@ class PoissonLogic(SimulationLogic):
 
         num_added = 0
 
+        station_list = self.stations.keys()
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
             
@@ -152,11 +160,12 @@ class PoissonLogic(SimulationLogic):
             
             if not requested_dict[month][year][is_week_day][(start_hour, end_hour)]:
                 lambda_poisson = self.session \
-                                     .query(data_model.Lambda) \
-                                     .filter(data_model.Lambda.month == month) \
-                                     .filter(data_model.Lambda.year == year) \
-                                     .filter(data_model.Lambda.is_week_day == is_week_day) \
-                                     .filter(data_model.Lambda.hour.between(start_hour, end_hour))
+                                     .query(Lambda) \
+                                     .filter(Lambda.month == month) \
+                                     .filter(Lambda.year == year) \
+                                     .filter(Lambda.is_week_day == is_week_day) \
+                                     .filter(Lambda.hour.between(start_hour, end_hour))\
+                                     .filter(Lambda.start_station_id.in_(station_list))
                 requested_dict[month][year][is_week_day][(start_hour, end_hour)] = True
                 
             for lam in lambda_poisson:

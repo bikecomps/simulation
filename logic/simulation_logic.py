@@ -57,12 +57,10 @@ class SimulationLogic:
 
     def initialize(self, start_time, end_time, 
                     rebalancing=True, bike_total=None,
-                    station_caps={}):
+                    station_caps={}, drop_stations=[]):
         '''
         Sets states of stations at the start_time
         '''
-        print "Bike_total:",bike_total
-        print "Station_caps?",station_caps
         print "Initializing"
         self.time = start_time
 
@@ -75,7 +73,8 @@ class SimulationLogic:
         self.disappointment_list = []
         self.trip_list = []
         print "\tInitializing stations"
-        self._initialize_stations(start_time, bike_total, station_caps)
+        self._initialize_stations(start_time, bike_total,
+                                  station_caps, drop_stations)
         self.rebalancing = rebalancing
 
     def _get_total_num_bikes(self):
@@ -92,13 +91,15 @@ class SimulationLogic:
     def _get_station_cap(self, s_id):
             return self.station_caps[s_id]
 
-    def _initialize_stations(self, start_time, bike_total, station_caps):
+    def _initialize_stations(self, start_time, bike_total, 
+                             station_caps, drop_stations):
         '''
         bike_total: Optional argument defining the number of bikes in the system.
             If none is supplied, takes Max from DB.
         station_caps: List of altered station caps. IMPORTANT: only stations 
             explicitely listed in station_caps will have capacity altered!
             {} != {31101:0}
+        drop_stations: List of station ids that should be removed from the simulation
         '''
         # Only initialize bikes if nothing was supplied
         if not bike_total:
@@ -108,7 +109,14 @@ class SimulationLogic:
         start_hour = int(round(start_time.hour + start_time.minute/60.0))
         distributed_bikes = 0
 
-        for s in self.session.query(Station):
+        # For performance reasons don't do unnecessarily complex query if empty list
+        if drop_stations:
+            stations = self.session.query(Station)\
+                                   .filter(~Station.id.in_(drop_stations))
+        else:
+            stations = self.session.query(Station)
+
+        for s in stations:
             # Initialize capacity
             if s.id in station_caps:
                 s_cap = station_caps[s.id]
@@ -152,7 +160,7 @@ class SimulationLogic:
         
         # Don't keep trying to reassign bikes to full stations
         full_stations = set()
-        while bike_delta != 0: 
+        while bike_delta != 0 and len(full_stations) < len(self.stations): 
             station_bike_prop = {s_id : float(s_count)/distributed_bikes 
                                     for s_id, s_count in self.station_counts.iteritems()
                                          if s_id not in full_stations}
@@ -168,6 +176,9 @@ class SimulationLogic:
                 bike_delta -= added_bikes
                 self.station_counts[s.id] += added_bikes
 
+        if bike_delta > 0:
+            print "WARNING: Number bikes exceed summed capacities across all stations"
+    
         for s_id, s in self.stations.iteritems():
             if self._get_station_cap(s_id) <= self.station_counts[s_id]:
                 print "\t\tFull station ",s_id, self._get_station_cap(s_id), self.station_counts[s.id]

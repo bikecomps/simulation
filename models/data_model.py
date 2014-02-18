@@ -115,11 +115,11 @@ class Trip(Base):
 
     start_station_id = Column(Integer, ForeignKey('stations.id'))
     start_station = relationship('Station', foreign_keys=[start_station_id],
-                                 backref=backref('trips_out'))
+                                 backref=backref('trips_out', lazy='dynamic'))
 
     end_station_id = Column(Integer, ForeignKey('stations.id'))
     end_station = relationship('Station', foreign_keys=[end_station_id], 
-                               backref=backref('trips_in'))
+                               backref=backref('trips_in', lazy='dynamic'))
 
     def __init__(self, bike_id, member_type, trip_type_id, start_date, end_date,
                  start_station_id, end_station_id):
