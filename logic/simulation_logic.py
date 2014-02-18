@@ -34,17 +34,23 @@ class SimulationLogic:
         # List of trips that didn't end at the desired station due to a shortage
         self.bike_shortages = []
         self.dock_shortages = []
+        self.total_rebalances = 0
         # Keys: all currently empty/full station ids. Values: empty or full
         self.empty_stations_set = set()
         self.full_stations_set = set()
         self.arr_dis_stations = {}
         self.dep_dis_stations = {}
 
+        self.total_num_bikes = -1
+
     def getDBSession(self):
         return self.session
 
-    def initialize(self, start_time, end_time,rebalancing=True):
-        '''Sets states of stations at the start_time'''
+    def initialize(self, start_time, end_time, 
+                    rebalancing=True, bike_total=None):
+        '''
+        Sets states of stations at the start_time
+        '''
         print "Initializing"
         self.time = start_time
 
@@ -58,9 +64,8 @@ class SimulationLogic:
         self.station_counts = {}
         self.stations = {}
         print "\tInitializing stations"
-        self.initialize_stations(start_time)
+        self.initialize_stations(start_time, bike_total)
         self.rebalancing = rebalancing
-
 
     def get_total_num_bikes(self):
         '''
@@ -74,12 +79,11 @@ class SimulationLogic:
         return max_bike_count
      
 
-    def initialize_stations(self, start_time):
-        '''
-        Loads the starting conditions of the stations from a csv.
-        Grossly hardcoded for now
-        '''
-        bike_total = self.get_total_num_bikes()
+    def initialize_stations(self, start_time, bike_total=None):
+        # Only initialize bikes if nothing was supplied
+        if not bike_total:
+            bike_total = self.get_total_num_bikes()
+        self.total_num_bikes = bike_total
         # Get the closest hour for now
         start_hour = int(round(start_time.hour + start_time.minute/60.0) )
         distributed_bikes = 0
@@ -267,6 +271,34 @@ class SimulationLogic:
                 self.pending_departures.put((first_departure.start_date, first_departure))
         return (eventType, trip)
 
+
+    def update_rebalance(self):
+        not_full = []
+        not_empty = []
+        for s_id in self.station_counts:
+            if self.station_counts[s_id] > 0 and s_id in self.empty_stations_set:
+                not_empty.append(s_id)
+                self.empty_stations_set.remove(s_id)      
+            elif self.station_counts[s_id] != self.stations[s_id].capacity and s_id in self.full_stations_set:
+                not_full.append(s_id)
+                self.full_stations_set.remove(s_id)
+            elif self.station_counts[s_id] == self.stations[s_id].capacity and s_id not in self.full_stations_set:
+                self.full_stations_set.add(s_id)
+            elif self.station_counts[s_id] == 0 and s_id not in self.empty_stations_set:
+                self.empty_stations_set.add(s_id)
+        """
+        if len(not_full) > 0:
+            print "\tNo longer full:\n" + "\t\t" + str(list(not_full))
+        if len(not_empty) > 0:
+                print "\tNo longer empty:\n" + "\t\t" + str(list(not_empty))
+        if len(self.full_stations_set) > 0:
+                print "\tNow full:\n" + "\t\t" + str(list(self.full_stations_set))
+        if len(self.empty_stations_set) > 0:
+            print "\tNow empty:\n" + "\t\t" + str(list(self.empty_stations_set))
+        """
+        if self.rebalancing:
+            self.rebalance_stations()
+
     def rebalance_stations(self):		
 
         remove_from_full = []
@@ -274,10 +306,12 @@ class SimulationLogic:
             to_remove = self.stations[station_id].capacity/2
             self.station_counts[station_id] -= to_remove
             self.moving_bikes += to_remove
+            self.total_rebalances += to_remove
             remove_from_full.append(station_id)
         for s in remove_from_full:
             self.full_stations_set.remove(s)
 
+        # Explanation?
         while self.moving_bikes < len(self.empty_stations_set):
             random_station = random.choice(self.station_counts.keys())
             if self.station_counts[random_station] > 1:
@@ -290,6 +324,7 @@ class SimulationLogic:
             for station_id in self.empty_stations_set:
                 self.station_counts[station_id] = bikes_per_station
                 self.moving_bikes -= bikes_per_station
+                self.total_rebalances += bikes_per_station
                 remove_from_empty.append(station_id)
             for s in remove_from_empty:    
                 self.empty_stations_set.remove(s)
@@ -303,7 +338,9 @@ class SimulationLogic:
         return {'trips':self.trip_list,
                 'disappointments':self.disappointment_list,
                 'arr_dis_stations':self.arr_dis_stations,
-                'dep_dis_stations':self.dep_dis_stations}
+                'dep_dis_stations':self.dep_dis_stations,
+                'total_rebalances':self.total_rebalances,
+                'total_num_bikes':self.total_num_bikes}
         
 
     def cleanup(self):

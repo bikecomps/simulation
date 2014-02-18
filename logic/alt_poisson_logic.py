@@ -44,23 +44,7 @@ class AltPoissonLogic(SimulationLogic):
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        not_full = []
-        not_empty = []
-        for s_id in self.station_counts:
-            if self.station_counts[s_id] > 0 and s_id in self.empty_stations_set:
-                not_empty.append(s_id)
-                self.empty_stations_set.remove(s_id)      
-            elif self.station_counts[s_id] != self.stations[s_id].capacity and s_id in self.full_stations_set:
-                not_full.append(s_id)
-                self.full_stations_set.remove(s_id)
-            elif self.station_counts[s_id] == self.stations[s_id].capacity and s_id not in self.full_stations_set:
-                self.full_stations_set.add(s_id)
-            elif self.station_counts[s_id] == 0 and s_id not in self.empty_stations_set:
-                self.empty_stations_set.add(s_id)
-
-        if self.rebalancing:
-            self.rebalance_stations()
- 
+        self.update_rebalance() 
         self.generate_new_trips(self.time)
         if self.rebalancing:
             self.rebalance_stations()
