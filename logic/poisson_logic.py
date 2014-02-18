@@ -21,7 +21,7 @@ class PoissonLogic(SimulationLogic):
         SimulationLogic.__init__(self, session)
 
     def initialize(self, start_time, end_time, **kwargs):
-        SimulationLogic.initialize(self, start_time, end_time, kwargs)
+        SimulationLogic.initialize(self, start_time, end_time, **kwargs)
         self.lambda_distrs = self.load_lambdas(start_time, end_time)
         self.duration_distrs = self.load_gammas()
 

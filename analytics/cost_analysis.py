@@ -1,3 +1,6 @@
+'''
+Basic optimization for the number of bikes to initialize in the system.
+'''
 from logic import PoissonLogic, Simulator
 from utils import Connector
 

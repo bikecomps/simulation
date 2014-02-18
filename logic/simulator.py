@@ -26,7 +26,7 @@ class Simulator:
         '''
         logic_options must have keywords EXACTLY the sim_logic's named params
         '''
-        print logic_options
+
         self.sim_logic.initialize(start_time, end_time, **logic_options)
         cur_time = start_time
         print "cur time:", cur_time, "start time:", start_time, "end time:", end_time
@@ -83,7 +83,7 @@ def main():
     if len(sys.argv) == 1:
         # defaults
         raw_start_date = "2012-6-2 00:00:00"
-        raw_end_date = "2012-6-8 00:00:00"
+        raw_end_date = "2012-6-3 00:00:00"
         file_name = "/tmp/test.csv"
         #logic = ExponentialLogic
         #logic = AltPoissonLogic
@@ -117,7 +117,7 @@ def main():
     logic = logic(session)
     simulator = Simulator(logic) 
     print start_date, end_date
-    results = simulator.run(start_date, end_date)
+    results = simulator.run(start_date, end_date, logic_options={'station_caps':{31237:0}})
     print "trips:", len(results['trips'])
     ds = results['disappointments']
     print "disappointments:", len(ds)
