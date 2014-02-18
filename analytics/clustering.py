@@ -237,6 +237,31 @@ class Clusterer:
         
         return data
 
+    def get_clusters_as_dict(self, conn):
+        '''
+        currently just returns trip count clusters but can be altered to pass in a different type, maybe?
+        '''
+        normalize = False
+        s_id_map, from_v, to_v, total_v = self.generate_trip_count_obs(conn, '2010-5-1', '2013-6-30')
+        orig_from, orig_to, orig_total = from_v, to_v, total_v
+        if normalize:
+            from_v = self.normalize_observations(from_v)
+            to_v = self.normalize_observations(to_v)
+            total_v = self.normalize_observations(total_v)
+
+        obs = total_v
+        raw_obs = orig_total
+
+        s_ids = sorted(s_id_map.iterkeys(), key=lambda k: s_id_map[k])
+        opt_clusters = self.op_cluster_obs(obs, 5)
+        centroids = self.get_centroids_from_clusters(s_ids, obs, opt_clusters)
+        centroids = self.normalize_centroids(centroids)
+        info = self.info_from_trip_clusters(raw_obs, obs, s_ids, opt_clusters, centroids)
+        clusters_dict = {}
+        for c_id, data in info.iteritems():
+            clusters_dict[c_id] = data["stations"]
+        return clusters_dict
+
 def trip_count_cluster():
     normalize = False
     conn = Connector()
@@ -293,7 +318,7 @@ def hour_count_cluster():
 
 def main():
     hour_count_cluster() 
-    #trip_count_cluster()
+    # trip_count_cluster()
     return
     conn = Connector()
     s = conn.getDBSession()

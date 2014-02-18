@@ -34,20 +34,18 @@ class StatsHandler(RequestHandler):
                                               "%Y-%m-%d %H:%M")
         
         sstats = SummaryStats(start_date, end_date)
-        self.write(sstats.get_stats()) 
+        self.write(sstats.get_stats())
 
-'''    
-# Now defunct. Doesn't use PlotMap correctly
-class IndexHandler(RequestHandler):
+class ClusterHandler(RequestHandler):
     def get(self):
-        day = 1
-        start_time = datetime.datetime.strptime('06:00',
-                                            '%H:%M')
-        end_time = datetime.datetime.strptime('20:00',
-                                          '%H:%M')
-        stations = PlotMap(day, start_time, end_time).stations
-        self.render("home.html", title="BikeShare Comps", locations=stations)
-'''
+        stations = PlotMap().stations
+        self.render("clustering.html", title="Clustering", locations=stations)
+
+    def post(self):
+        start_date = datetime.datetime.strptime(self.get_argument("start"),
+                                                "%Y-%m-%d %H:%M")
+        end_date = datetime.datetime.strptime(self.get_argument("end"),
+                                              "%Y-%m-%d %H:%M")
 
 class AboutHandler(RequestHandler):
     def get(self):
@@ -68,9 +66,10 @@ if __name__ == "__main__":
         (r"/base", BaseHandler),
         (r"/about", AboutHandler),
         (r"/stats", StatsHandler),
-	(r"/unified", UnifiedHandler)
+        (r"/unified", UnifiedHandler),
+    (r"/clustering", ClusterHandler)
     ], **settings)
-    port_num = 1337
+    port_num = 3000
     application.listen(port_num)
     print "listening on port", port_num
     tornado.ioloop.IOLoop.instance().start()

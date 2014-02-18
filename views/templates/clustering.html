@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block css_and_scripts %}
+<!-- Datetime Pickers -->
+<link rel="stylesheet" type="text/css" href="/static/css/jquery.datetimepicker.css" />
+<script src="/static/js/jquery.datetimepicker.js"></script>
+
+<!-- D3.js  -->
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
+<!-- jQuery -->
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+
+<!-- Google Maps script -->    
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+<script src="/static/js/bikeshare-googlemaps.js"></script>
+
+<script type="application/javascript">
+  set_coordinates("{{locations}}");
+</script>
+
+{% end %}
+
+{% block content %}
+
+<script src="/static/js/foundation.min.js"></script>
+
+<script>
+  $(document).foundation();
+</script>
+
+
+<div id="map_canvas"></div>
+
+<div id="loading_div">
+  <img id="loading"  src="/static/img/loading-gif-animation.gif" alt="loading" width=50px/>
+</div>
+
+<script type="text/javascript">
+  function set_map_height() {
+    var screen_height = window.innerHeight;
+    var map_height = screen_height - 55;
+    $("#content, #stats_wrapper").css("height",map_height);
+  }
+</script>
+
+{% end %}
+
