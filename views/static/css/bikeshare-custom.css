@@ -114,7 +114,12 @@ form button[type="submit"] {
 }
 
 #cluster_markers {
-  margin: 10px;
+  margin-left: 10px;
+  float: left;
+  line-height: 8px;
+  font-size: 12px;
+  position: relative;
+  top: 11px;
 }
 
 #stats_wrapper {
