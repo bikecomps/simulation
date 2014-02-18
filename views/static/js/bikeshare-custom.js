@@ -30,8 +30,12 @@ function load_trans() {
 
 function load_results() {
     var stats_name = $("#stats_picker").val();
-    var desired = sessionStorage[stats_name];
-    //displaySummaryStats(JSON.parse(desired),foo,bar);
+    var desired_package = sessionStorage[stats_name];
+    var desired_unpacked = desired_package.split('!?!');
+    var desired = desired_unpacked[0]
+    var from = desired_unpacked[1]
+    var to = desired_unpacked[2];
+    displaySummaryStats(JSON.parse(desired),from,to);
     $("#load_stats").animate({width: '100px'}, function() {$(this).html('Load Results')})
         .attr('onclick', 'load_trans()');
     $("#stats_picker").animate({left: '-165px'});
@@ -58,8 +62,6 @@ function toHours(d)  {
 	var minutes = parseInt(d/60) % 60;
 	var result = (hours > 0 ? hours + " hours " : "") + (minutes > 0? minutes : "0") + " minutes";
 	return result;
-
-
 
 //	var returnString = "";
 //	if ((d/3600.0) > 1) {
@@ -396,14 +398,14 @@ function processStatsForm() {
                 // pollProgress(false, "http://localhost:3001");
                 },
 		success: function(data) {
-                    res = data;
+                    res = data.concat('!?!',from,'!?!',to);
                     var jsond = JSON.parse(data);
 
                     if (Object.keys(jsond).length == 0) {
                         updateProgressBar(null, null, true);
                         return;
                     }
-            
+                    /*
                     var d = new Date();
                     var t = d.getTime();
                     var s = t.toString();
@@ -411,7 +413,7 @@ function processStatsForm() {
                     var opt = document.createElement('option');
                     opt.innerHTML = s;
                     $("#stats_picker").append(opt);
-
+                    */
                     displaySummaryStats(jsond, from, to);
 
                     $("#loading_div").hide();

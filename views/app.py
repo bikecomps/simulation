@@ -90,5 +90,3 @@ if __name__ == "__main__":
     proc = subprocess.Popen(cmd)
     
     tornado.ioloop.IOLoop.instance().start()
-
-    
