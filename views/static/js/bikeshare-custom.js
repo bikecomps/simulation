@@ -271,6 +271,54 @@ function displaySummaryStats(data, from, to) {
 				 data["num_trips_per_hour"]);
 }
 
+function updateProgressBar(currentTime, percentProgress, isError) {
+    var loadingDiv = $("#loading_div");
+    if (isError) {
+        loadingDiv.find("#error_alert").show();
+        return;
+    }
+
+    loadingDiv.find("#error_alert").hide();
+    
+    // update simulation time
+    loadingDiv.find("#current_time").html(currentTime);
+
+    // update progress bar
+    var progressbar = $( "#progressbar" );
+    progressbar.progressbar( "value", parseInt(percentProgress));
+    
+}
+
+function pollProgress(hasZero) {
+    var hasHundred = false;
+    var hasError = false;
+    setTimeout(function() {
+        $.ajax({
+            url: "http://localhost:3001",
+            type: "GET",
+            success: function(data) {
+                if (data.percent_progress == 0) {
+                    hasZero = true;
+                }
+                if (hasZero) {
+                    updateProgressBar(data.current_time, data.percent_progress);
+                    hasHundred = data.percent_progress == 100;
+                }
+            },
+            complete: function() {
+                if (!hasHundred && !hasError) {
+                    pollProgress(hasZero);
+                }
+            }
+            , error: function() {
+                hasError = true;
+                updateProgressBar(null, null, true);
+            }
+        });
+    }, 100);
+}
+
+
 function processStatsForm() {
 	var from = $("#from_date").val().trim(),
 		to = $("#to_date").val().trim(),
@@ -289,9 +337,25 @@ function processStatsForm() {
 		data: { start: from, end: to },
 		beforeSend: function() {
 			$("#stats_slider").animate({left: 0});
-			$("#loading_div").show();
+
+            // initialize 'loading_div'
+            var loadingDiv = $("#loading_div");            
+            var progressbar = $("#progressbar");
+            progressbar.progressbar("value", 0);            
+            loadingDiv.find("#current_time").html("");
+            loadingDiv.find("#error_alert").hide();
+			loadingDiv.show();
+
+            pollProgress(false);
 		},
 		success: function(data) {
+            var jsond = JSON.parse(data);
+
+            if (Object.keys(jsond).length == 0) {
+                updateProgressBar(null, null, true);
+                return;
+            }
+            
 			var d = new Date();
 			var t = d.getTime();
 			var s = t.toString();
@@ -300,9 +364,14 @@ function processStatsForm() {
 			opt.avalue = s;
 			opt.innerHTML = s;
 			$("#stats_picker").append(opt);
-			displaySummaryStats(JSON.parse(data), from, to);
+
+			displaySummaryStats(jsond, from, to);
+
 			$("#loading_div").hide();
 			$("#stats_slider").animate({left: 1004});
-		}
+		},
+        error : function() {
+            updateProgressBar(null, null, true);
+        }
 	});
 }

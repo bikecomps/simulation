@@ -3,27 +3,33 @@
 import tornado.ioloop
 import datetime
 import os
+import subprocess
 
 
 from analytics import PlotMap
-from tornado.web import RequestHandler, Application
+from tornado.web import RequestHandler, Application, asynchronous
 from analytics import SummaryStats
 
 class UnifiedHandler(RequestHandler):
-    def get(self):
-        
+
+    def get(self):        
         stations = PlotMap().stations
         self.render("unified.html",title="Simba | Washington DC",locations=stations)
-    
+
     def post(self):
         start_date = datetime.datetime.strptime(self.get_argument("start"), "%Y-%m-%d %H:%M")
         end_date = datetime.datetime.strptime(self.get_argument("end"), "%Y-%m-%d %H:%M")
- 
-        sstats = SummaryStats(start_date, end_date)
-        self.write(sstats.get_stats())        
-         
+
+        try:
+            sstats = SummaryStats(start_date, end_date)
+            self.write(sstats.get_stats())
+        except:
+            # some error occurred
+            self.write("{}")
+
 
 class StatsHandler(RequestHandler):
+
     def get(self):
         self.render("stats.html", title="Get Summary Stats on Generated Bike Trips")
 
@@ -48,10 +54,12 @@ class ClusterHandler(RequestHandler):
                                               "%Y-%m-%d %H:%M")
 
 class AboutHandler(RequestHandler):
+
     def get(self):
         self.render("about.html", title="About Us")
 
 class BaseHandler(RequestHandler):
+    
     def get(self):
         self.render("base.html", title="Base File")
 
@@ -67,9 +75,19 @@ if __name__ == "__main__":
         (r"/about", AboutHandler),
         (r"/stats", StatsHandler),
         (r"/unified", UnifiedHandler),
-    (r"/clustering", ClusterHandler)
+        (r"/clustering", ClusterHandler)
     ], **settings)
+
     port_num = 3000
     application.listen(port_num)
     print "listening on port", port_num
+
+    # run another server to use for long-polling
+    cmd = ["python",
+           "-m",
+           "views.long_polling"]
+    proc = subprocess.Popen(cmd)
+    
     tornado.ioloop.IOLoop.instance().start()
+
+    

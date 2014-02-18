@@ -52,8 +52,9 @@ class SummaryStats:
         session = Connector().getDBSession()
         logic = PoissonLogic(session)
         simulator = Simulator(logic)
-        results = simulator.run(self.start_date, self.end_date)
 
+        results = simulator.run(self.start_date, self.end_date)
+        
         self.session = session
         self.trips = results['trips']
         self.disappointments = results['disappointments']
