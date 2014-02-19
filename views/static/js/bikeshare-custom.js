@@ -32,8 +32,8 @@ function load_results() {
     var stats_name = $("#stats_picker").val();
     var desired_package = sessionStorage[stats_name];
     var desired_unpacked = desired_package.split('!?!');
-    var desired = desired_unpacked[0]
-    var from = desired_unpacked[1]
+    var desired = desired_unpacked[0];
+    var from = desired_unpacked[1];
     var to = desired_unpacked[2];
     displaySummaryStats(JSON.parse(desired),from,to);
     $("#stats_name").html(stats_name);
@@ -396,7 +396,6 @@ function processStatsForm() {
                 loadingDiv.find("#error_alert").hide();
                 loadingDiv.show();
                 pollProgress(false, "http://cmc307-04.mathcs.carleton.edu:3001");
-                // pollProgress(false, "http://localhost:3001");
                 },
 		success: function(data) {
                     res = data.concat('!?!',from,'!?!',to);
