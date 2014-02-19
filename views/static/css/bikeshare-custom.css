@@ -66,12 +66,21 @@ footer p {
   padding: 0px;
 }
 
-#simulation_control {
+#simulation_control,
+#cluster_control {
   height: auto;
+}
+
+#cluster_by_txt {
+	float: left;
+	margin-right: 5px;
+	vertical-align: middle;
+	margin-top: 4px;
 }
 
 #control_form {
   overflow: hidden;
+  float: left;
 }
 
 #from_div {
@@ -86,10 +95,13 @@ footer p {
   float: left;
 }
 
-#from_date {
-  height: auto;
+#clustering_method {
+	float: left;
+	margin-top: 17px;
+	width: 100px;
 }
 
+#from_date,
 #to_date {
   height: auto;
 }
@@ -102,15 +114,6 @@ input[type="text"] {
 }
 
 form button[type="submit"] {
-  margin-left: 10px;
-  float: left;
-  line-height: 8px;
-  font-size: 12px;
-  position: relative;
-  top: 11px;
-}
-
-#cluster_markers {
   margin-left: 10px;
   float: left;
   line-height: 8px;

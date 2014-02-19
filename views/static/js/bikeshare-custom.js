@@ -63,18 +63,6 @@ function toHours(d)  {
 	var minutes = parseInt(d/60) % 60;
 	var result = (hours > 0 ? hours + " hours " : "") + (minutes > 0? minutes : "0") + " minutes";
 	return result;
-
-//	var returnString = "";
-//	if ((d/3600.0) > 1) {
-//		returnString = returnString.concat((d/3600).toFixed() + " hours ");
-//		d = d - d/3600;
-//	}
-//	console.log(returnString);
-//	console.log(d);
-//	returnString = returnString.concat((d/60.0).toFixed() + " minutes");
-//	console.log(returnString);
-//	return returnString;
-	// return (d/3600.0).toFixed(2) + " hours";
 }
 
 function formatDate(dateStr) {
