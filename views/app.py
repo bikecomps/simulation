@@ -80,11 +80,11 @@ if __name__ == "__main__":
         (r"/clustering", ClusterHandler)
     ], **settings)
 
-    port_num = 3000
+    port_num = 1337
     application.listen(port_num)
     print "listening on port", port_num
 
-    run another server to use for long-polling
+    # run another server to use for long-polling
     cmd = ["python",
            "-m",
            "views.long_polling"]

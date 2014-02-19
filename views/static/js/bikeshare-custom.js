@@ -323,8 +323,7 @@ function updateProgressBar(currentTime, percentProgress, isError) {
 
     // update progress bar
     var progressbar = $( "#progressbar" );
-    progressbar.progressbar( "value", parseInt(percentProgress));
-    
+    progressbar.progressbar( "value", parseInt(percentProgress));  
 }
 
 function pollProgress(hasZero, currentUrl) {
@@ -355,7 +354,6 @@ function pollProgress(hasZero, currentUrl) {
         });
     }, 100);
 }
-
 
 function processStatsForm() {
 	var from = $("#from_date").val().trim(),
@@ -394,15 +392,7 @@ function processStatsForm() {
                         updateProgressBar(null, null, true);
                         return;
                     }
-                    /*
-                    var d = new Date();
-                    var t = d.getTime();
-                    var s = t.toString();
-                    sessionStorage[s]=data;
-                    var opt = document.createElement('option');
-                    opt.innerHTML = s;
-                    $("#stats_picker").append(opt);
-                    */
+
                     displaySummaryStats(jsond, from, to);
 
                     $("#stats_name").html('Most recent simulation.');
