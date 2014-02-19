@@ -148,6 +148,7 @@ def cluster_obs(obs, k):
     obs = np.array(obs)
     return kmeans2(obs, k)
 
+
 def op_cluster_obs(obs, max_k=30, npass=10):
     ''' 
     Info on pycluster available here:
@@ -155,17 +156,36 @@ def op_cluster_obs(obs, max_k=30, npass=10):
     '''
 
     obs = np.vstack(obs)
-    min_error = sys.maxint
-    best_clustering = []
+    # Minus 2 for at least two clusters
+    errors = [0] * (max_k - 1)
+    labels = [None] * (max_k - 1)
 
-    for i in xrange(1, max_k):
-        labels, error, nfound = pc.kcluster(obs, i, npass=npass)
+    # Doesn't make any sense for clusters = 1
+    for i in xrange(2, max_k + 1):
+        label, error, nfound = pc.kcluster(obs, i, npass=npass)
+        print i
+        errors[i - 2] = error
+        labels[i - 2] = label
+        
 
-        if error < min_error:
-            min_error = error
-            best_clustering = labels
+    # Find "kink" in error -> length is 1 less than errors
+    error_deriv = [errors[i] - errors[i-1] for i in range(1, len(errors))]
+    
+    # Want to maximize difference of the two slopes
+    opt_diff = -1
+    opt_i = -1
 
-    return best_clustering
+    n = len(error_deriv)
+    print "Error?!",errors
+    for i in range(1, n): 
+        # Approximate the slope of the derivative
+        diff = abs(sum(error_deriv[0:i])/i - sum(error_deriv[i:])/(n-i))
+        print i, diff, error_deriv
+        if diff > opt_diff:
+            opt_diff = diff
+            opt_i = i 
+
+    return labels[opt_i]
 
 def clusters_to_coords(session, id_key, clusters):
     csv = "s_id, name, lat, lon, cluster\n"
@@ -190,9 +210,8 @@ def get_centroids_from_clusters(s_ids, obs, opt_clusters):
     return centroids
 
 def normalize_centroids(centroids):
-    new_cs = {c_id:[x/sum(cen) for x in cen] #return 
+    return {c_id:[x/sum(cen) for x in cen] 
             for c_id, cen in centroids.iteritems()}
-    return new_cs
 
 def dump_centroids_to_csv(centroids):
     if not len(centroids):
@@ -321,7 +340,7 @@ def hour_count_cluster():
     normalize = False
     conn = Connector()
     engine = conn.getDBEngine()
-    s_ids, departures, arrivals, totals = gen_hour_obs(engine, '2013-5-1', '2013-6-1')
+    s_ids, departures, arrivals, totals = gen_hour_obs(engine, '2013-5-1', '2013-6-1', remove_zeroes=True)
     orig_deps, orig_arrs, orig_tots = departures, arrivals, totals
 
     if normalize:
@@ -332,7 +351,7 @@ def hour_count_cluster():
     obs = departures
     raw_obs = orig_deps
 
-    opt_clusters = op_cluster_obs(obs, 5)
+    opt_clusters = op_cluster_obs(obs, 8)
     centroids = get_centroids_from_clusters(s_ids, obs, opt_clusters)
     centroids = normalize_centroids(centroids)
     print dump_centroids_to_csv(centroids)

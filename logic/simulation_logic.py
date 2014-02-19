@@ -96,13 +96,15 @@ class SimulationLogic:
         # Retrieve StationDistance objects representing the five closest
         # stations for each stations.
         self.nearest_station_dists = {}
-        station_list = self.session.query(Station)\
-                           .filter(Station.id.in_(self.stations.keys()))
-        for station in station_list:
+        station_ids = self.stations.keys()
+
+        for s_id in station_ids:
             nearest_distances = self.session.query(StationDistance)\
-                    .filter(StationDistance.station1_id == station.id)\
+                    .filter(StationDistance.station1_id == s_id)\
+                    .filter(StationDistance.station1_id.in_(station_ids))\
+                    .filter(StationDistance.station2_id.in_(station_ids))\
                     .order_by(StationDistance.distance)[:8]
-            self.nearest_station_dists[station.id] = nearest_distances
+            self.nearest_station_dists[s_id] = nearest_distances
 
 
     def _initialize_stations(self, start_time, bike_total, 

@@ -117,7 +117,7 @@ def main():
     logic = logic(session)
     simulator = Simulator(logic) 
     print start_date, end_date
-    logic_options = {'station_caps':{31237:0}, 'drop_stations':[31704]}
+    logic_options = {'station_caps':{31237:0}, 'drop_stations':[31704,31000,31001,31002]}
     results = simulator.run(start_date, end_date, logic_options=logic_options)
     print "trips:", len(results['trips'])
     ds = results['disappointments']
