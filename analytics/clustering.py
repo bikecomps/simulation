@@ -267,30 +267,38 @@ def info_from_trip_clusters(raw_obs, obs, s_ids, opt_clusters, centroids):
     
     return data
 
-def get_clusters_as_dict(conn):
-    '''
-    currently just returns trip count clusters but can be altered to pass in a different type, maybe?
-    '''
-    normalize = False
-    s_id_map, from_v, to_v, total_v = generate_trip_count_obs(conn, '2010-5-1', '2013-6-30')
-    orig_from, orig_to, orig_total = from_v, to_v, total_v
-    if normalize:
-        from_v = normalize_observations(from_v)
-        to_v = normalize_observations(to_v)
-        total_v = normalize_observations(total_v)
+def get_clusters_as_dict(conn, cluster_type):
+    if cluster_type == "Trip counts":
+        return trip_count_cluster()
+    elif cluster_type == "Hour counts":
+        return hour_count_cluster()
+    else:
+        return {}
 
-    obs = total_v
-    raw_obs = orig_total
+def get_clusters(self, cluster_type):
+    return self.dump_json(self.get_clusters_as_dict(cluster_type))
+        
+def dump_json(self, to_dump):
+    '''
+    Utility to dump json in nice way
+    '''
+    if self.indent:
+        return json.dumps(to_dump, indent=4, default=self.json_dump_handler)
+    else:
+        return json.dumps(to_dump, default=self.json_dump_handler)
+    
+def json_dump_handler(self, obj):
+    '''
+    Converts from python to json for some types, add more ifs for more cases
 
-    s_ids = sorted(s_id_map.iterkeys(), key=lambda k: s_id_map[k])
-    opt_clusters = op_cluster_obs(obs, 5)
-    centroids = get_centroids_from_clusters(s_ids, obs, opt_clusters)
-    centroids = normalize_centroids(centroids)
-    info = info_from_trip_clusters(raw_obs, obs, s_ids, opt_clusters, centroids)
-    clusters_dict = {}
-    for c_id, data in info.iteritems():
-        clusters_dict[c_id] = data["stations"]
-    return clusters_dict
+    Thanks to following site:
+    http://stackoverflow.com/questions/455580/json-datetime-between-python-and-javascript
+    '''
+    if hasattr(obj, 'isoformat'):
+        return obj.isoformat()
+    else:
+        raise TypeError, 'Cannot serialize item %s of type %s' % (repr(obj), type(obj))
+
 
 def trip_count_cluster():
     normalize = False
@@ -316,6 +324,10 @@ def trip_count_cluster():
         print "-"*40,c_id,"-"*40
         for label, d in data.iteritems():
             print label+":",d
+    clusters_dict = {}
+    for c_id, data in info.iteritems():
+        clusters_dict[c_id] = data["stations"]
+    return clusters_dict
 
 def hour_count_cluster():   
     normalize = False
@@ -342,9 +354,14 @@ def hour_count_cluster():
         print "-"*40,c_id,"-"*40
         for label, d in data.iteritems():
             print label+":",d
+    clusters_dict = {}
+    for c_id, data in info.iteritems():
+        clusters_dict[c_id] = data["stations"]
+    return clusters_dict
+
 
 def main():
-    hour_count_cluster() 
+    print hour_count_cluster() 
     # trip_count_cluster()
     return
     conn = Connector()

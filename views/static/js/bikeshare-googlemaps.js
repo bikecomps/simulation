@@ -17,7 +17,6 @@ function set_coordinates(val)
 	locations=jQuery.parseJSON(j_val);
 }
 
-
 function initialize() {
 	connections = [];
 	var mapOptions = {
@@ -89,6 +88,9 @@ function initialize() {
 	}
 }
 
+
+
+
 function bindInfoWindow(marker, map, infoWindow) {
 	google.maps.event.addListener(marker, 'click', function() {
 		openWindow.close();
@@ -152,6 +154,7 @@ function changeMarkerColors() {
 	}
 }
 
+
 function clusterColors() {
 	var dic = {};
 	for (var color in clusters) {
@@ -164,6 +167,26 @@ function clusterColors() {
 	}
 }
 
+/*
+function clusterColors() {
+	var clusterMethod = $("#cluster_type").val().trim();
+	
+	if (!clusterMethod.length) {
+		break;
+	}
+	$.ajax({
+		type: "POST",
+		url: "/clustering",
+		data: { clustering_method: clusterMethod },
+		success: function(data) {
+			console.log(data);
+		},
+		error: function() {
+			console.log("Error in the ajax stuff :/");
+		}
+	});
+}
+*/
 function changeMarkerColor(marker_id, color) {
 	m = station_markers[marker_id];
 	m.setIcon({
