@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <title>{{title}}</title>
-  
+
   <link rel="stylesheet" href="/static/css/foundation.css">
   <link rel="stylesheet" href="/static/css/bikeshare-custom.css">
 
@@ -19,14 +19,14 @@
   
   <body onresize="set_map_height()">
     <nav class="top-bar" data-top-bar>
+      <section class="top-bar-section">
       <ul class="title-area">
         <div id="topbar-left-logo"><a href="/"><img src="/static/img/simbaLogo-320.png" /></a></div>
       </ul>
       
-      <section class="top-bar-section">
         <!-- Left Nav Section -->
-        <div class="left" id="simulation_control">
-            <form id="control_form" onsubmit="processStatsForm(); return false;">
+		<div class="left" id="simulation_control">
+			<form id="control_form" onsubmit="processStatsForm(); return false;">
                 <div id="from_div">
                     <input type="text" id="from_date" placeholder="Start Date">
                 </div>
@@ -37,9 +37,17 @@
             </form> 
         </div>
 
-        <ul id="cluster_markers" style="margin:10px">
-          <button id="submit" type="submit" onclick="clusterColors();">Cluster</button>
-        </ul>
+        <div class="left" id="cluster_control">
+			<div id="cluster_by_txt">Cluster stations by:</div>
+			<form id="control_form" onsubmit="clusterColors(); return false;">
+				<select id="clustering_method">
+					<option></option>
+					<option>Trip counts</option>
+					<option>Hour counts</option>
+				</select>
+				<button type="submit" id="submit">Cluster</button>
+			</form>
+        </div>
         
         <!-- Right Nav Section -->
         <ul class="right">

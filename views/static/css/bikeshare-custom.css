@@ -1,10 +1,6 @@
 @charset "UTF-8";
 /* CSS Document */
 
-#stats_picker {
-  width: 150px;
-}
-
 #topbar-left-logo img {
     height: 45px;
     margin-top: 5px;
@@ -38,6 +34,7 @@ footer p {
 
 #content {
     height: 100%;
+    /* width: 100%;*/
 }
 
 .full-screen-wrapper {
@@ -69,12 +66,21 @@ footer p {
   padding: 0px;
 }
 
-#simulation_control {
+#simulation_control,
+#cluster_control {
   height: auto;
+}
+
+#cluster_by_txt {
+	float: left;
+	margin-right: 5px;
+	vertical-align: middle;
+	margin-top: 4px;
 }
 
 #control_form {
   overflow: hidden;
+  float: left;
 }
 
 #from_div {
@@ -89,10 +95,13 @@ footer p {
   float: left;
 }
 
-#from_date {
-  height: auto;
+#clustering_method {
+	float: left;
+	margin-top: 17px;
+	width: 100px;
 }
 
+#from_date,
 #to_date {
   height: auto;
 }
@@ -113,28 +122,24 @@ form button[type="submit"] {
   top: 11px;
 }
 
-#cluster_markers {
-  margin: 10px;
-}
-
 #stats_wrapper {
   position: absolute;
-  left: -1004px;
+  left: -1004px;/*-99%;???*/
   top: 55px;
-  width: 2028px;
+  width: 2028px;/*200%;*/
   height: 100%;
   overflow: hidden;
 }
 
 #stats_slider {
-  width: 1024px;
+  width: 1024px;/*50%;*/
   height: 100%;
   position: absolute;
   left: 0px;
   top: 0px;
   background-color: #ffffff;
   z-index: 999;
-  overflow-y: scroll;
+  /*overflow-y: scroll;*/
 }
 
 #stats_button {
@@ -160,9 +165,57 @@ form button[type="submit"] {
 }
 
 #stats_panel {
-  margin-top: 10px;
+  margin-top: 35px;
   width: 100%;
+  height: 95%;
+  overflow-y: auto;
+}
+
+#stats_name_div {
+  position: absolute;
+  left: 20px;
+  top: 10px;
+  height: 30px;
+  overflow: hidden;
+}
+
+#save_load_div {
+  position: absolute;
+  right: 25px;
+  top: 5px;
+  height: 30px;
+  width: 205px;
+  overflow: hidden;
+}
+
+#save_load_form {
   height: 100%;
+  width: 100%;
+}
+
+#save_stats,
+#load_stats {
+  height: 100%;
+  width: 100px;
+  background-color: green;
+  position: absolute;
+}
+
+#save_stats {
+  left: 0px;
+}
+
+#load_stats {
+  right: 0px;
+}
+
+#stats_namer,
+#stats_picker {
+  height: 100%;
+  width: 155px;
+  position: absolute;
+  left: -160px;
+  top: 0px;
 }
 
 .chart {
@@ -242,6 +295,8 @@ form button[type="submit"] {
   border-width: 5px;
   border-radius: 10%;
   background-color: rgba(0,0,0,.8);
+  padding: 20px;
+  color: #fff;
 }
 
 #loading {
@@ -250,6 +305,19 @@ form button[type="submit"] {
   top: 50%;
   margin: -25px 0 0 -25px;
 }
+
+.ui-progressbar {
+  position: relative;
+}
+
+.progress-label {
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  font-weight: bold;
+  text-shadow: 1px 1px 0 #fff;
+}
+
 /*
 NOTE : DEPRECATING OBSOLETE CSS STYLES. by ahnjo. Feb 16, 2014
 #overall_trip_stats {

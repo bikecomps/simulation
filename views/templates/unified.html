@@ -3,7 +3,7 @@
 {% block css_and_scripts %}
 
 <style>
-  #cluster_markers {
+  #cluster_control {
     display: none;
   }
 </style>
@@ -78,11 +78,25 @@
 {% block content %}
 <div id="stats_wrapper">
   <div id="stats_slider">
+      <div id="stats_name_div">
+        <div>Now Displaying: <text id="stats_name">No results. Run a simulation already!</text></div>
+      </div>
+
+      <div id="save_load_div">
+         <form id="save_load_form">
+            <button type="button" class="button tiny" id="load_stats" onclick="load_trans()">Load Results</button>
+            <button type="button" class="button tiny" id="save_stats" onclick="save_trans()">Save Results</button>
+            <input type="text" id="stats_namer" placeholder="Insert Name"></input>
+            <select id="stats_picker"></select>
+         </form>
+      </div>
+      
       <div id="stats_button">
           <div class="slide_button" id="slide_button_1"></div>
           <div class="slide_button" id="slide_button_2"></div>
           <div class="slide_button" id="slide_button_3"></div>
       </div>
+      
       <div id="stats_panel">
         <div class="row">
           <div class="small-6 columns" id="overall_trip_stats">
@@ -216,7 +230,14 @@
 <div id="map_canvas"></div>
 
 <div id="loading_div">
-  <img id="loading"  src="/static/img/loading-gif-animation.gif" alt="loading" width=50px/>
+  <div id="progressbar"><div class="progress-label">Loading...</div></div>
+  <p>Simulation Time at <b id="current_time"></b></p>
+  <div id="error_alert" style="background-color: #f11; display:none;" data-alert class="alert-box warning round">
+    An error might have occurred in the back-end!
+    <a href="#" class="close">&times;</a>
+  </div>
+
+  <!-- <img id="loading"  src="/static/img/loading-gif-animation.gif" alt="loading" width=50px/> -->
 </div>
 
 <script type="text/javascript">
@@ -225,6 +246,20 @@
     var map_height = screen_height - 55;
     $("#content, #stats_wrapper").css("height",map_height);
   }
+
+  var progressbar = $( "#progressbar" ),
+  progressLabel = $( ".progress-label" );
+  
+  progressbar.progressbar({
+    value: false,
+    change: function() {
+      progressLabel.text( progressbar.progressbar( "value" ) + "%" );
+    },
+    complete: function() {
+      progressLabel.text( "Complete!" );
+    }
+  });
+  
 </script>
 
 {% end %}

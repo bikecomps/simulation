@@ -15,6 +15,8 @@ from exponential_logic import ExponentialLogic
 from alt_poisson_logic import AltPoissonLogic
 from utils import Connector
 
+import pickle
+
 class Simulator:
     def __init__(self, sim_logic):
         self.sim_logic = sim_logic
@@ -28,12 +30,29 @@ class Simulator:
         '''
 
         self.sim_logic.initialize(start_time, end_time, **logic_options)
+
         cur_time = start_time
         print "cur time:", cur_time, "start time:", start_time, "end time:", end_time
+        progress_buffer = {}
+        progress_buffer["total_steps"] = (end_time - start_time).total_seconds()/timestep.seconds
+        progress_buffer["done_steps"] = 0
+        progress_buffer["current_time"] = start_time
+
+        nfile = open("progress_buffer.dat", "w")
+        pickle.dump(progress_buffer, nfile)       
+        nfile.close()
+
         while cur_time < end_time:
             self.sim_logic.update(timestep)
             cur_time += timestep
             print "Finished time step ", cur_time
+            
+            progress_buffer["done_steps"] += 1
+            progress_buffer["current_time"] = cur_time
+
+            nfile = open("progress_buffer.dat", "w")
+            pickle.dump(progress_buffer, nfile)       
+            nfile.close()
 
         results = self.sim_logic.flush()
         self.sim_logic.clean_up()
