@@ -53,8 +53,6 @@ class ClusterHandler(RequestHandler):
         cluster_type = self.get_argument("clustering_method")
         clusters = clustering.get_clusters(cluster_type)        
         self.write(clusters)
-    #    start_date = datetime.datetime.strptime(self.get_argument("start"), "%Y-%m-%d %H:%M")
-    #    end_date = datetime.datetime.strptime(self.get_argument("end"), "%Y-%m-%d %H:%M")
 
 
 class AboutHandler(RequestHandler):
@@ -82,14 +80,14 @@ if __name__ == "__main__":
         (r"/clustering", ClusterHandler)
     ], **settings)
 
-    port_num = 1337
+    port_num = 3000
     application.listen(port_num)
     print "listening on port", port_num
 
-    # run another server to use for long-polling
-    # cmd = ["python",
-    #        "-m",
-    #        "views.long_polling"]
-    # proc = subprocess.Popen(cmd)
+    run another server to use for long-polling
+    cmd = ["python",
+           "-m",
+           "views.long_polling"]
+    proc = subprocess.Popen(cmd)
 
     tornado.ioloop.IOLoop.instance().start()
