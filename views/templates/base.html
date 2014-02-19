@@ -37,9 +37,11 @@
             </form> 
         </div>
 
-        <ul id="cluster_markers" style="margin:10px">
-          <button id="submit" type="submit" onclick="clusterColors();">Cluster</button>
-        </ul>
+        <div class="left" id="cluster_control">
+			<form id="control_form" onsubmit="clusterColors(); return false;">
+				<button type="submit" id="submit">Cluster</button>
+			</form>
+        </div>
         
         <!-- Right Nav Section -->
         <ul class="right">
