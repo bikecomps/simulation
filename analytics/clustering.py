@@ -9,7 +9,7 @@ import Pycluster as pc
 from scipy.cluster.vq import kmeans2
 from datetime import datetime
 import matplotlib.pyplot as plt
-
+import json
 
 def normalize_observations(obs):
     return [[x/float(sum(row)) if sum(row) > 0 else 0 for x in row] for row in obs]
@@ -267,7 +267,7 @@ def info_from_trip_clusters(raw_obs, obs, s_ids, opt_clusters, centroids):
     
     return data
 
-def get_clusters_as_dict(conn, cluster_type):
+def get_clusters_as_dict(cluster_type):
     if cluster_type == "Trip counts":
         return trip_count_cluster()
     elif cluster_type == "Hour counts":
@@ -275,19 +275,16 @@ def get_clusters_as_dict(conn, cluster_type):
     else:
         return {}
 
-def get_clusters(self, cluster_type):
-    return self.dump_json(self.get_clusters_as_dict(cluster_type))
+def get_clusters(cluster_type):
+    return dump_json(get_clusters_as_dict(cluster_type))
         
-def dump_json(self, to_dump):
+def dump_json(to_dump):
     '''
     Utility to dump json in nice way
     '''
-    if self.indent:
-        return json.dumps(to_dump, indent=4, default=self.json_dump_handler)
-    else:
-        return json.dumps(to_dump, default=self.json_dump_handler)
+    return json.dumps(to_dump, indent=4, default=json_dump_handler)
     
-def json_dump_handler(self, obj):
+def json_dump_handler(obj):
     '''
     Converts from python to json for some types, add more ifs for more cases
 
@@ -304,7 +301,7 @@ def trip_count_cluster():
     normalize = False
     conn = Connector()
     engine = conn.getDBEngine()
-    s_id_map, from_v, to_v, total_v = generate_trip_count_obs(conn, '2010-5-1', '2013-6-30')
+    s_id_map, from_v, to_v, total_v = generate_trip_count_obs(engine, '2010-5-1', '2013-6-30')
     orig_from, orig_to, orig_total = from_v, to_v, total_v
     if normalize:
         from_v = normalize_observations(from_v)
