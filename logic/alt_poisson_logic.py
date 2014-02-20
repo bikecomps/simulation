@@ -9,12 +9,22 @@ from utils import Connector
 import bisect
 from models import *
 from scipy.stats import poisson
+from scipy import stats
 import numpy
 import random
 from simulation_logic import SimulationLogic
 import datetime
 from dateutil import rrule
 from collections import defaultdict
+import math
+from sqlalchemy.sql import func,label
+
+# Linear regression
+LINEAR = 0
+# Log regression using years as given
+LOG1 = 1
+# Log regression using year-2010+2
+LOG2 = 2
 
 class AltPoissonLogic(SimulationLogic):
 
@@ -23,15 +33,87 @@ class AltPoissonLogic(SimulationLogic):
 
     def initialize(self, start_time, end_time, **kwargs):
         SimulationLogic.initialize(self, start_time, end_time, **kwargs)
+        self.time_of_last_data = datetime.datetime(2013, 07, 01)
         print "Loading Lambdas"
         self.lambda_distrs = self.load_lambdas(start_time, end_time)
         print "Loading Gammas"
         self.duration_distrs = self.load_gammas()
         print "Loading Destination Distrs"
         self.dest_distrs = self.load_dest_distrs(start_time, end_time)
-
         self.moving_bikes = 0
+        if end_time > self.time_of_last_data:
+            self.regression_type = LOG2
+            regression_data = self.init_regression_hardcoded()
+            self.monthly_slope = regression_data[0]
+            self.monthly_intercept = regression_data[1]
 
+
+    def init_regression_hardcoded(self):
+        # Hard-coded for LOG2, which worked best on one day of PoissonLogic...
+        monthly_slope = [140162.706152, 94490.3697272, 160616.094567, 212792.877352, \
+                             174981.220146, 177942.806166, 188861.264579, 206902.013367,\
+                             239728.666726, 172147.381917, 108641.452414, 94129.8034996]
+        monthly_intercept = [-123470.13792, -63016.7104916, -114170.211132, -161849.453422,\
+                                  -89324.4690648, -89963.7202702, -103228.30612, -122760.094436,\
+                                  -162961.869178, -90323.8821615, -40341.1279932, -43339.5275206]
+        return monthly_slope, monthly_intercept
+
+
+    def init_regression(self):
+        # Returns slope and y-intercept for regression line for each month
+        monthly_slope = []
+        monthly_intercept = []
+        for month in range(12):
+            print "Calculated regression for month", month+1
+            x_years = []
+            y_counts = []
+            month_data = self.session.query(func.count(Trip.id),
+                         label('year', func.date_part('year', Trip.start_date)))\
+                         .group_by(func.date_part('year', Trip.start_date))\
+                         .filter(func.date_part('month', Trip.start_date)==month+1)\
+                         .filter(Trip.trip_type_id == 1)
+            for entry in month_data:
+                # Entries look like (count, year)
+                x_years.append(entry[1])
+                y_counts.append(entry[0])
+
+            slope, intercept = self.get_regression(x_years, y_counts)
+            monthly_slope.append(slope)
+            monthly_intercept.append(intercept)
+        return monthly_slope, monthly_intercept
+
+
+    def get_regression(self, x_list, y_list):
+        if self.regression_type == LINEAR:
+            return self.linear_regression(x_list, y_list)
+        elif self.regression_type == LOG1:
+            return self.log_regression(x_list, y_list)
+        elif self.regression_type == LOG2:
+            return self.log_regression_with_year_deltas(x_list, y_list)
+
+
+    def linear_regression(self, x_list, y_list):
+        slope, intercept, r_val, p_val, std_err = stats.linregress(x_list, y_list)
+#        print "Slope", slope                       
+#        print "Intercept", intercept
+#        print "R val", r_val, "\t P val", p_val, "\t Std err", std_err
+        return slope, intercept
+
+
+    def log_regression(self, x_list, y_list):
+        # Using years as given
+        log_x_list = []
+        for x in x_list:
+            log_x_list.append(math.log(x))
+        return self.linear_regression(log_x_list, y_list)
+
+
+    def log_regression_with_year_deltas(self, x_list, y_list):
+        # Using log of 2, 3, 4, 5 as x instead of log of 2010, 2011, 2012, 2013, since log graphs are constrained by (0,undefined) and (1,0)
+        log_x_list = []
+        for x in x_list:
+            log_x_list.append(math.log(x-2010+2))
+        return self.linear_regression(log_x_list, y_list)
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
@@ -122,9 +204,11 @@ class AltPoissonLogic(SimulationLogic):
 
     def generate_new_trips(self, start_time):
         for s_id in self.station_counts:
-            lam = self.get_lambda(start_time.year, start_time.month,
+            if start_time > self.time_of_last_data:
+                lam = self.predict_future_lambda(start_time, s_id)
+            else:
+                lam = self.get_lambda(start_time.year, start_time.month,
                                   start_time.weekday(), start_time.hour, s_id)
-
             if lam:
                 num_trips = self.get_num_trips(lam)
                 for i in xrange(num_trips):
@@ -140,6 +224,65 @@ class AltPoissonLogic(SimulationLogic):
                                                   trip_start_time, trip_end_time,
                                                   s_id, e_id)
                         self.pending_departures.put((start_time, new_trip))
+    
+
+    def predict_future_lambda(self, start_time, station_id):
+        month = start_time.month
+        slope = self.monthly_slope[month-1]
+        intercept = self.monthly_intercept[month-1]
+        lam_prediction = 0
+        for prev_year in self.get_year_range_of_data(month):
+            prev_year_lambda = self.get_lambda(prev_year, month, start_time.weekday(), start_time.hour, station_id)
+            if not prev_year_lambda: continue
+            lam_prediction += self.predict_from_one_year(prev_year, prev_year_lambda, slope, intercept, start_time)
+
+        lam_prediction /= len(self.get_year_range_of_data(month))
+        if lam_prediction <= 0:
+            return None
+        return ExpLambda(station_id, start_time.year, start_time.month, start_time.weekday()<5, start_time.hour, lam_prediction)
+
+
+    def predict_from_one_year(self, prev_year, prev_year_lambda, slope, intercept, start_time):
+        if self.regression_type == LINEAR:
+            return self.linear_predict(prev_year, prev_year_lambda, slope, intercept, start_time)
+        elif self.regression_type == LOG1:
+            return self.log_predict(prev_year, prev_year_lambda, slope, intercept, start_time)
+        elif self.regression_type == LOG2:
+            return self.log_predict_with_year_deltas(prev_year, prev_year_lambda, slope, intercept, start_time)
+
+
+    def linear_predict(self, prev_year, prev_year_lambda, slope, intercept, start_time):
+        prev_year_trips = slope * prev_year + intercept
+        future_year_trips = slope * start_time.year + intercept
+        lam_prediction = prev_year_lambda.rate * future_year_trips / prev_year_trips
+        return lam_prediction
+
+
+    def log_predict(self, prev_year, prev_year_lambda, slope, intercept, start_time):
+        prev_year_trips = slope * math.log(prev_year) + intercept
+        future_year_trips = slope * math.log(start_time.year) + intercept
+        lam_prediction = prev_year_lambda.rate * future_year_trips / prev_year_trips
+        return lam_prediction
+
+
+    def log_predict_with_year_deltas(self, prev_year, prev_year_lambda, slope, intercept, start_time):
+        # Hopefully these are reasonable 
+        prev_year_trips = slope * math.log(prev_year-2010+2) + intercept
+        future_year_trips = slope * math.log(start_time.year-2010+2) + intercept
+        lam_prediction = prev_year_lambda.rate * future_year_trips / prev_year_trips
+        return lam_prediction
+
+
+    def get_year_range_of_data(self, month):
+        #TODO: Don't just hard-code dates of existing data                                                   
+        if month >= 10:
+            return [2010, 2011, 2012]
+        elif month <= 6:
+            return [2011, 2012, 2013]
+        else:
+            return [2011, 2012]
+
+
     def get_num_trips(self, lam):
         """
         Samples a poisson distribution with the given lambda and returns the number
@@ -198,6 +341,33 @@ class AltPoissonLogic(SimulationLogic):
 
         num_added = 0
         station_list = self.stations.keys()
+        
+        # If future, load lambdas for that time every year
+        if end_time > self.time_of_last_data:
+            if start_time > self.time_of_last_data: dt_start = start_time
+            else: dt_start = self.time_of_last_data
+            print "The future is now"
+            for day in rrule.rrule(rrule.DAILY, dtstart=dt_start, until=end_time):
+                dow = day.weekday()
+                
+                start_hour = dt_start.hour if dt_start.weekday() == dow else 0
+                end_hour = end_time.hour if end_time.weekday() == dow else 24
+
+                month = day.month
+                year = day.year
+                is_week_day = dow < 5
+                if not requested_dict[month][year][is_week_day][(start_hour, end_hour)]:
+                    lambda_poisson = self.session.query(ExpLambda)\
+                        .filter(ExpLambda.is_week_day == is_week_day)\
+                        .filter(ExpLambda.month == month)\
+                        .filter(ExpLambda.hour.between(start_hour, end_hour))\
+                        .filter(ExpLambda.station_id.in_(station_list))
+                    requested_dict[month][year][is_week_day][(start_hour, end_hour)] = True
+
+                for lam in lambda_poisson:
+                    distr_dict[lam.year][lam.month][lam.is_week_day][lam.hour][lam.station_id] = lam
+                    num_added += 1
+                            
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
             
