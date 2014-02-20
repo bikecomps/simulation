@@ -103,20 +103,6 @@ function addLine(fromStation, toStation, color) {
 	connection.setMap(map);
 }
 
-function visualizeSim() {
-	/*$.getScript("static/js/bikeshare-custom.js").done(function() {
-		results = processStatsForm();
-    	for (var station_id in station_counts) {
-			console.log(station_id + " " + station_counts[station_id]);
-		}
-	});*/
-	// console.log("final counts:" + " " + data_for_maps['final_station_counts']);
-	// console.log("caps:" + " " + data_for_maps['simulation_station_caps']);
-	$.when($.getScript("static/js/bikeshare-custom.js")).done(function () {
-		console.log("hello.");
-	});
-}
-
 function removeLines() {
 	for (var index in connections) {
 		var connection = connections[index];
