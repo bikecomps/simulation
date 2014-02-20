@@ -186,7 +186,8 @@ class SimulationLogic:
         
         # Don't keep trying to reassign bikes to full stations
         full_stations = set()
-        while bike_delta != 0 and len(full_stations) < len(self.stations): 
+        while bike_delta > 0 and len(full_stations) < len(self.stations): 
+            print "Init",bike_delta
             station_bike_prop = {s_id : float(s_count)/distributed_bikes 
                                     for s_id, s_count in self.station_counts.iteritems()
                                          if s_id not in full_stations}
@@ -389,15 +390,17 @@ class SimulationLogic:
         # If any of the stations are fuller than others take from them
         # Also we'll give every station more than 1 bike
         while self.moving_bikes < len(need_bikes) * 5:
-            print "moving?",self.moving_bikes,"Needed",len(need_bikes) * 5
             s_id = crowded_stations[i]
             i += 1
             to_remove = self.station_counts[s_id] - self._get_station_cap(s_id) / 2
-            print "count, cap", self.station_counts[s_id], self._get_station_cap(s_id) / 2
+            #print "count, cap", self.station_counts[s_id], self._get_station_cap(s_id) / 2
             if to_remove < 0:
-                print "Error, cannot remove the possible number of bikes"
-                break
- 
+                # Try removing to down to less than half
+                if self.station_counts[s_id] > 2:
+                    to_remove = self.station_counts[s_id] / 2
+                else:
+                    break
+
             self.station_counts[s_id] -= to_remove
             self.moving_bikes += to_remove
             self.total_rebalances += to_remove
