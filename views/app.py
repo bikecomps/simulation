@@ -53,8 +53,6 @@ class ClusterHandler(RequestHandler):
         cluster_type = self.get_argument("clustering_method")
         clusters = clustering.get_clusters(cluster_type)        
         self.write(clusters)
-    #    start_date = datetime.datetime.strptime(self.get_argument("start"), "%Y-%m-%d %H:%M")
-    #    end_date = datetime.datetime.strptime(self.get_argument("end"), "%Y-%m-%d %H:%M")
 
 
 class AboutHandler(RequestHandler):

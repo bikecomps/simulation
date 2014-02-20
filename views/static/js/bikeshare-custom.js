@@ -112,7 +112,7 @@ function groupBarPlot(htmlIdName, data) {
 	x1.domain(labelNames).rangeRoundBands([0, x0.rangeBand()]);
 	y.domain([0, d3.max(data, function(d) { return d3.max(d.ages, function(d) { return d.value; }); })]);
 	
-  svg.append("g")
+        svg.append("g")
 		.attr("class", "x axis")
 		.attr("transform", "translate(0," + height + ")")
 		.call(xAxis);
@@ -174,13 +174,13 @@ function wrapLabel(labels) {
 function nonGroupBarPlot(htmlIdName, labels, counts) {
 
 	var chart,
-		width = 500, //750,
-		bar_height = 20,
-		height = bar_height * labels.length,
-		x, y, yRangeBand,
-		left_width = 250,
-		gap = 2,
-		extra_width = 100;
+        width = 500, //750,
+	bar_height = 20,
+	height = bar_height * labels.length,
+	x, y, yRangeBand,
+	left_width = 250,
+	gap = 2,
+	extra_width = 100;
 	
 	x = d3.scale.linear()
 		.domain([0, d3.max(counts)])
@@ -246,7 +246,7 @@ function plotKeysVals(htmlIdName, map) {
 		sortedMap.push([key, map[key]]);
 		console.log(sortedMap[key]);
 	}
-	sortedMap.sort(function(a,b){return b[1]-a[1]});
+	sortedMap.sort(function(a,b){return b[1]-a[1];});
 	var names = new Array();
 	var counts = new Array();
 	for (var i = 0; i < sortedMap.length; i++) {
@@ -323,6 +323,7 @@ function updateProgressBar(currentTime, percentProgress, isError) {
 
     // update progress bar
     var progressbar = $( "#progressbar" );
+
     var value = parseInt(percentProgress);
     if (value == 0) {
 	progressbar.progressbar("option", "value", false);	
@@ -360,64 +361,55 @@ function pollProgress(hasZero, currentUrl) {
     }, 100);
 }
 
-
 function processStatsForm() {
-	var from = $("#from_date").val().trim(),
-		to = $("#to_date").val().trim(),
-		currentDate = (new Date()).dateFormat("Y-m-d H:i");
-
-	if (!from.length) {
-		from = currentDate;
-	}
-	if (!to.length) {
-		to = currentDate;
-	}
-
-	$.ajax({
-		type: "POST",
-		url: "/unified",
-		data: { start: from, end: to },
-		beforeSend: function() {
-			$("#stats_slider").animate({left: 0});
-
-                // initialize 'loading_div'
-                var loadingDiv = $("#loading_div");            
-                var progressbar = $("#progressbar");
-                progressbar.progressbar("option", "value", false);            
-                loadingDiv.find("#current_time").html("");
-		progressbar.find(".ui-progressbar-value").css({
-			"background" : "#" + Math.floor( Math.random() * 16777215 ).toString(16)
- 	        });
-                loadingDiv.find("#error_alert").hide();
-                loadingDiv.show();
-
-                pollProgress(false, "http://cmc307-04.mathcs.carleton.edu:3001");
-                },
-		success: function(data) {
-                    res = data.concat('!?!',from,'!?!',to);
-                    var jsond = JSON.parse(data);
-
-                    if (Object.keys(jsond).length == 0) {
-                        updateProgressBar(null, null, true);
-                        return;
-                    }
-                    /*
-                    var d = new Date();
-                    var t = d.getTime();
-                    var s = t.toString();
-                    sessionStorage[s]=data;
-                    var opt = document.createElement('option');
-                    opt.innerHTML = s;
-                    $("#stats_picker").append(opt);
-                    */
-                    displaySummaryStats(jsond, from, to);
-
-                    $("#stats_name").html('Most recent simulation.');
-                    $("#loading_div").hide();
-                    $("#stats_slider").animate({left: 1004});
-                },
-                error: function() {
-                    updateProgressBar(null, null, true);
-                }
-	});
+    var from = $("#from_date").val().trim(),
+    to = $("#to_date").val().trim(),
+    currentDate = (new Date()).dateFormat("Y-m-d H:i");
+    
+    if (!from.length) {
+	from = currentDate;
+    }
+    if (!to.length) {
+	to = currentDate;
+    }
+    
+    $.ajax({
+      type: "POST",
+      url: "/unified",
+      data: { start: from, end: to },
+      beforeSend: function() {
+	  $("#stats_slider").animate({left: 0});
+	  
+          // initialize 'loading_div'
+          var loadingDiv = $("#loading_div");            
+          var progressbar = $("#progressbar");
+          progressbar.progressbar("option", "value", false);            
+          loadingDiv.find("#current_time").html("");
+	  progressbar.find(".ui-progressbar-value").css({
+	     "background" : "#" + Math.floor( Math.random() * 16777215 ).toString(16)
+          });
+          loadingDiv.find("#error_alert").hide();
+          loadingDiv.show();
+		    
+          pollProgress(false, "http://cmc307-04.mathcs.carleton.edu:3001");
+      },
+      success: function(data) {
+	  res = data.concat('!?!',from,'!?!',to);
+          var jsond = JSON.parse(data);
+	  
+          if (Object.keys(jsond).length == 0) {
+              updateProgressBar(null, null, true);
+              return;
+          }
+	  
+          displaySummaryStats(jsond, from, to);
+	  
+          $("#stats_name").html('Most recent simulation.');
+          $("#loading_div").hide();
+          $("#stats_slider").animate({left: 1004});
+      },
+      error: function() {
+          updateProgressBar(null, null, true);
+      }
+    });
 }
