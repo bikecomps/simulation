@@ -9,6 +9,7 @@ import subprocess
 from analytics import PlotMap
 from tornado.web import RequestHandler, Application, asynchronous
 from analytics import SummaryStats
+from analytics import clustering
 
 class UnifiedHandler(RequestHandler):
 
@@ -46,13 +47,13 @@ class StatsHandler(RequestHandler):
 class ClusterHandler(RequestHandler):
     def get(self):
         stations = PlotMap().stations
-        self.render("clustering.html", title="Clustering", locations=stations)
+        self.render("clustering.html", title="Clustering Tool", locations=stations)
 
     def post(self):
-        start_date = datetime.datetime.strptime(self.get_argument("start"),
-                                                "%Y-%m-%d %H:%M")
-        end_date = datetime.datetime.strptime(self.get_argument("end"),
-                                              "%Y-%m-%d %H:%M")
+        cluster_type = self.get_argument("clustering_method")
+        clusters = clustering.get_clusters(cluster_type)        
+        self.write(clusters)
+
 
 class AboutHandler(RequestHandler):
 

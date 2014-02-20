@@ -44,12 +44,6 @@ class ExponentialLogic(SimulationLogic):
         self.time += timestep
 
     def initialize_trips(self):
-        '''
-        for s_id,els in self.exp_distrs.iteritems():
-            print s_id
-            for el in els:
-                print "\t",el
-        '''
         hour = self.start_time.hour
         day = self.start_time.day
         for s_id in self.stations.iterkeys():
@@ -80,6 +74,8 @@ class ExponentialLogic(SimulationLogic):
         trip_start_time = time + datetime.timedelta(seconds=wait_time)
         # It should go somewhere depending on when the hour of its start_time (could be far in the future)
         end_station_id = self.get_destination(s_id, trip_start_time)
+        if end_station_id not in self.stations:
+            print "ERROR END_ID",end_station_id,"NOT IN STATIONS, FROM s_id",s_id
 
         #print "Desire",(s_id,end_station_id)
         gamma = self.duration_distrs.get((s_id, end_station_id), None)
@@ -105,15 +101,13 @@ class ExponentialLogic(SimulationLogic):
         '''
             Returns a destination station given dest_distrs
         '''
-        #print time.day, time.hour, s_id
         vectors = self.dest_distrs[time.weekday() < 5][time.hour][s_id]
         if len(vectors) > 0:
             cum_prob_vector = vectors[0]
             station_vector = vectors[1]
 
-            # cum_prob_vector[-1] should be 1 No scaling needed as described here:
             # http://docs.python.org/3/library/random.html (very bottom of page)
-            x = random.random()
+            x = random.random() * cum_prob_vector[-1]
         
             return station_vector[bisect.bisect(cum_prob_vector, x)]
         else:
@@ -165,8 +159,6 @@ class ExponentialLogic(SimulationLogic):
         '''
         distr_dict = [[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)] for d in range(2)]
 
-
-        station_list = self.stations.keys()
         # Inclusive
         #TODO figure out what to do if timespan > a week -> incline to say ignore it
         #TODO Bug: loading too much data at the moment, by a fair amount
@@ -183,19 +175,20 @@ class ExponentialLogic(SimulationLogic):
                .filter(DestDistr.is_week_day == (dow < 5)) \
                .filter(DestDistr.hour.between(start_hour, end_hour))\
                .yield_per(10000)
-               # Actually faster to just load extra data...
-               #.filter(DestDistr.start_station_id.in_(station_list))\
 
             for distr in date_distrs:
-                result = distr_dict[distr.is_week_day][distr.hour][distr.start_station_id]
+                # Faster to do this than be smart about the db query
+                if distr.start_station_id in self.stations \
+                        and distr.end_station_id in self.stations:
+                    result = distr_dict[distr.is_week_day][distr.hour][distr.start_station_id]
 
-                # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
-                if len(result) == 0:
-                    distr_dict[distr.is_week_day][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
-                else:
-                    result[0].append(distr.prob)
-                    result[1].append(distr.end_station_id)
-                num_distrs += 1
+                    # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
+                    if len(result) == 0:
+                        distr_dict[distr.is_week_day][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
+                    else:
+                        result[0].append(distr.prob)
+                        result[1].append(distr.end_station_id)
+                    num_distrs += 1
 
             print "\t\tStarting reductions"
             # Change all of the probability vectors into cumulative probability vectors

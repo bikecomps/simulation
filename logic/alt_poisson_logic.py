@@ -155,15 +155,16 @@ class AltPoissonLogic(SimulationLogic):
                #.filter(DestDistr.start_station_id.in_(station_list))\
 
             for distr in date_distrs:
-                result = distr_dict[distr.is_week_day][distr.hour][distr.start_station_id]
+                if distr.start_station_id in self.stations or distr.end_station_id in self.stations:
+                    result = distr_dict[distr.is_week_day][distr.hour][distr.start_station_id]
 
-                # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
-                if len(result) == 0:
-                    distr_dict[distr.is_week_day][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
-                else:
-                    result[0].append(distr.prob)
-                    result[1].append(distr.end_station_id)
-                num_distrs += 1
+                    # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
+                    if len(result) == 0:
+                        distr_dict[distr.is_week_day][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
+                    else:
+                        result[0].append(distr.prob)
+                        result[1].append(distr.end_station_id)
+                    num_distrs += 1
 
             print "\t\tStarting reductions"
             # Change all of the probability vectors into cumulative probability vectors

@@ -357,7 +357,8 @@ class PoissonLogic(SimulationLogic):
                                      .filter(Lambda.year == year) \
                                      .filter(Lambda.is_week_day == is_week_day) \
                                      .filter(Lambda.hour.between(start_hour, end_hour))\
-                                     .filter(Lambda.start_station_id.in_(station_list))
+                                     .filter(Lambda.start_station_id.in_(station_list))\
+                                     .filter(Lambda.end_station_id.in_(station_list))
                 requested_dict[month][year][is_week_day][(start_hour, end_hour)] = True
                 
             for lam in lambda_poisson:
