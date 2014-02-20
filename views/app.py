@@ -85,9 +85,9 @@ if __name__ == "__main__":
     print "listening on port", port_num
 
     # run another server to use for long-polling
-    """cmd = ["python",
-			"-m",
-			"views.long_polling"]
+    cmd = ["python",
+           "-m",
+           "views.long_polling"]
     proc = subprocess.Popen(cmd)
-	"""
+
     tornado.ioloop.IOLoop.instance().start()

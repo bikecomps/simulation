@@ -380,7 +380,7 @@ function processStatsForm() {
 		url: "/unified",
 		data: { start: from, end: to },
 		beforeSend: function() {
-			$("#stats_slider").animate({left: 0});
+			$("#stats_slider").animate({left: 20});
 
                 // initialize 'loading_div'
                 var loadingDiv = $("#loading_div");            
@@ -406,10 +406,13 @@ function processStatsForm() {
 
                     $("#stats_name").html('Most recent simulation.');
                     $("#loading_div").hide();
-                    $("#stats_slider").animate({left: 1004});
+                    $("#stats_slider").animate({left: 660});
                     displaySummaryStats(jsond, from, to);
+                    map.panBy(-320,0);
+
 				    console.log(data_for_maps);	
 					$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
+
                 },
                 error: function() {
                     updateProgressBar(null, null, true);
