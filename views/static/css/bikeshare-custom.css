@@ -34,7 +34,6 @@ footer p {
 
 #content {
     height: 100%;
-    /* width: 100%;*/
 }
 
 .full-screen-wrapper {
@@ -124,22 +123,21 @@ form button[type="submit"] {
 
 #stats_wrapper {
   position: absolute;
-  left: -1004px;/*-99%;???*/
+  right: 0px;
   top: 55px;
-  width: 2028px;/*200%;*/
+  width: 200%;
   height: 100%;
   overflow: hidden;
 }
 
 #stats_slider {
-  width: 1024px;/*50%;*/
+  width: 50%;
   height: 100%;
   position: absolute;
-  left: 0px;
-  top: 0px;
+  left: 20px;
   background-color: #ffffff;
+  overflow: hidden;
   z-index: 999;
-  /*overflow-y: scroll;*/
 }
 
 #stats_button {
@@ -149,7 +147,7 @@ form button[type="submit"] {
   right: 0px;
   top: 0px;
   background-color: #959595;
-  cursor: ew-resize;
+  /*cursor: ew-resize;*/
 }
 
 .slide_button {
@@ -161,22 +159,29 @@ form button[type="submit"] {
   border-color: white;
   border-radius: 100%;
   background-color: gray;
-  cursor: initial;
+  /*cursor: initial;*/
 }
 
 #stats_panel {
-  margin-top: 35px;
-  width: 100%;
-  height: 95%;
+  position: absolute;
+  top: 40px;
+  right: 20px;
+  width: 640px;
+  height: 100%;
   overflow-y: auto;
 }
 
 #stats_name_div {
-  position: absolute;
-  left: 20px;
-  top: 10px;
+  position: relative;
+  left: 640px;
   height: 30px;
+  width: 200px;
   overflow: hidden;
+}
+
+#stats_name {
+  color: #3987c7;
+  font-size: 18px;
 }
 
 #save_load_div {

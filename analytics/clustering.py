@@ -289,7 +289,7 @@ def info_from_trip_clusters(raw_obs, obs, s_ids, opt_clusters, centroids):
 def get_clusters_as_dict(cluster_type):
     if cluster_type == "Trip counts":
         return trip_count_cluster()
-    elif cluster_type == "Hour counts":
+    elif cluster_type == "Hours of high traffic":
         return hour_count_cluster()
     else:
         return {}

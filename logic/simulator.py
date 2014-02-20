@@ -98,7 +98,8 @@ def main():
     logic_options = {
         "SimulationLogic" : SimulationLogic,
         "PoissonLogic" : PoissonLogic,
-        "ExponentialLogic" : ExponentialLogic
+        "ExponentialLogic" : ExponentialLogic,
+        "AltPoissonLogic" : AltPoissonLogic
     }
     
     # For testing

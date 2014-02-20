@@ -31,7 +31,10 @@ function initialize() {
 	
 	station_markers = {};
 	marker_colors = ["blue", "orange", "green", "red", "purple", "yellow"];
-	marker_cap_gradient = ["E50000","C02600","895F00","519800","2DBF00"]
+	// red, red-purple, purple, blue-purple, blue
+	//marker_cap_gradient = ["ED5A1D","C34E31","843D50","452B6E","1B2083"]
+	// light-green to dark-blue gradient?
+	marker_cap_gradient = ["#16E31E","#14BA3B","#137C68","#115385","#1016B2"]
 
 
 	for (station=0; station < Object.keys(locations).length; station++) {
@@ -101,6 +104,20 @@ function addLine(fromStation, toStation, color) {
 	});
 	connections.push(connection);
 	connection.setMap(map);
+}
+
+function visualizeSim() {
+	/*$.getScript("static/js/bikeshare-custom.js").done(function() {
+		results = processStatsForm();
+    	for (var station_id in station_counts) {
+			console.log(station_id + " " + station_counts[station_id]);
+		}
+	});*/
+	// console.log("final counts:" + " " + data_for_maps['final_station_counts']);
+	// console.log("caps:" + " " + data_for_maps['simulation_station_caps']);
+	$.when($.getScript("static/js/bikeshare-custom.js")).done(function () {
+		console.log("hello.");
+	});
 }
 
 function removeLines() {
