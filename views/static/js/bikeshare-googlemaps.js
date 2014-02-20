@@ -29,7 +29,10 @@ function initialize() {
 	
 	station_markers = {};
 	marker_colors = ["blue", "orange", "green", "red", "purple", "yellow"];
-	marker_cap_gradient = ["E50000","C02600","895F00","519800","2DBF00"]
+	// red, red-purple, purple, blue-purple, blue
+	marker_cap_gradient = ["ED1F1D","AD1F56","5720A2","519800","82207C"]
+	// light-green to dark-blue gradient?
+	// marker_cap_gradient = ["16E31E","14BA3B","137C68","115385","1016B2"]
 
 
 	for (station=0; station < Object.keys(locations).length; station++) {
@@ -98,6 +101,12 @@ function addLine(fromStation, toStation, color) {
 	});
 	connections.push(connection);
 	connection.setMap(map);
+}
+
+function displayStationCountVis(station_counts, station_caps) {
+	for (var station_id in station_counts) {
+
+	}
 }
 
 function removeLines() {
