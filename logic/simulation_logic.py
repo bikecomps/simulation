@@ -176,6 +176,7 @@ class SimulationLogic:
             self.station_counts[s.id] = count
             self.station_caps[s.id] = s_cap
         
+        # If we distribute too many bikes, reclaim them, otherwise redistribute more bikes
         bike_delta = bike_total - distributed_bikes
 
         # We need to distribute integer numbers (either pos or neg) so we need 
@@ -186,6 +187,7 @@ class SimulationLogic:
         
         # Don't keep trying to reassign bikes to full stations
         full_stations = set()
+        print "New init stations"
         while bike_delta > 0 and len(full_stations) < len(self.stations): 
             print "Init",bike_delta
             station_bike_prop = {s_id : float(s_count)/distributed_bikes 
@@ -359,30 +361,29 @@ class SimulationLogic:
         # NOTE: potential error, if you have a rebalance time < 1 hour 
         # could potentially exceed that time
 
-        #TODO: peak->.queue
-        continue_removing = True
-        while not self.full_stations.empty() and continue_removing:
-            time, s_id  = self.full_stations.get()
-            if cur_time - time >= self.rebalancing_time:
+        while not self.full_stations.empty():
+            time = self.full_stations.queue[0][0]
+            if cur_time - time  >= self.rebalancing_time:
+                time, s_id  = self.full_stations.get()
                 to_remove = self._get_station_cap(s_id)/2
                 self.station_counts[s_id] -= to_remove
                 self.moving_bikes += to_remove
                 self.total_rebalances += to_remove
                 self.unavailable_stations.remove(s_id)
             else:
-                continue_removing = False
-                self.full_stations.put((time, s_id))
+                break
+                #self.full_stations.put((time, s_id))
 
         # If there are empty stations that are empty add to them
         need_bikes = []
-        continue_removing = True
-        while not self.empty_stations.empty() and continue_removing:
-            time, s_id = self.empty_stations.get()
+        while not self.empty_stations.empty():
+            # Peak at the time
+            time = self.empty_stations.queue[0][0]
             if cur_time - time >= self.rebalancing_time:
+                time, s_id = self.empty_stations.get()
                 need_bikes.append(s_id)
             else:
-                continue_removing = False
-                self.empty_stations.put((time, s_id))
+                break
 
         crowded_stations = sorted(self.stations,
             key=lambda x: self._get_station_cap(x) - self.station_counts[x])
@@ -410,7 +411,6 @@ class SimulationLogic:
             for s_id in need_bikes:
                 self.station_counts[s_id] += bikes_to_distr
                 self.unavailable_stations.remove(s_id)
-
 
     def flush(self):
         '''Returns list of all trips since initialization, or adds them to the database if to_database is True'''
