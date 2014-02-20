@@ -28,6 +28,33 @@ def calculate_cost(sim_results):
             'missed_rev':missed_revenue}
 
 
+
+
+def long_run_optimize(start_d, end_d, step=100, max_over=2, iters=10):
+    session = Connector().getDBSession()
+    logic = PoissonLogic(session)
+    simulator = Simulator(logic)
+
+    # Get a baseline using default method of getting number of bikes
+    run_options = {'bike_total':None}
+    sim_results = simulator.run(start_d, end_d, 
+                                logic_options=run_options)
+    base_line = sim_results['total_num_bikes']
+    costs = calculate_cost(sim_results)
+    errors = {}
+    errors[base_line] = costs['gross_rev'] - costs['gross_cost']
+
+    for nbikes in range(100, max_over*base_line, step):
+        logic = PoissonLogic(session)
+        simulator = Simulator(logic)
+
+        sim_results = simulator.run(start_d, end_d,
+                                    logic_options={'bike_total':nbikes}) 
+        costs = calculate_costs(sim_results)
+        errors[nbikes] = costs['gross_rev'] - costs['gross_cost']
+    print errors
+
+
 def optimize_num_bikes(start_d, end_d, step_factor=.5, iters=10):
     '''
     iters: the number of times which to run the optimizer.
@@ -111,7 +138,8 @@ def main():
     raw_end_date = '2012-6-3 00:00:00'
     start_date = dt.datetime.strptime(raw_start_date, '%Y-%m-%d %H:%M:%S')
     end_date = dt.datetime.strptime(raw_end_date, '%Y-%m-%d %H:%M:%S')
-    optimize_num_bikes(start_date, end_date, iters=3)
+    #optimize_num_bikes(start_date, end_date, iters=3)
+    long_run_optimize(start_date, end_date, step=100, max_over=2, iters=10)
     return
 
     session = Connector().getDBSession()
