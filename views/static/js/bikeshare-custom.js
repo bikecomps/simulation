@@ -323,8 +323,12 @@ function updateProgressBar(currentTime, percentProgress, isError) {
 
     // update progress bar
     var progressbar = $( "#progressbar" );
-    progressbar.progressbar( "value", parseInt(percentProgress));
-    
+    var value = parseInt(percentProgress);
+    if (value == 0) {
+	progressbar.progressbar("option", "value", false);	
+    } else {
+	progressbar.progressbar( "value", parseInt(percentProgress));	
+    }
 }
 
 function pollProgress(hasZero, currentUrl) {
@@ -379,10 +383,14 @@ function processStatsForm() {
                 // initialize 'loading_div'
                 var loadingDiv = $("#loading_div");            
                 var progressbar = $("#progressbar");
-                progressbar.progressbar("value", 0);            
+                progressbar.progressbar("option", "value", false);            
                 loadingDiv.find("#current_time").html("");
+		progressbar.find(".ui-progressbar-value").css({
+			"background" : "#" + Math.floor( Math.random() * 16777215 ).toString(16)
+ 	        });
                 loadingDiv.find("#error_alert").hide();
                 loadingDiv.show();
+
                 pollProgress(false, "http://cmc307-04.mathcs.carleton.edu:3001");
                 },
 		success: function(data) {
