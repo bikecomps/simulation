@@ -403,11 +403,11 @@ function processStatsForm() {
                         return;
                     }
 
-                    displaySummaryStats(jsond, from, to);
 
                     $("#stats_name").html('Most recent simulation.');
                     $("#loading_div").hide();
                     $("#stats_slider").animate({left: 1004});
+                    displaySummaryStats(jsond, from, to);
 				    console.log(data_for_maps);	
 					$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
                 },
