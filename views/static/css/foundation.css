@@ -1,14 +1,22 @@
 meta.foundation-mq-small {
-  font-family: "only screen and (min-width: 768px)";
-  width: 768px; }
+  font-family: "only screen and (min-width: 0px)";
+  width: 640px; }
 
 meta.foundation-mq-medium {
-  font-family: "only screen and (min-width:1280px)";
-  width: 1280px; }
+  font-family: "only screen and (min-width:1024px)";
+  width: 1024px; }
 
 meta.foundation-mq-large {
-  font-family: "only screen and (min-width:1440px)";
-  width: 1440px; }
+  font-family: "only screen and (min-width:1024px)";
+  width: 1024px; }
+
+.medium-6 {
+  width: 50%;
+}
+
+.medium-12 {
+  width: 100%;
+}
 
 *,
 *:before,

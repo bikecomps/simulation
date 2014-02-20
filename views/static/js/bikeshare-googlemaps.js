@@ -8,13 +8,7 @@ var openWindow;
 var station_markers;
 
 var marker_colors;
-var color_index;
-
-function set_coordinates(val)
-{
-	j_val = val.replace(/&quot;/g,'"');
-	locations=jQuery.parseJSON(j_val);
-}
+var marker_cap_gradient;
 
 function initialize() {
 	connections = [];
@@ -35,7 +29,10 @@ function initialize() {
 	
 	station_markers = {};
 	marker_colors = ["blue", "orange", "green", "red", "purple", "yellow"];
-	color_index = 0;
+	// red, red-purple, purple, blue-purple, blue
+	//marker_cap_gradient = ["ED5A1D","C34E31","843D50","452B6E","1B2083"]
+	// light-green to dark-blue gradient?
+	marker_cap_gradient = ["16E31E","14BA3B","137C68","115385","1016B2"]
 
 
 	for (station=0; station < Object.keys(locations).length; station++) {
@@ -54,20 +51,23 @@ function initialize() {
 			},
 			id: locations[station][2],
 			title: locations[station][3],
-			capacity: locations[station][4]
+			capacity: locations[station][4],
+			alt_capacity: locations[station][4] // holds user-altered capacities
 		});
 		station_markers[locations[station][2]] = marker;
 		var infoWindow = new google.maps.InfoWindow({
 			content: "Hakuna Matata?",
-			maxWidth: 200
+			maxWidth: 300
 		});
 		openWindow = infoWindow;
 		bindInfoWindow(marker, map, infoWindow);
 	}
 }
 
-
-
+function set_coordinates(val) {
+	j_val = val.replace(/&quot;/g,'"');
+	locations=jQuery.parseJSON(j_val);
+}
 
 function bindInfoWindow(marker, map, infoWindow) {
 	google.maps.event.addListener(marker, 'click', function() {
@@ -103,10 +103,24 @@ function addLine(fromStation, toStation, color) {
 	connection.setMap(map);
 }
 
+function visualizeSim() {
+	/*$.getScript("static/js/bikeshare-custom.js").done(function() {
+		results = processStatsForm();
+    	for (var station_id in station_counts) {
+			console.log(station_id + " " + station_counts[station_id]);
+		}
+	});*/
+	// console.log("final counts:" + " " + data_for_maps['final_station_counts']);
+	// console.log("caps:" + " " + data_for_maps['simulation_station_caps']);
+	$.when($.getScript("static/js/bikeshare-custom.js")).done(function () {
+		console.log("hello.");
+	});
+}
+
 function removeLines() {
 	for (var index in connections) {
 		var connection = connections[index];
-		connection.setMap(null);        
+		connection.setMap(null);
 	}
 }
 
@@ -123,7 +137,7 @@ function clusterColors() {
 		url: "/clustering",
 		data: { clustering_method: clusterMethod },
 		success: function(data) {
-            var jsond = JSON.parse(data);
+			var jsond = JSON.parse(data);
 			for (var num in jsond) {
 				jsond[marker_colors[num]] = jsond[num];
 				delete jsond[num];
@@ -140,7 +154,7 @@ function clusterColors() {
 
 		},
 		error: function() {
-			console.log("Error in the ajax stuff :/");
+			console.log("ajax error while clustering");
 		}
 	});
 }

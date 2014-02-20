@@ -271,7 +271,7 @@ class SimulationLogic:
             
     def resolve_sad_departure(self, trip):
         '''When you want a bike but the station is empty'''
-        pass
+        pass #station_caps
 
 
     def resolve_arrival(self, trip):
@@ -396,7 +396,9 @@ class SimulationLogic:
                 'arr_dis_stations':self.arr_dis_stations,
                 'dep_dis_stations':self.dep_dis_stations,
                 'total_rebalances':self.total_rebalances,
-                'total_num_bikes':self.total_num_bikes}
+                'total_num_bikes':self.total_num_bikes,
+                'station_counts':self.station_counts,
+                'sim_station_caps':self.station_caps}
         
 
     def cleanup(self):

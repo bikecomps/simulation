@@ -1,4 +1,5 @@
 var res;
+var data_for_maps;
 
 function save_trans() {
     $("#load_stats").animate({right: "-100px"});
@@ -32,8 +33,8 @@ function load_results() {
     var stats_name = $("#stats_picker").val();
     var desired_package = sessionStorage[stats_name];
     var desired_unpacked = desired_package.split('!?!');
-    var desired = desired_unpacked[0]
-    var from = desired_unpacked[1]
+    var desired = desired_unpacked[0];
+    var from = desired_unpacked[1];
     var to = desired_unpacked[2];
     displaySummaryStats(JSON.parse(desired),from,to);
     $("#stats_name").html(stats_name);
@@ -112,7 +113,7 @@ function groupBarPlot(htmlIdName, data) {
 	x1.domain(labelNames).rangeRoundBands([0, x0.rangeBand()]);
 	y.domain([0, d3.max(data, function(d) { return d3.max(d.ages, function(d) { return d.value; }); })]);
 	
-  svg.append("g")
+        svg.append("g")
 		.attr("class", "x axis")
 		.attr("transform", "translate(0," + height + ")")
 		.call(xAxis);
@@ -174,13 +175,13 @@ function wrapLabel(labels) {
 function nonGroupBarPlot(htmlIdName, labels, counts) {
 
 	var chart,
-		width = 500, //750,
-		bar_height = 20,
-		height = bar_height * labels.length,
-		x, y, yRangeBand,
-		left_width = 250,
-		gap = 2,
-		extra_width = 100;
+        width = 500, //750,
+	bar_height = 20,
+	height = bar_height * labels.length,
+	x, y, yRangeBand,
+	left_width = 250,
+	gap = 2,
+	extra_width = 100;
 	
 	x = d3.scale.linear()
 		.domain([0, d3.max(counts)])
@@ -246,7 +247,7 @@ function plotKeysVals(htmlIdName, map) {
 		sortedMap.push([key, map[key]]);
 		console.log(sortedMap[key]);
 	}
-	sortedMap.sort(function(a,b){return b[1]-a[1]});
+	sortedMap.sort(function(a,b){return b[1]-a[1];});
 	var names = new Array();
 	var counts = new Array();
 	for (var i = 0; i < sortedMap.length; i++) {
@@ -309,6 +310,7 @@ function displaySummaryStats(data, from, to) {
 				 data["num_trips_per_hour"]);
 }
 
+
 function updateProgressBar(currentTime, percentProgress, isError) {
     var loadingDiv = $("#loading_div");
     if (isError) {
@@ -323,8 +325,13 @@ function updateProgressBar(currentTime, percentProgress, isError) {
 
     // update progress bar
     var progressbar = $( "#progressbar" );
-    progressbar.progressbar( "value", parseInt(percentProgress));
-    
+
+    var value = parseInt(percentProgress);
+    if (value == 0) {
+	progressbar.progressbar("option", "value", false);	
+    } else {
+	progressbar.progressbar( "value", parseInt(percentProgress));	
+    }
 }
 
 function pollProgress(hasZero, currentUrl) {
@@ -356,7 +363,6 @@ function pollProgress(hasZero, currentUrl) {
     }, 100);
 }
 
-
 function processStatsForm() {
 	var from = $("#from_date").val().trim(),
 		to = $("#to_date").val().trim(),
@@ -374,43 +380,43 @@ function processStatsForm() {
 		url: "/unified",
 		data: { start: from, end: to },
 		beforeSend: function() {
-			$("#stats_slider").animate({left: 0});
+			$("#stats_slider").animate({left: 20});
 
                 // initialize 'loading_div'
                 var loadingDiv = $("#loading_div");            
                 var progressbar = $("#progressbar");
-                progressbar.progressbar("value", 0);            
+                progressbar.progressbar("option", "value", false);            
                 loadingDiv.find("#current_time").html("");
-                loadingDiv.find("#error_alert").hide();
+             	progressbar.find(".ui-progressbar-value").css({
+					"background" : "#" + Math.floor( Math.random() * 16777215 ).toString(16)
+					});
+				loadingDiv.find("#error_alert").hide();
                 loadingDiv.show();
                 pollProgress(false, "http://cmc307-04.mathcs.carleton.edu:3001");
-                // pollProgress(false, "http://localhost:3001");
                 },
 		success: function(data) {
                     res = data.concat('!?!',from,'!?!',to);
                     var jsond = JSON.parse(data);
-
+					data_for_maps = jsond;
                     if (Object.keys(jsond).length == 0) {
                         updateProgressBar(null, null, true);
                         return;
                     }
-                    /*
-                    var d = new Date();
-                    var t = d.getTime();
-                    var s = t.toString();
-                    sessionStorage[s]=data;
-                    var opt = document.createElement('option');
-                    opt.innerHTML = s;
-                    $("#stats_picker").append(opt);
-                    */
+
                     displaySummaryStats(jsond, from, to);
 
                     $("#stats_name").html('Most recent simulation.');
                     $("#loading_div").hide();
-                    $("#stats_slider").animate({left: 1004});
+
+                    $("#stats_slider").animate({left: 660});
+                    map.panBy(-320,0);
+
+				    console.log(data_for_maps);	
+					$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
+
                 },
                 error: function() {
                     updateProgressBar(null, null, true);
                 }
-	});
+	});	
 }
