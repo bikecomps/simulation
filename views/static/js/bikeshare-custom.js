@@ -391,6 +391,8 @@ function processStatsForm() {
 					"background" : "#" + Math.floor( Math.random() * 16777215 ).toString(16)
 					});
 				loadingDiv.find("#error_alert").hide();
+                var slider_left_pos = parseInt($("#stats_slider").css('left'),10);
+                if (slider_left_pos == 660) {map.panBy(320,0);}
                 loadingDiv.show();
                 pollProgress(false, "http://cmc307-04.mathcs.carleton.edu:3001");
                 },
@@ -410,8 +412,8 @@ function processStatsForm() {
                     displaySummaryStats(jsond, from, to);
                     map.panBy(-320,0);
 
-				    console.log(data_for_maps);	
-					$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
+		    console.log(data_for_maps);	
+		    $.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
 
                 },
                 error: function() {

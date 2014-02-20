@@ -80,7 +80,8 @@ if __name__ == "__main__":
         (r"/clustering", ClusterHandler)
     ], **settings)
 
-    port_num = 31337
+
+    port_num = 3000
     application.listen(port_num)
     print "listening on port", port_num
 

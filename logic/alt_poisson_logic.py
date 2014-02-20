@@ -132,10 +132,11 @@ class AltPoissonLogic(SimulationLogic):
         Caches destination distributions into dictionary of day -> hour -> start_station_id -> [cumulative_distr, corresponding stations]
         # Change to a list of lists, faster, more space efficient
         '''
-        distr_dict = [[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)] for d in range(2)]
+        time_diff = end_time - start_time 
+        distr_dict = {y:{m:[[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)]
+                      for d in range(2)] for m in range(start_time.month, end_time.month + 1)}
+                          for y in range(start_time.year, end_time.year + 1)}
 
-
-        station_list = self.stations.keys()
         # Inclusive
         #TODO figure out what to do if timespan > a week -> incline to say ignore it
         #TODO Bug: loading too much data at the moment, by a fair amount
@@ -152,16 +153,17 @@ class AltPoissonLogic(SimulationLogic):
                .filter(DestDistr.is_week_day == (dow < 5)) \
                .filter(DestDistr.hour.between(start_hour, end_hour))\
                .yield_per(10000)
-               #.filter(DestDistr.start_station_id.in_(station_list))\
 
             for distr in date_distrs:
+                # Faster to do this than be smart about the db query
                 if distr.start_station_id in self.stations \
                         and distr.end_station_id in self.stations:
-                    result = distr_dict[distr.is_week_day][distr.hour][distr.start_station_id]
+                    result = distr_dict[distr.year][distr.month][distr.is_week_day][distr.hour][distr.start_station_id]
 
                     # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
                     if len(result) == 0:
-                        distr_dict[distr.is_week_day][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
+                        distr_dict[distr.year][distr.month][distr.is_week_day]\
+                                  [distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
                     else:
                         result[0].append(distr.prob)
                         result[1].append(distr.end_station_id)
@@ -169,7 +171,7 @@ class AltPoissonLogic(SimulationLogic):
 
             print "\t\tStarting reductions"
             # Change all of the probability vectors into cumulative probability vectors
-            for hour in distr_dict[(dow < 5)]:
+            for hour in distr_dict[day.year][day.month][(dow < 5)]:
                 for s_id, vectors in hour.iteritems():
                     # We have data for choosing destination vector
                     if len(vectors) == 2:
@@ -182,12 +184,12 @@ class AltPoissonLogic(SimulationLogic):
         return distr_dict
 
 
-    def get_destination(self, s_id, time):
+    def _get_destination(self, s_id, time):
         '''
             Returns a destination station given dest_distrs
         '''
         #print time.day, time.hour, s_id
-        vectors = self.dest_distrs[time.weekday() < 5][time.hour][s_id]
+        vectors = self.dest_distrs[time.year][time.month][time.weekday() < 5][time.hour][s_id]
         if vectors:
             cum_prob_vector = vectors[0]
             station_vector = vectors[1]
@@ -213,7 +215,7 @@ class AltPoissonLogic(SimulationLogic):
             if lam:
                 num_trips = self.get_num_trips(lam)
                 for i in xrange(num_trips):
-                    e_id = self.get_destination(s_id, start_time)
+                    e_id = self._get_destination(s_id, start_time)
                     gamma = self.duration_distrs.get((s_id, e_id), None)
                     if gamma:
                         added_time = datetime.timedelta(seconds=random.randint(0, 3600))
