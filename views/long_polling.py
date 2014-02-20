@@ -28,7 +28,7 @@ class PollingHandler(RequestHandler):
 if __name__ == "__main__":
     application = Application([(r"/", PollingHandler)])
 
-    port_num = 3002
+    port_num = 3001
     application.listen(port_num)
     print "listening on port", port_num
 
