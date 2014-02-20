@@ -32,7 +32,7 @@ function initialize() {
 	// red, red-purple, purple, blue-purple, blue
 	//marker_cap_gradient = ["ED5A1D","C34E31","843D50","452B6E","1B2083"]
 	// light-green to dark-blue gradient?
-	marker_cap_gradient = ["16E31E","14BA3B","137C68","115385","1016B2"]
+	marker_cap_gradient = ["#16E31E","#14BA3B","#137C68","#115385","#1016B2"]
 
 
 	for (station=0; station < Object.keys(locations).length; station++) {
