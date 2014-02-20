@@ -360,20 +360,25 @@ function processStatsForm() {
 		to = $("#to_date").val().trim(),
 		currentDate = (new Date()).dateFormat("Y-m-d H:i");
 
+	capacity_dict = JSON.stringify(capacity_dict);
+
 	if (!from.length) {
 		from = currentDate;
 	}
 	if (!to.length) {
 		to = currentDate;
 	}
-
+	var datatosend = { start: from, end: to, capacity: capacity_dict};
 	$.ajax({
 		type: "POST",
 		url: "/unified",
-		data: { start: from, end: to },
+		data: datatosend,
 		beforeSend: function() {
 			$("#stats_slider").animate({left: 0});
 
+			console.log("=== DATA ===");
+			console.log(datatosend);
+ 
                 // initialize 'loading_div'
                 var loadingDiv = $("#loading_div");            
                 var progressbar = $("#progressbar");

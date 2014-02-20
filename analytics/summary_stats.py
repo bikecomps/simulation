@@ -34,9 +34,10 @@ import sys
 import random
 
 class SummaryStats:
-    def __init__(self, start_date, end_date):
+    def __init__(self, start_date, end_date, capacity_dict):
         self.start_date = start_date
         self.end_date = end_date
+	self.capacity_dict = capacity_dict
 
         self.session = None
         self.trips = None
@@ -53,7 +54,9 @@ class SummaryStats:
         logic = PoissonLogic(session)
         simulator = Simulator(logic)
 
-        results = simulator.run(self.start_date, self.end_date)
+	options = {'station_caps' : self.capacity_dict}
+
+        results = simulator.run(self.start_date, self.end_date, logic_options=options)
         
         self.session = session
         self.trips = results['trips']
