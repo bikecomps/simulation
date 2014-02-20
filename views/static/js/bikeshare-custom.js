@@ -1,4 +1,5 @@
 var res;
+var data_for_maps;
 
 function save_trans() {
     $("#load_stats").animate({right: "-100px"});
@@ -309,6 +310,7 @@ function displaySummaryStats(data, from, to) {
 				 data["num_trips_per_hour"]);
 }
 
+
 function updateProgressBar(currentTime, percentProgress, isError) {
     var loadingDiv = $("#loading_div");
     if (isError) {
@@ -386,7 +388,7 @@ function processStatsForm() {
 		success: function(data) {
                     res = data.concat('!?!',from,'!?!',to);
                     var jsond = JSON.parse(data);
-
+					data_for_maps = jsond;
                     if (Object.keys(jsond).length == 0) {
                         updateProgressBar(null, null, true);
                         return;
@@ -397,9 +399,13 @@ function processStatsForm() {
                     $("#stats_name").html('Most recent simulation.');
                     $("#loading_div").hide();
                     $("#stats_slider").animate({left: 1004});
+					console.log("hihihihi!");
+				    console.log(data_for_maps);	
+					$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
                 },
                 error: function() {
                     updateProgressBar(null, null, true);
                 }
 	});
+	
 }

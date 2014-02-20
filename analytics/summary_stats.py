@@ -19,7 +19,8 @@ stats about the bike trips:
     hour => no. departures completed that hour
 - Arrivals per Hour
     hour => no. arrivals completed that hour
-
+- Final Station Counts 
+- Simulated Station Capacities 
 '''
 
 from logic import PoissonLogic, Simulator
@@ -58,6 +59,8 @@ class SummaryStats:
         self.session = session
         self.trips = results['trips']
         self.disappointments = results['disappointments']
+        self.stats['final_station_counts'] = results['station_counts']
+        self.stats['simulated_station_caps'] = results['sim_station_caps']
 
     def get_dummy_simulation(self):
         station_ids = [0,1,2,3,4]
@@ -117,7 +120,6 @@ class SummaryStats:
 
         self.stats['num_departures_per_station'] = dep_counts
         self.stats['num_arrivals_per_station'] = arr_counts
-
 
     def calculate_per_hour_stats(self):
         list_counts = [[0,0] for i in range(24)]

@@ -271,7 +271,7 @@ class SimulationLogic:
             
     def resolve_sad_departure(self, trip):
         '''When you want a bike but the station is empty'''
-        passstation_caps
+        pass #station_caps
 
 
     def resolve_arrival(self, trip):
