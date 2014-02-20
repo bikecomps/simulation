@@ -73,7 +73,8 @@ class AltPoissonLogic(SimulationLogic):
                #.filter(DestDistr.start_station_id.in_(station_list))\
 
             for distr in date_distrs:
-                if distr.start_station_id in self.stations or distr.end_station_id in self.stations:
+                if distr.start_station_id in self.stations \
+                        and distr.end_station_id in self.stations:
                     result = distr_dict[distr.is_week_day][distr.hour][distr.start_station_id]
 
                     # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
