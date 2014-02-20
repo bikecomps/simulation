@@ -238,23 +238,5 @@ class ExponentialLogic(SimulationLogic):
         new_trip = self.generate_trip(departure_station_ID, trip.start_date)
         self.pending_departures.put((new_trip.start_date, new_trip))
 
-    def resolve_sad_arrival(self, trip):
-        '''
-        Changes trip.end_station_id to the id of the station nearest to it and updates trip.end_date accordingly. Puts the updated trip into pending_arrivals.
-        '''
-        station_list_index = 0
-        nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
-        visited_stations = [disappointment.station_id for disappointment in trip.disappointments]
-        while nearest_station in visited_stations:
-            station_list_index+=1
-            nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
-        
-        gamma = self.duration_distrs.get((trip.end_station_id, nearest_station), None)
-        if gamma:
-            trip.end_station_id = nearest_station
-            trip_duration = self.get_trip_duration(gamma)
-            trip.end_date += trip_duration
-            self.pending_arrivals.put((trip.end_date, trip))
-
     def clean_up(self):
         pass

@@ -104,9 +104,9 @@ def main():
         raw_start_date = "2012-6-2 00:00:00"
         raw_end_date = "2012-6-3 00:00:00"
         file_name = "/tmp/test.csv"
-        logic = ExponentialLogic
+        #logic = ExponentialLogic
         #logic = AltPoissonLogic
-        #logic = PoissonLogic
+        logic = PoissonLogic
         start_date = datetime.datetime.strptime(raw_start_date, '%Y-%m-%d %H:%M:%S')
         end_date = datetime.datetime.strptime(raw_end_date, '%Y-%m-%d %H:%M:%S')
     else:
@@ -136,7 +136,8 @@ def main():
     logic = logic(session)
     simulator = Simulator(logic) 
     print start_date, end_date
-    logic_options = {'station_caps':{31237:0}, 'drop_stations':[31704,31000,31001,31002]}
+    logic_options = {'station_caps':{31237:0}, 'drop_stations':[31704,31000,31001,31002],
+                     'rebalancing_time':datetime.timedelta(seconds=3600)}
     results = simulator.run(start_date, end_date, logic_options=logic_options)
     print "trips:", len(results['trips'])
     ds = results['disappointments']

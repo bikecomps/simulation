@@ -236,35 +236,6 @@ class AltPoissonLogic(SimulationLogic):
         trip_length = numpy.random.gamma(gamma.shape, gamma.scale)
         return datetime.timedelta(seconds=trip_length)
 
-    def resolve_sad_departure(self, trip):
-        '''
-        Currently does nothing. Used to do this: changes trip.start_station_id to the id of the station nearest to it. Updates both trip.start_date and trip.end_date using get_trip_duration(), puts the updated trip into pending_departures. 
-        '''
-        pass
-
-
-    def resolve_sad_arrival(self, trip):
-        '''
-        Changes trip.end_station_id to the id of the station nearest to it and updates trip.end_date accordingly. Puts the updated trip into pending_arrivals.
-        '''
-        station_list_index = 0
-        nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
-        visited_stations = [disappointment.station_id for disappointment in trip.disappointments]
-        while nearest_station in visited_stations:
-            station_list_index+=1
-            nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
-        
-        #gauss = self.gaussian_distrs.get((trip.end_station_id, nearest_station), None)
-        gamma = self.duration_distrs.get((trip.end_station_id, nearest_station), None)
-        #if gauss:
-        if gamma:
-            trip.end_station_id = nearest_station
-            #trip_duration = self.get_trip_duration(gauss)
-            trip_duration = self.get_trip_duration(gamma)
-            trip.end_date += trip_duration
-            self.pending_arrivals.put((trip.end_date, trip))
-
-
     def clean_up(self):
         pass
 

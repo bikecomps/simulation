@@ -378,7 +378,7 @@ def hour_count_cluster():
 
 def main():
     print hour_count_cluster() 
-    # trip_count_cluster()
+    print trip_count_cluster()
     return
     conn = Connector()
     s = conn.getDBSession()

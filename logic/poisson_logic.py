@@ -108,15 +108,9 @@ class PoissonLogic(SimulationLogic):
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        self.update_rebalance()
-        # print "\tPost rebalance. Moving bikes:", self.moving_bikes
-        #if len(self.full_stations_set) > 0:
-        #        print "\t\tNow full:\n" + "\t\t" + str(self.full_stations_set)
-        #if len(self.empty_stations_set) > 0:
-        #    print "\t\tNow empty:\n" + "\t\t" + str(self.empty_stations_set)
+        self.rebalance_stations(self.time)
+
         self.generate_new_trips(self.time)
-        if self.rebalancing:
-            self.rebalance_stations()
         self.time+=timestep
         self.resolve_trips()
 
@@ -349,35 +343,6 @@ class PoissonLogic(SimulationLogic):
             return datetime.timedelta(seconds=0)
         trip_length = numpy.random.gamma(gamma.shape, gamma.scale)
         return datetime.timedelta(seconds=trip_length)
-
-    def resolve_sad_departure(self, trip):
-        '''
-        Currently does nothing. Used to do this: changes trip.start_station_id to the id of the station nearest to it. Updates both trip.start_date and trip.end_date using get_trip_duration(), puts the updated trip into pending_departures. 
-        '''
-        pass
-
-
-    def resolve_sad_arrival(self, trip):
-        '''
-        Changes trip.end_station_id to the id of the station nearest to it and updates trip.end_date accordingly. Puts the updated trip into pending_arrivals.
-        '''
-        station_list_index = 0
-        nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
-        visited_stations = [disappointment.station_id for disappointment in trip.disappointments]
-        while nearest_station in visited_stations:
-            station_list_index+=1
-            nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
-        
-        #gauss = self.gaussian_distrs.get((trip.end_station_id, nearest_station), None)
-        gamma = self.duration_distrs.get((trip.end_station_id, nearest_station), None)
-        #if gauss:
-        if gamma:
-            trip.end_station_id = nearest_station
-            #trip_duration = self.get_trip_duration(gauss)
-            trip_duration = self.get_trip_duration(gamma)
-            trip.end_date += trip_duration
-            self.pending_arrivals.put((trip.end_date, trip))
-
 
     def clean_up(self):
         pass
