@@ -223,7 +223,7 @@ class SimulationLogic:
     def generate_new_trips(self, timestep):
         '''Generates trips COMPLETELY RANDOMLY WOOO'''
         for station in self.station_counts:
-            num_trips = random.randint(0,self.station_counts[station])
+            num_trips = random.randint(0, self.station_counts[station])
             for i in range(num_trips):
                 end_station_ID = random.choice(self.station_counts.keys())
                 start_time = self.time + datetime.timedelta(minutes=random.randint(0, timestep.total_seconds()/60))
@@ -281,14 +281,18 @@ class SimulationLogic:
             self.station_counts[departure_station_ID] -= 1
             self.pending_arrivals.put((trip.end_date, trip))
 
+            # Perfect time to denote a now empty station
+            if self.station_counts[departure_station_ID] == 0\
+                   and not trip.start_station_id in self.unavailable_stations:
+                self.unavailable_stations.add(departure_station_ID)
+                self.empty_stations.put((trip.start_date, departure_station_ID))
+
+
+
             
     def resolve_sad_departure(self, trip):
         '''When you want a bike but the station is empty'''
-        # Perfect time to denote a sad person
-        if not trip.start_station_id in self.unavailable_stations:
-            self.unavailable_stations.add(trip.start_station_id)
-            self.empty_stations.put((trip.start_date, trip.start_station_id))
-
+        pass
 
 
     def resolve_arrival(self, trip):
@@ -309,14 +313,15 @@ class SimulationLogic:
             self.station_counts[arrival_station_ID] += 1
             self.trip_list.append(trip)
 
+            # Check here to see if it's full for rebalancing to work perfectly
+            if self.station_counts[arrival_station_ID] == self._get_station_cap(arrival_station_ID)\
+                    and not arrival_station_ID in self.unavailable_stations:
+                self.unavailable_stations.add(arrival_station_ID)
+                self.full_stations.put((trip.end_date, arrival_station_ID))
+
 
     def resolve_sad_arrival(self, trip):
         '''When you want to drop off a bike but the station is full'''
-        # Perfect time to denote a sad person
-        if not trip.end_station_id in self.unavailable_stations:
-            self.unavailable_stations.add(trip.end_station_id)
-            self.full_stations.put((trip.end_date, trip.end_station_id))
-
         station_list_index = 0
         nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
         visited_stations = [disappointment.station_id for disappointment in trip.disappointments]

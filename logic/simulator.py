@@ -149,35 +149,9 @@ def main():
     print results['arr_dis_stations']
     print "Departure dis stations:"
     print results['dep_dis_stations']
-    
-    # simulator.write_out(results, file_name)
-    # simulator.save_to_db(results['trips'])
-    #simulator.write_out(results, file_name)
-    #simulator.save_to_db(results['trips'])
     hours = [[0]*24 for d in range(7)]
     for t in results['trips']:
         hours[t.start_date.weekday()][t.start_date.hour] += 1
-
-    # print "Times?"
-    # for d in range(7):
-    #    for i in range(24):
-    #        print d,i,": ",hours[d][i]
-
-    
-    """
-    stations = {}
-    for t in results['trips']:
-        if t.start_station_id in stations:
-            stations[t.start_station_id] += 1
-        else:
-            stations[t.start_station_id] = 1
-
-    print "Stations?"
-    print len(stations.keys())
-    for s_id, count in stations.iteritems():
-        print s_id,count
-    """
-
     session.close()
     
 

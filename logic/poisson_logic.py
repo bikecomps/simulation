@@ -136,9 +136,7 @@ class PoissonLogic(SimulationLogic):
  #                   print "lambda =", lam, " & ", num_trips, "trips during", start_time
                     for i in range(num_trips):
                         # Starting time of the trip is randomly chosen within the Lambda's time range, which is hard-coded to be an hour.
-                        added_time = datetime.timedelta(0, random.randint(0, 59),
-                                                        0, 0, random.randint(0, 59), 
-                                                        0, 0)
+                        added_time = datetime.timedelta(minutes=random.randint(0, 59), seconds=random.randint(0, 59))
                         trip_start_time = start_time + added_time
                         trip_duration = self.get_trip_duration(gamma)
                         trip_end_time = trip_start_time + trip_duration

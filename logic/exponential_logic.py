@@ -234,6 +234,11 @@ class ExponentialLogic(SimulationLogic):
         elif trip.end_date:
             self.station_counts[departure_station_ID] -= 1
             self.pending_arrivals.put((trip.end_date, trip))
+            # Perfect time to denote a now empty station
+            if self.station_counts[departure_station_ID] == 0\
+                   and not trip.start_station_id in self.unavailable_stations:
+                self.unavailable_stations.add(departure_station_ID)
+                self.empty_stations.put((trip.start_date, departure_station_ID))
 
         new_trip = self.generate_trip(departure_station_ID, trip.start_date)
         self.pending_departures.put((new_trip.start_date, new_trip))

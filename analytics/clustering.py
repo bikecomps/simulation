@@ -54,13 +54,12 @@ def gen_hour_obs(conn, start_d, end_d, week_day=True, remove_zeroes=False):
     
     query = """
             SELECT start_station_id, end_station_id, 
-                   EXTRACT(DOW FROM start_date), 
-                   EXTRACT(HOUR FROM start_date),
+                   EXTRACT(DOW FROM start_date) as dow, 
+                   EXTRACT(HOUR FROM start_date) as hour,
                    COUNT(*)
             FROM trips 
             WHERE start_date BETWEEN '{s}' AND '{e}' 
-            GROUP BY start_station_id, end_station_id,
-                   EXTRACT(DOW FROM start_date), EXTRACT(HOUR FROM start_date);
+            GROUP BY start_station_id, end_station_id, dow, hour
             """.format(s=start_d, e=end_d)
     
     # Calculate the number of weekdays in a range, and weekend days
