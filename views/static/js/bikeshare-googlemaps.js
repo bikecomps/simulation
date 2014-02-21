@@ -150,6 +150,10 @@ function clusterColors() {
 		type: "POST",
 		url: "/clustering",
 		data: { clustering_method: clusterMethod },
+		beforeSend: function() {
+			$("#loading_div").show();
+			console.log("loading div, where are you?");
+		},
 		success: function(data) {
 			var jsond = JSON.parse(data);
 			for (var num in jsond) {
@@ -165,7 +169,7 @@ function clusterColors() {
 			for (var marker_id in dic) {
 				changeMarkerColor(marker_id, dic[marker_id]);
 			}
-
+			$("#loading_div").hide();
 		},
 		error: function() {
 			console.log("ajax error while clustering");
