@@ -18,9 +18,10 @@ import sys
 import random
 
 class RangeEvaluator:
-    def __init__(self, start_date, end_date):
+    def __init__(self, start_date, end_date, logic_options = {}):
         self.start_date = start_date
         self.end_date = end_date
+        self.logic_options = logic_options
 
         # by default, evaluator is not verbose
         self.verbose = False
@@ -54,8 +55,14 @@ class RangeEvaluator:
         #logic = ExponentialLogic(self.session)
         #logic = AltPoissonLogic(self.session)
         simulator = Simulator(logic)
-        results = simulator.run(self.start_date, self.end_date)
+        results = simulator.run(self.start_date, self.end_date,
+                                logic_options = self.logic_options)
         
+        self.trips = results['trips']
+        self.disappointments = results['disappointments'] 
+        self.station_counts = results['station_counts']
+        self.sim_station_caps = results['sim_station_caps']
+
         total_trips = 0
 
         trips = {}

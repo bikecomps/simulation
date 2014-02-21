@@ -26,6 +26,7 @@ stats about the bike trips:
 from logic import PoissonLogic, Simulator
 from utils import Connector
 from models import Trip, Station
+from tests import RangeEvaluator
 
 import csv
 import datetime
@@ -47,25 +48,38 @@ class SummaryStats:
     	self.station_name_dict = {}
         self.indent = False
 
+        # option to run with range_evaluator
+        self.run_evaluator = True
+
         self.run_simulation()
         self.calculate_stats()
 
     def run_simulation(self):
+        options = {'station_caps' : self.capacity_dict}
         session = Connector().getDBSession()
-        logic = PoissonLogic(session)
-        simulator = Simulator(logic)
-
-	options = {'station_caps' : self.capacity_dict}
-
-        results = simulator.run(self.start_date, self.end_date, logic_options=options)
-        
         self.session = session
         self.station_list = self.session.query(Station)
 
-        self.trips = results['trips']
-        self.disappointments = results['disappointments']
-        self.stats['final_station_counts'] = results['station_counts']
-        self.stats['simulated_station_caps'] = results['sim_station_caps']
+        if self.run_evaluator:
+            re = RangeEvaluator(self.start_date, self.end_date, logic_options = options)
+            self.stats['man_dist_score_arr'] = re.eval_man_indiv_dist(True)
+            self.stats['man_dist_score_dep'] = re.eval_man_indiv_dist(False)
+            self.stats['eucl_dist_score'] = re.eval_eucl_dist()
+
+            self.trips = re.trips
+            self.disappointments = re.disappointments
+            self.stats['final_station_counts'] = re.station_counts
+            self.stats['simulated_station_caps'] = re.sim_station_caps
+
+        else:
+            logic = PoissonLogic(session)
+            simulator = Simulator(logic)            
+            results = simulator.run(self.start_date, self.end_date, logic_options = options)            
+
+            self.trips = results['trips']
+            self.disappointments = results['disappointments']
+            self.stats['final_station_counts'] = results['station_counts']
+            self.stats['simulated_station_caps'] = results['sim_station_caps']
 
     def get_dummy_simulation(self):
         station_ids = [0,1,2,3,4]
@@ -207,10 +221,10 @@ class SummaryStats:
 
 
 def main():
-    start_date = datetime.datetime.strptime('1-1-2012 00:00',
-                                            '%m-%d-%Y %H:%M')
-    end_date = datetime.datetime.strptime('1-2-2012 00:00',
-                                          '%m-%d-%Y %H:%M')
+    start_date = datetime.datetime.strptime('2012-02-02 00:00',
+                                            '%Y-%m-%d %H:%M')
+    end_date = datetime.datetime.strptime('2012-02-03 00:00',
+                                          '%Y-%m-%d %H:%M')
                                           
 
     sstats = SummaryStats(start_date, end_date, {})
