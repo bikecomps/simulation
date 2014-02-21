@@ -271,6 +271,14 @@ function displaySummaryStats(data, from, to) {
 	$("#avg_trip_time").text(toHours(data["avg_trip_time"]));
 	$("#std_trip_time").text(toHours(data["std_trip_time"]));
 
+	// set 'total_num_trips', 'total_num_disappointments',
+	// 'avg_trip_time', and 'std_trip_time' 
+	$("#total_num_empty_disappointments").text(data["total_num_empty_disappointments"]);
+	$("#total_num_full_disappointments").text(data["total_num_full_disappointments"]);
+	$("#most_disappointing_dep_station").text(data["most_disappointing_dep_station"]);
+	$("#most_disappointing_arr_station").text(data["most_disappointing_arr_station"]);
+
+
 	// set 'min_duration_trip' 
 	var minTrip = data["min_duration_trip"];
 	var minTripHtml = $("#min_duration_trip");

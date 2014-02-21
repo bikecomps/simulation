@@ -39,14 +39,14 @@ class SummaryStats:
     def __init__(self, start_date, end_date, capacity_dict):
         self.start_date = start_date
         self.end_date = end_date
-	self.capacity_dict = capacity_dict
+        self.capacity_dict = capacity_dict
 
         self.session = None
         self.trips = None
         self.full_station_disappointments = None
         self.empty_station_disappointments = None
         self.stats = {}
-    	self.station_name_dict = {}
+        self.station_name_dict = {}
         self.indent = False
         self.dis_station_counts = {}
 
@@ -74,7 +74,7 @@ class SummaryStats:
             self.stats['final_station_counts'] = re.station_counts
             self.stats['simulated_station_caps'] = re.sim_station_caps
             self.arr_dis_station_counts = re.arr_dis_station_counts
-            self.dep_dis_station_counts = re.arr_dis_station_counts
+            self.dep_dis_station_counts = re.dep_dis_station_counts
  
         else:
             logic = PoissonLogic(session)
@@ -135,7 +135,6 @@ class SummaryStats:
         dep_counts = {}
         arr_counts = {}
         pair_counts = {}
-        
         # disapointment counts per station
         #dis_counts = {}
 
@@ -175,6 +174,7 @@ class SummaryStats:
         self.stats['num_arr_disappointments_per_station'] = self.arr_dis_station_counts
         self.stats['most_disappointing_dep_station'] = max(self.dep_dis_station_counts, key = lambda x: self.dep_dis_station_counts[x])
         self.stats['most_disappointing_arr_station'] = max(self.arr_dis_station_counts, key = lambda x: self.arr_dis_station_counts[x])
+
 
     def calculate_per_hour_stats(self):
         trip_counts = [[0,0] for i in range(24)]
