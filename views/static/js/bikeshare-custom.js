@@ -367,8 +367,11 @@ function processStatsForm() {
 	var from = $("#from_date").val().trim(),
 		to = $("#to_date").val().trim(),
 		currentDate = (new Date()).dateFormat("Y-m-d H:i");
+	console.log("dict from within processStatsForm():");
+	console.log(typeof capacity_dict);
+	console.log(capacity_dict);
 
-	capacity_dict = JSON.stringify(capacity_dict);
+	capacity_dict_string = JSON.stringify(capacity_dict);
 
 	if (!from.length) {
 		from = currentDate;
@@ -376,7 +379,7 @@ function processStatsForm() {
 	if (!to.length) {
 		to = currentDate;
 	}
-	var datatosend = { start: from, end: to, capacity: capacity_dict};
+	var datatosend = { start: from, end: to, capacity: capacity_dict_string};
 	$.ajax({
 		type: "POST",
 		url: "/unified",

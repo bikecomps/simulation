@@ -126,7 +126,8 @@ function appendCapacityChange(id) {
 	//	value: newCapacity
 	//});
 
-	console.log("CAPACITY DICTIONARY = " + capacity_dict);
+	console.log("CAPACITY DICTIONARY:");
+	console.log(capacity_dict);
 
 	//$.ajax({
 	//	type: "POST",
@@ -152,7 +153,6 @@ function clusterColors() {
 		data: { clustering_method: clusterMethod },
 		beforeSend: function() {
 			$("#loading_div").show();
-			console.log("loading div, where are you?");
 		},
 		success: function(data) {
 			var jsond = JSON.parse(data);
