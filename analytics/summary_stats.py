@@ -111,6 +111,7 @@ class SummaryStats:
         dep_counts = {}
         arr_counts = {}
         pair_counts = {}
+        dis_counts = {} # disaapointment counts
 
         for station1 in self.station_list:
             station1_name = station1.name.encode('ascii', 'ignore')
@@ -118,6 +119,7 @@ class SummaryStats:
 
             dep_counts[station1_name] = 0
             arr_counts[station1_name] = 0            
+            dis_counts[station1_name] = 0
 
             pair_counts[station1_name] = {}
             for station2 in self.station_list:
@@ -131,28 +133,44 @@ class SummaryStats:
             arr_counts[end_station_name] += 1
             pair_counts[start_station_name][end_station_name] += 1
 
+            
+        for disappointment in self.disappointments:
+            dis_counts[self.station_name_dict[disappointment.station_id]] += 1
+
         self.stats['num_departures_per_station'] = dep_counts
         self.stats['num_arrivals_per_station'] = arr_counts
         self.stats['num_trips_per_pair_station'] = pair_counts
+        self.stats['num_disappointments_per_station'] = dis_counts
+        self.stats['most_disappointing_station'] = max(dis_counts, key = lambda x: dis_counts[x])
 
     def calculate_per_hour_stats(self):
-        list_counts = [[0,0] for i in range(24)]
+        trip_counts = [[0,0] for i in range(24)]
+        dis_time_counts = [0] * 24
 
         for trip in self.trips:
             start_hour = trip.start_date.hour
-            list_counts[start_hour][0] += 1
+            trip_counts[start_hour][0] += 1
             
             end_hour = trip.end_date.hour
-            list_counts[end_hour][1] += 1
+            trip_counts[end_hour][1] += 1
+
+        for disappointment in self.disappointments:
+            hour = disappointment.time.hour
+            dis_time_counts[hour] += 1
 
         # put in suitable form for group chart
-        counts = [{
+        trip_counts_dict = [{
             "Hour": i,
-            "Number of Departures" : list_counts[i][0],
-            "Number of Arrivals" : list_counts[i][1]
-        } for i in range(len(list_counts))]
-
-        self.stats['num_trips_per_hour'] = counts
+            "Number of Departures" : trip_counts[i][0],
+            "Number of Arrivals" : trip_counts[i][1]
+        } for i in range(len(trip_counts))]
+        dis_time_counts_dict = [{
+            "Hour" : i,
+            "Number of Disappointments" : dis_time_counts[i]
+        } for i in range(len(dis_time_counts))]
+        
+        self.stats['num_trips_per_hour'] = trip_counts_dict
+        self.stats['num_disappointments_per_hour'] = dis_time_counts_dict
 
     def calculate_stats(self):
         # now important to calculate station stats first so as to populate self.station_name_dict before calculating overall stats
@@ -195,7 +213,7 @@ def main():
                                           '%m-%d-%Y %H:%M')
                                           
 
-    sstats = SummaryStats(start_date, end_date)
+    sstats = SummaryStats(start_date, end_date, {})
     sstats.indent = True
     print sstats.get_stats()
 
