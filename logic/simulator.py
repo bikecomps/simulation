@@ -144,11 +144,11 @@ def main():
                      'rebalancing_time':datetime.timedelta(seconds=3600)}
     results = simulator.run(start_date, end_date, logic_options=logic_options)
     print "trips:", len(results['trips'])
-    ds = results['disappointments']
-    print "disappointments:", len(ds)
-    num_ds = len([x for x in ds if x.trip == None])
-    print "Empty diss", num_ds
-    print "Full diss", len(ds) - num_ds
+    #ds = results['disappointments']
+    #print "disappointments:", len(ds)
+    #num_ds = len([x for x in ds if x.trip == None])
+    #print "Empty diss", num_ds
+    #print "Full diss", len(ds) - num_ds
     print "Arrival dis stations:"
     print results['arr_dis_stations']
     print "Departure dis stations:"

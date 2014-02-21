@@ -312,7 +312,7 @@ def json_dump_handler(obj):
         raise TypeError, 'Cannot serialize item %s of type %s' % (repr(obj), type(obj))
 
 
-def trip_count_cluster(start_d, end_d, normalize=True, cluster_empties=False, choice="totals",
+def trip_count_cluster(start_d='2010-09-15', end_d='2013-12-31', normalize=True, cluster_empties=False, choice="totals",
                        max_k=5):
     conn = Connector()
     engine = conn.getDBEngine()
@@ -345,7 +345,7 @@ def trip_count_cluster(start_d, end_d, normalize=True, cluster_empties=False, ch
         clusters_dict[c_id] = data["stations"]
     return clusters_dict
 
-def hour_count_cluster(start_d, end_d, normalize=True, cluster_empties=False,
+def hour_count_cluster(start_d='2010-09-15', end_d='2013-12-31', normalize=True, cluster_empties=False,
                        choice="departures", max_k=8):
     conn = Connector()
     engine = conn.getDBEngine()

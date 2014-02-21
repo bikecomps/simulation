@@ -126,7 +126,8 @@ function appendCapacityChange(id) {
 	//	value: newCapacity
 	//});
 
-	console.log("CAPACITY DICTIONARY = " + capacity_dict);
+	console.log("CAPACITY DICTIONARY:");
+	console.log(capacity_dict);
 
 	//$.ajax({
 	//	type: "POST",
@@ -150,6 +151,9 @@ function clusterColors() {
 		type: "POST",
 		url: "/clustering",
 		data: { clustering_method: clusterMethod },
+		beforeSend: function() {
+			$("#loading_div").show();
+		},
 		success: function(data) {
 			var jsond = JSON.parse(data);
 			for (var num in jsond) {
@@ -165,7 +169,7 @@ function clusterColors() {
 			for (var marker_id in dic) {
 				changeMarkerColor(marker_id, dic[marker_id]);
 			}
-
+			$("#loading_div").hide();
 		},
 		error: function() {
 			console.log("ajax error while clustering");

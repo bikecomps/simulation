@@ -43,6 +43,9 @@ class SimulationLogic:
         # Contains all resolved trips
         self.trip_list = []
         self.disappointments = []
+        self.full_station_disappointments = []
+        self.empty_station_disappointments = []
+
         # List of trips that didn't end at the desired station due to a shortage
         self.bike_shortages = []
         self.dock_shortages = []
@@ -60,7 +63,6 @@ class SimulationLogic:
 
         self.arr_dis_stations = {}
         self.dep_dis_stations = {}
-
         self.total_num_bikes = -1
 
     def getDBSession(self):
@@ -78,8 +80,6 @@ class SimulationLogic:
         self.start_time = start_time
         self.end_time = end_time
     
-        self.bike_shortages = []
-        self.dock_shortages = []
         self.total_rebalances = 0
         # Keys: all currently empty/full station ids. Values: empty or full
         self.empty_stations_set = set()
@@ -92,14 +92,14 @@ class SimulationLogic:
 
         self.pending_departures = Queue.PriorityQueue()
         self.pending_arrivals = Queue.PriorityQueue()
-        self.disappointment_list = []
         self.trip_list = []
-
+        self.full_station_disappointments = []
+        self.empty_station_disappointments = []
         print "\tInitializing stations"
         # Make sure all stations are initialized correctly
         self.stations = {}
-        self.station_coutns = {}
-        self.station_caps = {}
+        self.station_counts = {}
+        self.station_caps = station_caps
         self._initialize_stations(start_time, bike_total,
                                   station_caps, drop_stations)
         self._initialize_station_distances()
@@ -287,13 +287,15 @@ class SimulationLogic:
         departure_station_ID = trip.start_station_id
 
         if self.station_counts[departure_station_ID] == 0:
-            new_disappointment = Disappointment(departure_station_ID, trip.start_date, trip_id=None)
-            self.session.add(new_disappointment)
+            self.empty_stations_set.add(departure_station_ID)
+            new_disappointment = Disappointment(departure_station_ID, trip.start_date, trip_id=None, is_full=False)
+            self.session.add(new_disappointment) # ??????
+
             if departure_station_ID not in self.dep_dis_stations:
                 self.dep_dis_stations[departure_station_ID] = 1
             else:
                 self.dep_dis_stations[departure_station_ID] += 1
-            self.disappointment_list.append(new_disappointment)
+            self.empty_station_disappointments.append(new_disappointment)
             self.resolve_sad_departure(trip)
         else:
             self.station_counts[departure_station_ID] -= 1
@@ -319,13 +321,13 @@ class SimulationLogic:
 
         capacity = self._get_station_cap(arrival_station_ID)
         if self.station_counts[arrival_station_ID] == capacity:
-            new_disappointment = Disappointment(arrival_station_ID, trip.end_date, trip_id=None)
-            trip.disappointments.append(new_disappointment)
+            self.full_stations_set.add(arrival_station_ID)
+            new_disappointment = Disappointment(arrival_station_ID, trip.end_date, trip_id=None, is_full=True)
             if arrival_station_ID not in self.arr_dis_stations:
                 self.arr_dis_stations[arrival_station_ID] = 1
             else:
                 self.arr_dis_stations[arrival_station_ID] += 1
-            self.disappointment_list.append(new_disappointment)
+            self.full_station_disappointments.append(new_disappointment)
             self.resolve_sad_arrival(trip)
         else:
             self.station_counts[arrival_station_ID] += 1
@@ -437,9 +439,9 @@ class SimulationLogic:
 
     def flush(self):
         '''Returns list of all trips since initialization, or adds them to the database if to_database is True'''
-
         return {'trips':self.trip_list,
-                'disappointments':self.disappointment_list,
+                'full_station_disappointments':self.full_station_disappointments,
+                'empty_station_disappointments':self.empty_station_disappointments,
                 'arr_dis_stations':self.arr_dis_stations,
                 'dep_dis_stations':self.dep_dis_stations,
                 'total_rebalances':self.total_rebalances,
