@@ -243,20 +243,24 @@ form button[type="submit"] {
 
 #num_departures_per_station {
   margin-top: 30px;
+  width: 100%;
 }
 
 #num_departures_per_station div {
   height: 300px;
   overflow-x: hidden;
   overflow-y: scroll;
+  width: inherit;
 }
 
 #num_arrivals_per_station {
   margin-top: 30px;
+  width: 100%;
 }
 
 #num_arrivals_per_station div {
   height: 300px;
+  width: inherit;
   overflow-x: hidden;
   overflow-y: scroll;
 }
