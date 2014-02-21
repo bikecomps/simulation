@@ -111,16 +111,28 @@ class RangeEvaluator:
         '''
         Returns the P-value using permutation tests.
         For a large number of times, it permutes the rows of the 
-        produced trips and calculates metric on the 'new' data.
+        produced trips and real trips and calculates metric on the 'new' data.
         It returns the proportion of times the permuted data produced better 
         results than the observed.
         '''
-        dist_observed = metric()
-        shuffle_times = 10**5
+        shuffle_times = 10**4 - 1
         perm_results = []
+        dist_observed = metric()
 
+        all_trips = (self.produced + self.real)[:]
+        dist_observed = metric()
+        
         for i in range(shuffle_times):
-            random.shuffle(self.produced)
+            shuffled_indices = range(0, len(all_trips))
+            random.shuffle(shuffled_indices)
+            shuffled_indices_p = shuffled_indices[:len(self.produced)]
+            shuffled_indices_r = shuffled_indices[len(self.produced):]
+            
+            new_produced = [all_trips[j] for j in shuffled_indices_p]
+            new_real = [all_trips[j] for j in shuffled_indices_r]
+            self.produced = new_produced
+            self.real = new_real
+            
             dist_new = metric()
             perm_results.append(dist_new)
             
