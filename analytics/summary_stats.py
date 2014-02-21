@@ -62,7 +62,9 @@ class SummaryStats:
         self.session = session
         self.station_list = self.session.query(Station)
 
-        if self.run_evaluator:
+        # we only have 'real' trips up to the end of 2013
+        # so we can't do comparisons/evaluations for 2014
+        if self.run_evaluator and self.end_date.year <= 2013:
             re = RangeEvaluator(self.start_date, self.end_date, logic_options = options)
             self.stats['man_dist_score_arr'] = re.eval_man_indiv_dist(True)
             self.stats['man_dist_score_dep'] = re.eval_man_indiv_dist(False)
