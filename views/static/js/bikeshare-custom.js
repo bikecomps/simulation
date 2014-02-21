@@ -329,8 +329,9 @@ function updateProgressBar(currentTime, percentProgress, isError) {
     var value = parseInt(percentProgress);
     if (value == 0) {
 	progressbar.progressbar("option", "value", false);	
+	progressbar.find(".progress-label").html("Loading...");
     } else {
-	progressbar.progressbar( "value", parseInt(percentProgress));	
+	progressbar.progressbar( "value", value);
     }
 }
 
@@ -394,6 +395,7 @@ function processStatsForm() {
                 var loadingDiv = $("#loading_div");            
                 var progressbar = $("#progressbar");
                 progressbar.progressbar("option", "value", false);            
+		progressbar.find(".progress-label").html("Loading...");
                 loadingDiv.find("#current_time").html("");
              	progressbar.find(".ui-progressbar-value").css({
 					"background" : "#" + Math.floor( Math.random() * 16777215 ).toString(16)
