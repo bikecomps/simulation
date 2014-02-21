@@ -43,10 +43,12 @@ class SummaryStats:
 
         self.session = None
         self.trips = None
-        self.disappointments = None
+        self.full_station_disappointments = None
+        self.empty_station_disappointments = None
         self.stats = {}
     	self.station_name_dict = {}
         self.indent = False
+        self.dis_station_counts = {}
 
         # option to run with range_evaluator
         self.run_evaluator = True
@@ -67,17 +69,23 @@ class SummaryStats:
             self.stats['eucl_dist_score'] = re.eval_eucl_dist()
 
             self.trips = re.trips
-            self.disappointments = re.disappointments
+            self.full_station_disappointments = re.full_station_disappointments
+            self.empty_station_disappointments = re.empty_station_disappointments
             self.stats['final_station_counts'] = re.station_counts
             self.stats['simulated_station_caps'] = re.sim_station_caps
-
+            self.arr_dis_station_counts = re.arr_dis_station_counts
+            self.dep_dis_station_counts = re.arr_dis_station_counts
+ 
         else:
             logic = PoissonLogic(session)
             simulator = Simulator(logic)            
             results = simulator.run(self.start_date, self.end_date, logic_options = options)            
 
             self.trips = results['trips']
-            self.disappointments = results['disappointments']
+            self.empty_station_disappointments = results['empty_station_disappointments']
+            self.full_station_disappointments = results['full_station_disappointments']
+            self.arr_dis_station_counts = results['arr_dis_stations']
+            self.dep_dis_station_counts = results['dep_dis_stations']
             self.stats['final_station_counts'] = results['station_counts']
             self.stats['simulated_station_caps'] = results['sim_station_caps']
 
@@ -91,8 +99,8 @@ class SummaryStats:
             trip_list.append(Trip(str(random.randint(1,500)),"Casual", 2,start_time,end_time,i%4,4-i%4))
 
         self.trips = trip_list
-        self.disappointments = []
-
+        self.full_station_disappointments = []
+        self.empty_station_disappointments = []
 
     def calculate_overall_stats(self):
         trips_and_times = [(trip.duration().total_seconds(), trip) for trip in self.trips]
@@ -100,7 +108,9 @@ class SummaryStats:
 
 
         self.stats['total_num_trips'] = len(self.trips)
-        self.stats['total_num_disappointments'] = len(self.disappointments)
+        self.stats['total_num_disappointments'] = len(self.full_station_disappointments) + len(self.empty_station_disappointments)
+        self.stats['total_num_full_disappointments'] = len(self.full_station_disappointments)
+        self.stats['total_num_empty_disappointments'] = len(self.empty_station_disappointments)
         self.stats['avg_trip_time'] = numpy.average(trip_times)
         self.stats['std_trip_time'] = numpy.std(trip_times)        
         min_trip = 0 if len(trips_and_times) == 0 else min(trips_and_times)[1]
@@ -125,7 +135,9 @@ class SummaryStats:
         dep_counts = {}
         arr_counts = {}
         pair_counts = {}
-        dis_counts = {} # disaapointment counts
+        
+        # disapointment counts per station
+        #dis_counts = {}
 
         for station1 in self.station_list:
             station1_name = station1.name.encode('ascii', 'ignore')
@@ -133,8 +145,15 @@ class SummaryStats:
 
             dep_counts[station1_name] = 0
             arr_counts[station1_name] = 0            
-            dis_counts[station1_name] = 0
+            
+            if station1_name not in self.arr_dis_station_counts: 
+                self.arr_dis_station_counts[station1_name] = 0
+        
+            if station1_name not in self.dep_dis_station_counts: 
+                self.dep_dis_station_counts[station1_name] = 0
 
+            self.dis_station_counts[station1_name] = self.arr_dis_station_counts[station1_name] + self.dep_dis_station_counts[station1_name]
+            
             pair_counts[station1_name] = {}
             for station2 in self.station_list:
                 station2_name = station2.name.encode('ascii', 'ignore')
@@ -146,20 +165,22 @@ class SummaryStats:
             dep_counts[start_station_name] += 1
             arr_counts[end_station_name] += 1
             pair_counts[start_station_name][end_station_name] += 1
-
             
-        for disappointment in self.disappointments:
-            dis_counts[self.station_name_dict[disappointment.station_id]] += 1
 
         self.stats['num_departures_per_station'] = dep_counts
         self.stats['num_arrivals_per_station'] = arr_counts
         self.stats['num_trips_per_pair_station'] = pair_counts
-        self.stats['num_disappointments_per_station'] = dis_counts
-        self.stats['most_disappointing_station'] = max(dis_counts, key = lambda x: dis_counts[x])
+        self.stats['num_disappointments_per_station'] = self.dis_station_counts
+        self.stats['num_dep_disappointments_per_station'] = self.dep_dis_station_counts 
+        self.stats['num_arr_disappointments_per_station'] = self.arr_dis_station_counts
+        self.stats['most_disappointing_dep_station'] = max(self.dep_dis_station_counts, key = lambda x: self.dep_dis_station_counts[x])
+        self.stats['most_disappointing_arr_station'] = max(self.arr_dis_station_counts, key = lambda x: self.arr_dis_station_counts[x])
 
     def calculate_per_hour_stats(self):
         trip_counts = [[0,0] for i in range(24)]
         dis_time_counts = [0] * 24
+        empty_dis_time_counts = [0] * 24
+        full_dis_time_counts = [0] * 24
 
         for trip in self.trips:
             start_hour = trip.start_date.hour
@@ -168,9 +189,15 @@ class SummaryStats:
             end_hour = trip.end_date.hour
             trip_counts[end_hour][1] += 1
 
-        for disappointment in self.disappointments:
+        for disappointment in self.full_station_disappointments:
             hour = disappointment.time.hour
             dis_time_counts[hour] += 1
+            full_dis_time_counts[hour] +=1
+
+        for disappointment in self.empty_station_disappointments:
+            hour = disappointment.time.hour
+            dis_time_counts[hour] += 1
+            empty_dis_time_counts[hour] +=1
 
         # put in suitable form for group chart
         trip_counts_dict = [{
@@ -183,8 +210,21 @@ class SummaryStats:
             "Number of Disappointments" : dis_time_counts[i]
         } for i in range(len(dis_time_counts))]
         
+        full_dis_time_counts_dict = [{
+            "Hour" : i,
+            "Number of Disappointments" : full_dis_time_counts[i]
+        } for i in range(len(full_dis_time_counts))]
+        
+        empty_dis_time_counts_dict = [{
+            "Hour" : i,
+            "Number of Disappointments" : empty_dis_time_counts[i]
+        } for i in range(len(empty_dis_time_counts))]
+        
         self.stats['num_trips_per_hour'] = trip_counts_dict
         self.stats['num_disappointments_per_hour'] = dis_time_counts_dict
+        self.stats['num_full_disappointments_per_hour'] = full_dis_time_counts_dict
+        self.stats['num_empty_disappointments_per_hour'] = empty_dis_time_counts_dict
+
 
     def calculate_stats(self):
         # now important to calculate station stats first so as to populate self.station_name_dict before calculating overall stats
