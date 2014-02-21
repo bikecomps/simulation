@@ -17,7 +17,7 @@
     {% block css_and_scripts %}{% end %}
   </head>
   
-  <body onresize="set_map_height()">
+  <body onresize="set_map_height(); set_stats_panel_height()">
     <nav class="top-bar" data-top-bar>
       <section class="top-bar-section">
       <ul class="title-area">
@@ -43,7 +43,7 @@
 				<select id="clustering_method">
 					<option></option>
 					<option>Trip counts</option>
-					<option>Hour counts</option>
+					<option>Hours of high traffic</option>
 				</select>
 				<button type="submit" id="submit">Cluster</button>
 			</form>

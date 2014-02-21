@@ -8,13 +8,9 @@ var openWindow;
 var station_markers;
 
 var marker_colors;
-var color_index;
+var marker_cap_gradient;
 
-function set_coordinates(val)
-{
-	j_val = val.replace(/&quot;/g,'"');
-	locations=jQuery.parseJSON(j_val);
-}
+var capacity_dict = {};
 
 function initialize() {
 	connections = [];
@@ -35,7 +31,10 @@ function initialize() {
 	
 	station_markers = {};
 	marker_colors = ["blue", "orange", "green", "red", "purple", "yellow"];
-	color_index = 0;
+	// red, red-purple, purple, blue-purple, blue
+	//marker_cap_gradient = ["ED5A1D","C34E31","843D50","452B6E","1B2083"]
+	// light-green to dark-blue gradient?
+	marker_cap_gradient = ["#16E31E","#14BA3B","#137C68","#115385","#1016B2"]
 
 
 	for (station=0; station < Object.keys(locations).length; station++) {
@@ -54,20 +53,23 @@ function initialize() {
 			},
 			id: locations[station][2],
 			title: locations[station][3],
-			capacity: locations[station][4]
+			capacity: locations[station][4],
+			alt_capacity: locations[station][4] // holds user-altered capacities
 		});
 		station_markers[locations[station][2]] = marker;
 		var infoWindow = new google.maps.InfoWindow({
 			content: "Hakuna Matata?",
-			maxWidth: 200
+			maxWidth: 300
 		});
 		openWindow = infoWindow;
 		bindInfoWindow(marker, map, infoWindow);
 	}
 }
 
-
-
+function set_coordinates(val) {
+	j_val = val.replace(/&quot;/g,'"');
+	locations=jQuery.parseJSON(j_val);
+}
 
 function bindInfoWindow(marker, map, infoWindow) {
 	google.maps.event.addListener(marker, 'click', function() {
@@ -76,8 +78,9 @@ function bindInfoWindow(marker, map, infoWindow) {
 		var contentString = '<div class="infoWindow_wrapper">' + 
 			'<div class="infoWindow_id">' + marker.id + '</div>' +
 			'<div class="infoWindow_title">' + marker.title + '</div>' +
-			'<div class="infoWindow_capacity">Capacity : <div class="infoWindow_capacity_label">' + marker.capacity +
-			'</div></div>' +
+			'<div class="infoWindow_capacity"><label>Capacity<input type="text" id="infoWindow_capacity_text" value="' + marker.capacity + '" />' +  
+			'<a class="button tiny" id="infoWindow_capacity_button" onclick="appendCapacityChange(' + marker.id +
+			'); return false;">Save</a></label></div>' +
 			'</div>';
 
 		//console.log("MARKER CAPACITY FOR STA #" + marker.id + " = " + marker.capacity);
@@ -106,8 +109,33 @@ function addLine(fromStation, toStation, color) {
 function removeLines() {
 	for (var index in connections) {
 		var connection = connections[index];
-		connection.setMap(null);        
+		connection.setMap(null);
 	}
+}
+
+function appendCapacityChange(id) {
+	var newCapacity = $('#infoWindow_capacity_text').val(); //get
+	$('#infoWindow_capacity_text').val(newCapacity); //set
+
+	console.log("CAPACITY FOR STA #" + id + " IS UPDATED TO "+ newCapacity);		
+
+	capacity_dict[id] = newCapacity;
+
+	//capacity_dict.push({
+	//	key: id,
+	//	value: newCapacity
+	//});
+
+	console.log("CAPACITY DICTIONARY = " + capacity_dict);
+
+	//$.ajax({
+	//	type: "POST",
+	//	url: "/unified",
+	//	data: { capacity_dict: capacity_dictionary },
+	//	error: function() {
+	//		console.log("AJAX is not happy about your capacity_dictionary.");
+	//	}
+	//});
 }
 
 function clusterColors() {
@@ -123,7 +151,7 @@ function clusterColors() {
 		url: "/clustering",
 		data: { clustering_method: clusterMethod },
 		success: function(data) {
-            var jsond = JSON.parse(data);
+			var jsond = JSON.parse(data);
 			for (var num in jsond) {
 				jsond[marker_colors[num]] = jsond[num];
 				delete jsond[num];
@@ -140,7 +168,7 @@ function clusterColors() {
 
 		},
 		error: function() {
-			console.log("Error in the ajax stuff :/");
+			console.log("ajax error while clustering");
 		}
 	});
 }

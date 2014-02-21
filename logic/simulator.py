@@ -29,6 +29,9 @@ class Simulator:
         logic_options must have keywords EXACTLY the sim_logic's named params
         '''
 
+	print "[simulator run] logic_options = "
+	print logic_options
+
         self.sim_logic.initialize(start_time, end_time, **logic_options)
 
         cur_time = start_time
@@ -95,7 +98,8 @@ def main():
     logic_options = {
         "SimulationLogic" : SimulationLogic,
         "PoissonLogic" : PoissonLogic,
-        "ExponentialLogic" : ExponentialLogic
+        "ExponentialLogic" : ExponentialLogic,
+        "AltPoissonLogic" : AltPoissonLogic
     }
     
     # For testing

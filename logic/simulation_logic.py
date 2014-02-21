@@ -24,6 +24,8 @@ class SimulationLogic:
         self.session = session
         # self.time is a datetime, representing the current time in the simulator.
         self.time = None
+        self.start_time = None
+        self.end_time = None
 
         # STATION STATES
         # s_id -> station object
@@ -76,12 +78,28 @@ class SimulationLogic:
         self.start_time = start_time
         self.end_time = end_time
     
-        # Stations should eventually be gotten from the database
+        self.bike_shortages = []
+        self.dock_shortages = []
+        self.total_rebalances = 0
+        # Keys: all currently empty/full station ids. Values: empty or full
+        self.empty_stations_set = set()
+        self.full_stations_set = set()
+        self.arr_dis_stations = {}
+        self.dep_dis_stations = {}
+
+        self.total_num_bikes = -1
+
+
         self.pending_departures = Queue.PriorityQueue()
         self.pending_arrivals = Queue.PriorityQueue()
         self.disappointment_list = []
         self.trip_list = []
+
         print "\tInitializing stations"
+        # Make sure all stations are initialized correctly
+        self.stations = {}
+        self.station_coutns = {}
+        self.station_caps = {}
         self._initialize_stations(start_time, bike_total,
                                   station_caps, drop_stations)
         self._initialize_station_distances()
@@ -292,7 +310,7 @@ class SimulationLogic:
             
     def resolve_sad_departure(self, trip):
         '''When you want a bike but the station is empty'''
-        pass
+        pass #station_caps
 
 
     def resolve_arrival(self, trip):
@@ -425,7 +443,9 @@ class SimulationLogic:
                 'arr_dis_stations':self.arr_dis_stations,
                 'dep_dis_stations':self.dep_dis_stations,
                 'total_rebalances':self.total_rebalances,
-                'total_num_bikes':self.total_num_bikes}
+                'total_num_bikes':self.total_num_bikes,
+                'station_counts':self.station_counts,
+                'sim_station_caps':self.station_caps}
         
 
     def cleanup(self):

@@ -19,7 +19,8 @@ stats about the bike trips:
     hour => no. departures completed that hour
 - Arrivals per Hour
     hour => no. arrivals completed that hour
-
+- Final Station Counts 
+- Simulated Station Capacities 
 '''
 
 from logic import PoissonLogic, Simulator
@@ -34,9 +35,10 @@ import sys
 import random
 
 class SummaryStats:
-    def __init__(self, start_date, end_date):
+    def __init__(self, start_date, end_date, capacity_dict):
         self.start_date = start_date
         self.end_date = end_date
+	self.capacity_dict = capacity_dict
 
         self.session = None
         self.trips = None
@@ -53,11 +55,17 @@ class SummaryStats:
         logic = PoissonLogic(session)
         simulator = Simulator(logic)
 
-        results = simulator.run(self.start_date, self.end_date)
+	options = {'station_caps' : self.capacity_dict}
+
+        results = simulator.run(self.start_date, self.end_date, logic_options=options)
         
         self.session = session
+        self.station_list = self.session.query(Station)
+
         self.trips = results['trips']
         self.disappointments = results['disappointments']
+        self.stats['final_station_counts'] = results['station_counts']
+        self.stats['simulated_station_caps'] = results['sim_station_caps']
 
     def get_dummy_simulation(self):
         station_ids = [0,1,2,3,4]
@@ -102,22 +110,30 @@ class SummaryStats:
     def calculate_per_station_stats(self):
         dep_counts = {}
         arr_counts = {}
-        station_list = []
+        pair_counts = {}
 
-        station_list = self.session.query(Station)
+        for station1 in self.station_list:
+            station1_name = station1.name.encode('ascii', 'ignore')
+            self.station_name_dict[station1.id] = station1_name
 
-        for station in station_list:
-            dep_counts[station.name.encode('ascii','ignore')] = 0
-            arr_counts[station.name.encode('ascii','ignore')] = 0
-            self.station_name_dict[station.id] = station.name
+            dep_counts[station1_name] = 0
+            arr_counts[station1_name] = 0            
+
+            pair_counts[station1_name] = {}
+            for station2 in self.station_list:
+                station2_name = station2.name.encode('ascii', 'ignore')
+                pair_counts[station1_name][station2_name] = 0            
 
         for trip in self.trips:
-            dep_counts[self.station_name_dict[trip.start_station_id]] += 1
-            arr_counts[self.station_name_dict[trip.end_station_id]] += 1
+            start_station_name = self.station_name_dict[trip.start_station_id]
+            end_station_name = self.station_name_dict[trip.end_station_id]
+            dep_counts[start_station_name] += 1
+            arr_counts[end_station_name] += 1
+            pair_counts[start_station_name][end_station_name] += 1
 
         self.stats['num_departures_per_station'] = dep_counts
         self.stats['num_arrivals_per_station'] = arr_counts
-
+        self.stats['num_trips_per_pair_station'] = pair_counts
 
     def calculate_per_hour_stats(self):
         list_counts = [[0,0] for i in range(24)]
