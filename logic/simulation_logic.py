@@ -307,8 +307,6 @@ class SimulationLogic:
                 self.unavailable_stations.add(departure_station_ID)
                 self.empty_stations.put((trip.start_date, departure_station_ID))
 
-
-
             
     def resolve_sad_departure(self, trip):
         '''When you want a bike but the station is empty'''
@@ -368,17 +366,21 @@ class SimulationLogic:
             trip = self.pending_arrivals.get()[1]
             eventType = ARRIVAL_TYPE
         else:
-            first_departure = self.pending_departures.get()[1]
-            first_arrival = self.pending_arrivals.get()[1]
+            # Peek at the first elements of both queues
+            first_departure = self.pending_departures.queue[0][1]
+            first_arrival = self.pending_arrivals.queue[0][1]
+
             # If a departure and arrival happen at the exact same time, departures resolve first. This decision was completely arbitrary.
             if (first_departure.start_date <= first_arrival.end_date):
                 trip = first_departure
                 eventType = DEPARTURE_TYPE
-                self.pending_arrivals.put((first_arrival.end_date, first_arrival))
+                # Remove departure from q
+                self.pending_departures.get()
             else:
                 trip = first_arrival
                 eventType = ARRIVAL_TYPE
-                self.pending_departures.put((first_departure.start_date, first_departure))
+                # Remove the arrival from the awaiting q
+                self.pending_arrivals.get()
         return (eventType, trip)
 
     def rebalance_stations(self, cur_time):		
@@ -397,7 +399,6 @@ class SimulationLogic:
                 self.unavailable_stations.remove(s_id)
             else:
                 break
-                #self.full_stations.put((time, s_id))
 
         # If there are empty stations that are empty add to them
         need_bikes = []

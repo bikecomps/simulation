@@ -34,14 +34,10 @@ class ExponentialLogic(SimulationLogic):
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        self.update_rebalance() 
-        self.resolve_trips()
-
-        if self.rebalancing:
-            self.rebalance_stations()
-
+        self.rebalance_stations(self.time)
         # Increment after we run for the current timestep?
         self.time += timestep
+        self.resolve_trips()
 
     def initialize_trips(self):
         hour = self.start_time.hour
@@ -227,9 +223,9 @@ class ExponentialLogic(SimulationLogic):
 
         # No bike to depart on, log a dissapointment
         if self.station_counts[departure_station_ID] == 0:
-            new_disappointment = Disappointment(departure_station_ID, trip.start_date, trip_id=None)
+            new_disappointment = Disappointment(departure_station_ID, trip.start_date, trip_id=None, is_full=False)
             self.session.add(new_disappointment)
-            self.disappointment_list.append(new_disappointment)
+            self.disappointments.append(new_disappointment)
             self.resolve_sad_departure(trip)
 
         # Using trip_end_time=None to indicate that we should just generate another trip
