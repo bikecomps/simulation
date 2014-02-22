@@ -62,7 +62,7 @@ class ExponentialLogic(SimulationLogic):
 
         # Returns time till next event in seconds
         # Function takes in 1/rate = "scale" but it works better the other way...
-        wait_time = numpy.random.exponential(exp_l.rate*(2./4))
+        wait_time = numpy.random.exponential(exp_l.rate*(3./4))
         #if wait_time > 3600:
         #    return Trip('-1', "Casual", 2, time + datetime.timedelta(seconds=3601), 
         #                None, s_id, s_id)
@@ -97,7 +97,7 @@ class ExponentialLogic(SimulationLogic):
         '''
             Returns a destination station given dest_distrs
         '''
-        vectors = self.dest_distrs[time.year][time.month][time.weekday() < 5][time.hour][s_id]
+        vectors = self.dest_distrs[s_id][time.year][time.month][time.weekday() < 5][time.hour]
         if len(vectors) > 0:
             cum_prob_vector = vectors[0]
             station_vector = vectors[1]
@@ -153,9 +153,14 @@ class ExponentialLogic(SimulationLogic):
         # Change to a list of lists, faster, more space efficient
         '''
         time_diff = end_time - start_time 
+        '''
         distr_dict = {y:{m:[[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)]
                       for d in range(2)] for m in range(start_time.month, end_time.month + 1)}
                           for y in range(start_time.year, end_time.year + 1)}
+        '''
+        # Maps s_id->year->month->is_weekday->hour
+        distr_dict = defaultdict(lambda: defaultdict(lambda: 
+                        defaultdict(lambda: defaultdict(lambda: defaultdict(list)))))
 
         # Inclusive
         #TODO figure out what to do if timespan > a week -> incline to say ignore it
@@ -178,12 +183,12 @@ class ExponentialLogic(SimulationLogic):
                 # Faster to do this than be smart about the db query
                 if distr.start_station_id in self.stations \
                         and distr.end_station_id in self.stations:
-                    result = distr_dict[distr.year][distr.month][distr.is_week_day][distr.hour][distr.start_station_id]
+                    result = distr_dict[distr.start_station_id][distr.year][distr.month][distr.is_week_day][distr.hour]
 
                     # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
                     if len(result) == 0:
-                        distr_dict[distr.year][distr.month][distr.is_week_day]\
-                                  [distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
+                        distr_dict[distr.start_station_id][distr.year][distr.month][distr.is_week_day]\
+                                  [distr.hour] = [[distr.prob], [distr.end_station_id]]
                     else:
                         result[0].append(distr.prob)
                         result[1].append(distr.end_station_id)
@@ -191,8 +196,8 @@ class ExponentialLogic(SimulationLogic):
 
             print "\t\tStarting reductions"
             # Change all of the probability vectors into cumulative probability vectors
-            for hour in distr_dict[day.year][day.month][(dow < 5)]:
-                for s_id, vectors in hour.iteritems():
+            for s_id, s_id_info in distr_dict.iteritems():
+                for hour, vectors in s_id_info[day.year][day.month][(dow < 5)].iteritems():
                     # We have data for choosing destination vector
                     if len(vectors) == 2:
                         prob_vector = vectors[0]
@@ -202,7 +207,6 @@ class ExponentialLogic(SimulationLogic):
                         vectors[0] = cum_prob_vector
         print "Loaded %d distrs" % num_distrs
         return distr_dict
-
 
     def get_trip_duration(self, gamma):
         '''

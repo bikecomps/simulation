@@ -140,15 +140,20 @@ def main():
     logic = logic(session)
     simulator = Simulator(logic) 
     print start_date, end_date
-    logic_options = {'station_caps':{31237:5}, 'drop_stations':[31704,31000,31001,31002],
-                     'rebalancing_time':datetime.timedelta(seconds=3600)}
+    #logic_options = {'station_caps':{31237:5}, 'drop_stations':[31704,31000,31001,31002],
+    #                 'rebalancing_time':datetime.timedelta(seconds=3600)}
+    logic_options = {'rebalancing_time':datetime.timedelta(seconds=3600), 'bike_total':5000}
     results = simulator.run(start_date, end_date, logic_options=logic_options)
     print "trips:", len(results['trips'])
+    print "Num rebalances",results['total_rebalances']
     #ds = results['disappointments']
     #print "disappointments:", len(ds)
     #num_ds = len([x for x in ds if x.trip == None])
     #print "Empty diss", num_ds
     #print "Full diss", len(ds) - num_ds
+    print "Arrival dissapointments", len(results['arr_dis_stations'])
+    print "Dep. dissapointments", len(results['dep_dis_stations'])
+
     print "Arrival dis stations:"
     print results['arr_dis_stations']
     print "Departure dis stations:"
