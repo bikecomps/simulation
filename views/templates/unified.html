@@ -29,7 +29,16 @@
 
 <script type="application/javascript">
     $(document).ready(function(){
-        var flexy_tables = $("#overall_trip_stats, #disappointment_stats, #min_duration_trip, #max_duration_trip");
+        var flexy_tables = $(
+            "#overall_trip_stats, \
+             #disappointment_stats,\
+             #min_duration_trip,\
+             #max_duration_trip,\
+             #comp_overall_trip_stats,\
+             #comp_disappointment_stats,\
+             #comp_min_duration_trip,\
+             #comp_max_duration_trip"
+        );
 
         $(".slide_button").click(function() {
             var slider = $("#stats_slider");
@@ -119,12 +128,8 @@
             <h5>Overall Statistics</h5>
             <table>
               <tr>
-                <td>Total Number of Trips Completed</td>
+                <td>Number of Trips Completed</td>
                 <td id="total_num_trips"></td>
-              </tr>
-              <tr>
-                <td>Total Number of Disappointments</td>
-                <td id="total_num_disappointments"></td>
               </tr>
               <tr>
                 <td>Average Trip Time</td>
@@ -134,11 +139,27 @@
                 <td>Standard Deviation of Trip Times</td>
                 <td id="std_trip_time"></td>
               </tr>
+              <tr>
+                <td>Arrival Prediction Accurracy: Manhattan Distance</td>
+                <td id='man_dist_score_arr'></td>
+              </tr>
+              <tr>
+                <td>Departure Prediction Accuracy: Manhattan Distance</td>
+                <td id='man_dist_score_dep'></td>
+              </tr>
+              <tr>
+                <td>Overall Prediction Accuracy: Euclidean Distance</td>
+                <td id='eucl_dist_score'></td>
+              </tr>
             </table>
           </div>
           <div class="large-12 columns" id="disappointment_stats">
             <h5>Disappointment Statistics</h5>
             <table>
+              <tr>
+                <td>Number of Disappointments</td>
+                <td id="total_num_disappointments"></td>
+              </tr>
               <tr>
                 <td>Total Empty Station Station Disappointments</td>
                 <td id="total_num_empty_disappointments"></td>
@@ -152,7 +173,7 @@
                 <td id="most_disappointing_dep_station"></td>
               </tr>
                <tr>
-                <td>Station Most Likely to Disappint (when arriving)</td>
+                <td>Station Most Likely to Disappoint (when arriving)</td>
                 <td id="most_disappointing_arr_station"></td>
               </tr>
            </table>
@@ -233,6 +254,142 @@
           </div>
         </div>
       </div>
+
+      <!-- Stats panel for side-by-side comparisons -->
+      <div id="comp_stats_panel">
+        <div class="row">
+          <div class="large-12 columns" id="comp_overall_trip_stats">
+            <h5>Overall Statistics</h5>
+            <table>
+              <tr>
+                <td>Number of Trips Completed</td>
+                <td id="comp_total_num_trips"></td>
+              </tr>
+              <tr>
+                <td>Average Trip Time</td>
+                <td id="comp_avg_trip_time"></td>
+              </tr>
+              <tr>
+                <td>Standard Deviation of Trip Times</td>
+                <td id="comp_std_trip_time"></td>
+              </tr>
+              <tr>
+                <td>Arrival Prediction Accurracy: Manhattan Distance</td>
+                <td id='comp_man_dist_score_arr'></td>
+              </tr>
+              <tr>
+                <td>Departure Prediction Accuracy: Manhattan Distance</td>
+                <td id='comp_man_dist_score_dep'></td>
+              </tr>
+              <tr>
+                <td>Overall Prediction Accuracy: Euclidean Distance</td>
+                <td id='comp_eucl_dist_score'></td>
+              </tr>
+            </table>
+          </div>
+          <div class="large-12 columns" id="comp_disappointment_stats">
+            <h5>Disappointment Statistics</h5>
+            <table>
+              <tr>
+                <td>Number of Disappointments</td>
+                <td id="comp_total_num_disappointments"></td>
+              </tr>
+              <tr>
+                <td>Total Empty Station Station Disappointments</td>
+                <td id="comp_total_num_empty_disappointments"></td>
+              </tr>
+              <tr>
+                <td>Total Full Station Disappointments</td>
+                <td id="comp_total_num_full_disappointments"></td>
+              </tr>
+              <tr>
+                <td>Station Most Likely to Disappoint (when departing)</td>
+                <td id="comp_most_disappointing_dep_station"></td>
+              </tr>
+               <tr>
+                <td>Station Most Likely to Disappoint (when arriving)</td>
+                <td id="comp_most_disappointing_arr_station"></td>
+              </tr>
+           </table>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="large-12 columns" id="comp_min_duration_trip">
+            <h5>Minimum Duration Trip</h5>
+            <table>
+              <tr>
+                <td>Start Station</td>
+                <td class="comp_start_station_name"></td>
+              </tr>
+              <tr>
+                <td>End Station</td>
+                <td class="comp_end_station_name"></td>              
+              </tr>
+              <tr>
+                <td>Duration</td>
+                <td class="comp_duration"></td>
+              </tr>
+              <tr>
+                <td>Trip Start Time</td>
+                <td class="comp_start_datetime"></td>
+              </tr>
+              <tr>
+                <td>Trip End Time</td>
+                <td class="comp_end_datetime"></td>
+              </tr>
+            </table>
+          </div>
+          <div class="large-12 columns" id="comp_max_duration_trip">
+            <h5>Maximum Duration Trip</h5>
+            <table>
+              <tr>
+                <td>Start Station</td>
+                <td class="start_station_name"></td>
+              </tr>
+              <tr>
+                <td>End Station</td>
+                <td class="end_station_name"></td>              
+              </tr>
+              <tr>
+                <td>Duration</td>
+                <td class="duration"></td>
+              </tr>
+              <tr>
+                <td>Trip Start Time</td>
+                <td class="start_datetime"></td>
+              </tr>
+              <tr>
+                <td>Trip End Time</td>
+                <td class="end_datetime"></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="row">
+          <div id="num_departures_per_station">
+            <h5>Number of Departures per Station</h5>
+            <div style = "max-width:878px;"></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div id="num_arrivals_per_station">
+            <h5>Number of Arrivals per Station</h5>
+            <div style = "max-width:878px;"></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="large-12 columns" id="num_trips_per_hour">
+            <h5>Number of Trips per Hour</h5>
+            <div></div>
+          </div>
+        </div>
+      </div>
+
+
   </div>
 </div>
 
