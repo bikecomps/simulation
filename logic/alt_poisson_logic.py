@@ -117,15 +117,10 @@ class AltPoissonLogic(SimulationLogic):
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        self.update_rebalance() 
+        self.rebalance_stations(self.time)
         self.generate_new_trips(self.time)
-        if self.rebalancing:
-            self.rebalance_stations()
-
-        self.resolve_trips()
-
-        # Increment after we run for the current timestep?
         self.time += timestep
+        self.resolve_trips()
 
     def load_dest_distrs(self, start_time, end_time):
         '''
