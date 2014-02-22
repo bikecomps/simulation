@@ -36,27 +36,6 @@ footer p {
     height: 100%;
 }
 
-.full-screen-wrapper {
-    width: 100%;
-    max-width: 100%;
-    height: 100%;
-}
-
-#time-slider {
-    z-index: 99999;
-    width: 540px;
-    position: absolute;
-    left: 87px;
-    top: 63px;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-#trigger-button {
-    line-height: 22px;
-    margin-bottom: 0;
-}
-
 /*Style elements from unified.html*/
 
 #map_canvas {
@@ -95,9 +74,9 @@ footer p {
 }
 
 #clustering_method {
-	float: left;
-	margin-top: 15px;
-	width: 100px;
+  float: left;
+  margin-top: 15px;
+  width: 100px;
 }
 
 #from_date,
@@ -138,6 +117,7 @@ form button[type="submit"] {
   background-color: #ffffff;
   overflow: hidden;
   z-index: 999;
+  box-shadow: 2px 2px 2px rgba(128, 128, 128, 0.5);
 }
 
 #stats_button {
@@ -146,8 +126,6 @@ form button[type="submit"] {
   position: absolute;
   right: 0px;
   top: 0px;
-  background-color: #959595;
-  /*cursor: ew-resize;*/
 }
 
 .slide_button {
@@ -158,14 +136,20 @@ form button[type="submit"] {
   border-width: 1px;
   border-color: white;
   border-radius: 100%;
-  background-color: gray;
-  /*cursor: initial;*/
+  background-color: #595959;
 }
 
 #stats_panel {
   position: absolute;
-  top: 40px;
+  top: 100px;
   right: 20px;
+  width: 640px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+#comp_stats_panel {
+  display: none;
   width: 640px;
   height: 100%;
   overflow-y: auto;
@@ -173,21 +157,30 @@ form button[type="submit"] {
 
 #stats_name_div {
   position: relative;
-  left: 640px;
-  height: 30px;
-  width: 200px;
+  height: 60px;
   overflow: hidden;
+  margin-top: 20px;
+  left: 825px;
+  top: 30px;
 }
 
 #stats_name {
   color: #3987c7;
-  font-size: 18px;
+  margin-bottom: 0;
+  float: left;
+}
+
+#stats_range {
+  width: 100%;
+  height: 20px;
+  float: left;
+  color: #3987c7;
 }
 
 #save_load_div {
   position: absolute;
-  right: 25px;
-  top: 5px;
+  right: 40px;
+  top: 15px;
   height: 30px;
   width: 205px;
   overflow: hidden;
@@ -326,27 +319,6 @@ form button[type="submit"] {
   font-weight: bold;
   text-shadow: 1px 1px 0 #fff;
 }
-
-/*
-NOTE : DEPRECATING OBSOLETE CSS STYLES. by ahnjo. Feb 16, 2014
-#overall_trip_stats {
-  float: left;
-  width: auto;
-}
-
-#min_duration_trip {
-  float: left;
-  width: auto;
-  padding-left: 20px;
-}
-
-#max_duration_trip {
-  float: left;
-  width: auto;
-  padding-left: 20px;
-}
-*/
-
 
 .infoWindow_wrapper {
     overflow-y: hidden;
