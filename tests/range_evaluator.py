@@ -19,6 +19,11 @@ import random
 
 class RangeEvaluator:
     def __init__(self, start_date, end_date, logic_options = {}):
+        year = end_date.year
+        if year > 2013:
+            print "We don't have testing data for 2014 and beyond"
+            exit()
+
         self.start_date = start_date
         self.end_date = end_date
         self.logic_options = logic_options
@@ -184,7 +189,8 @@ class RangeEvaluator:
             total_diff += diff
             total_real += max(sum(self.real[i]), sum(self.produced[i]))
 
-        return (1-(float(total_diff)/total_real))*100
+        result = (1-(float(total_diff)/total_real))*100 if total_real > 0 else 100
+        return result
 
     def eval_man_indiv_dist(self, get_arrivals):
         total_diff = 0
@@ -208,7 +214,8 @@ class RangeEvaluator:
             total_diff += diff
             total_real += max(self.real[i][get_arrivals], self.produced[i][get_arrivals])
 
-        return (1-(float(total_diff)/total_real))*100
+        result = (1-(float(total_diff)/total_real))*100 if total_real > 0 else 100
+        return result
 
     def eval_eucl_dist(self):
         total_diff = 0
@@ -239,7 +246,9 @@ class RangeEvaluator:
             total_real += max(self.real[i][0]**2 + self.real[i][1]**2,
                               self.produced[i][0]**2 + self.produced[i][1]**2)
             
-        return (1-(float(total_diff)/total_real))*100
+        result = (1-(float(total_diff)/total_real))*100 if total_real > 0 else 100
+        return result
+
 
 
 def main():
