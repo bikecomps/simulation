@@ -463,7 +463,8 @@ function processStatsForm() {
                     return;
                 }
 
-                $("#stats_name").html('Most recent simulation.');
+                $("#stats_name").html('Summary for most recent simulation:');
+                $("#stats_range").html(from + ' to ' + to);
                 $("#loading_div").hide();
                 $("#stats_slider").animate({left: 660});
                 displaySummaryStats(jsond, from, to);
