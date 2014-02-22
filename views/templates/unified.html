@@ -29,6 +29,8 @@
 
 <script type="application/javascript">
     $(document).ready(function(){
+        var flexy_tables = $("#overall_trip_stats, #disappointment_stats, #min_duration_trip, #max_duration_trip");
+
         $(".slide_button").click(function() {
             var slider = $("#stats_slider");
             var left_pos = parseInt(slider.css('left'),10);
@@ -45,8 +47,8 @@
                 case "slide_button_2":
                     slider.animate({left: '660px'},400);
                     $("#stats_panel").css('width', '640px');
-                    $(".large-6").css('width', '100%');
-                    $(".large-12").css('width', '100%');
+                    flexy_tables.addClass('large-12');
+                    flexy_tables.removeClass('large-6');
                     if (left_pos != 660) {
                         map.panBy(-320,0);
                         $('#stats_name_div').css('left','490px');
@@ -56,8 +58,8 @@
                 case "slide_button_3":
                     slider.animate({left: '50%'},600, function() {
                         $("#stats_panel").css('width', '100%');
-                        $(".large-6").css('width', '50%');
-                        $(".large-12").css('width', '50%');
+                        flexy_tables.addClass('large-6');
+                        flexy_tables.removeClass('large-12');
                         $("#stats_name_div").css('left', '20px');
                         if (left_pos == 660) {map.panBy(320,0);}
                     });
@@ -84,14 +86,7 @@
             },
             function() {
                 $(".slide_button").css('background-color', 'gray');
-            });
-
-        /*
-        $('#stats_slider').draggable({
-            axis: 'x',
-            containment: 'parent',
-        });
-        */
+            }); 
   });
 </script>
 {% end %}
@@ -120,7 +115,7 @@
       
       <div id="stats_panel">
         <div class="row">
-          <div class="large-6 columns" id="overall_trip_stats">
+          <div class="large-12 columns" id="overall_trip_stats">
             <h5>Overall Statistics</h5>
             <table>
               <tr>
@@ -141,7 +136,7 @@
               </tr>
             </table>
           </div>
-          <div class="large-6 columns" id="disappointment_stats">
+          <div class="large-12 columns" id="disappointment_stats">
             <h5>Disappointment Statistics</h5>
             <table>
               <tr>
@@ -165,7 +160,7 @@
         </div>
 
         <div class="row">
-          <div class="large-6 columns" id="min_duration_trip">
+          <div class="large-12 columns" id="min_duration_trip">
             <h5>Minimum Duration Trip</h5>
             <table>
               <tr>
@@ -190,7 +185,7 @@
               </tr>
             </table>
           </div>
-          <div class="large-6 columns" id="max_duration_trip">
+          <div class="large-12 columns" id="max_duration_trip">
             <h5>Maximum Duration Trip</h5>
             <table>
               <tr>
