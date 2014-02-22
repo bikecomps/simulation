@@ -429,50 +429,50 @@ function processStatsForm() {
 	}
 	var datatosend = { start: from, end: to, capacity: capacity_dict_string};
 	$.ajax({
-		type: "POST",
-		url: "/unified",
-		data: datatosend,
-		beforeSend: function() {
-			$("#stats_slider").animate({left: 20});
+	    type: "POST",
+	    url: "/unified",
+	    data: datatosend,
+	    beforeSend: function() {
+	        $("#stats_slider").animate({left: 20});
 
-			console.log("=== DATA ===");
-			console.log(datatosend);
- 
+	        console.log("=== DATA ===");
+	        console.log(datatosend);
+
                 // initialize 'loading_div'
                 var loadingDiv = $("#loading_div");            
                 var progressbar = $("#progressbar");
                 progressbar.progressbar("option", "value", false);            
-		progressbar.find(".progress-label").html("Loading...");
+                progressbar.find(".progress-label").html("Loading...");
                 loadingDiv.find("#current_time").html("");
              	progressbar.find(".ui-progressbar-value").css({
-					"background" : "#" + Math.floor( Math.random() * 16777215 ).toString(16)
-					});
-				loadingDiv.find("#error_alert").hide();
+                    "background" : "#" + Math.floor( Math.random() * 16777215 ).toString(16)
+                });
+                loadingDiv.find("#error_alert").hide();
                 var slider_left_pos = parseInt($("#stats_slider").css('left'),10);
                 if (slider_left_pos == 660) {map.panBy(320,0);}
                 loadingDiv.show();
                 pollProgress(false, "http://cmc307-04.mathcs.carleton.edu:3001");
-                },
-		success: function(data) {
-                    res = data.concat('!?!',from,'!?!',to);
-                    var jsond = JSON.parse(data);
-					data_for_maps = jsond;
-                    if (Object.keys(jsond).length == 0) {
-                        updateProgressBar(null, null, true);
-                        return;
-                    }
+            },
 
+	    success: function(data) {
+                res = data.concat('!?!',from,'!?!',to);
+                var jsond = JSON.parse(data);
+                data_for_maps = jsond;
+                if (Object.keys(jsond).length == 0) {
+                    updateProgressBar(null, null, true);
+                    return;
+                }
 
-                    $("#stats_name").html('Most recent simulation.');
-                    $("#loading_div").hide();
-                    $("#stats_slider").animate({left: 660});
-                    displaySummaryStats(jsond, from, to);
-                    map.panBy(-320,0);
+                $("#stats_name").html('Most recent simulation.');
+                $("#loading_div").hide();
+                $("#stats_slider").animate({left: 660});
+                displaySummaryStats(jsond, from, to);
+                map.panBy(-320,0);
 
-		    console.log(data_for_maps);	
-		    $.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
+		console.log(data_for_maps);	
+		$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
+            },
 
-                },
                 error: function() {
                     updateProgressBar(null, null, true);
                 }
