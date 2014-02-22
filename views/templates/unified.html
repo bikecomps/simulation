@@ -51,7 +51,9 @@
                     flexy_tables.removeClass('large-6');
                     if (left_pos != 660) {
                         map.panBy(-320,0);
-                        $('#stats_name_div').css('left','490px');
+                        $('#stats_name_div').css('left','825px');
+			$('#stats_name_div').css('top', '30px');
+			$('#stats_panel').css('top', '120px');
                     }
                     break;
                 
@@ -60,7 +62,9 @@
                         $("#stats_panel").css('width', '100%');
                         flexy_tables.addClass('large-6');
                         flexy_tables.removeClass('large-12');
-                        $("#stats_name_div").css('left', '20px');
+                        $("#stats_name_div").css('left', '65px');
+			$("#stats_name_div").css('top', '0px');
+			$('#stats_panel').css('top', '100px');
                         if (left_pos == 660) {map.panBy(320,0);}
                     });
                     break;
@@ -68,24 +72,24 @@
         });
 
         $("#slide_button_1").hover(
-            function() {$("#slide_button_1").css('background-color', 'steelblue');},
-            function() {$("#slide_button_1").css('background-color', 'gray');}
+            function() {$("#slide_button_1").css('background-color', '#3987c7');},
+            function() {$("#slide_button_1").css('background-color', '#595959');}
         );
 
         $("#slide_button_2").hover(
             function() {
-                $("#slide_button_1, #slide_button_2").css('background-color', 'steelblue');
+                $("#slide_button_1, #slide_button_2").css('background-color', '#3987c7');
             },
             function() {
-                $("#slide_button_1, #slide_button_2").css('background-color', 'gray');
+                $("#slide_button_1, #slide_button_2").css('background-color', '#595959');
             });
 
         $("#slide_button_3").hover(
             function() {
-                $(".slide_button").css('background-color', 'steelblue');
+                $(".slide_button").css('background-color', '#3987c7');
             },
             function() {
-                $(".slide_button").css('background-color', 'gray');
+                $(".slide_button").css('background-color', '#595959');
             }); 
   });
 </script>
@@ -95,7 +99,7 @@
 <div id="stats_wrapper">
   <div id="stats_slider">
       <div id="stats_name_div">
-          <h5 id="stats_name">Run a simulation!</h5><div id="stats_range"></div>
+          <h3 id="stats_name">Run a simulation!</h3><div id="stats_range"></div>
       </div>
 
       <div id="save_load_div">

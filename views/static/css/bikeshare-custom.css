@@ -138,6 +138,7 @@ form button[type="submit"] {
   background-color: #ffffff;
   overflow: hidden;
   z-index: 999;
+  box-shadow: 2px 2px 2px rgba(128, 128, 128, 0.5);
 }
 
 #stats_button {
@@ -146,7 +147,7 @@ form button[type="submit"] {
   position: absolute;
   right: 0px;
   top: 0px;
-  background-color: #959595;
+  /*background-color: #959595;*/
   /*cursor: ew-resize;*/
 }
 
@@ -158,13 +159,13 @@ form button[type="submit"] {
   border-width: 1px;
   border-color: white;
   border-radius: 100%;
-  background-color: gray;
+  background-color: #595959;
   /*cursor: initial;*/
 }
 
 #stats_panel {
   position: absolute;
-  top: 60px;
+  top: 100px;
   right: 20px;
   width: 640px;
   height: 100%;
@@ -173,14 +174,17 @@ form button[type="submit"] {
 
 #stats_name_div {
   position: relative;
-  left: 490px;
   height: 60px;
   overflow: hidden;
+  margin-top: 20px;
+  left: 825px;
+  top: 30px;
 }
 
 #stats_name {
   color: #3987c7;
-  font-size: 18px;
+  margin-bottom: 0;
+  float: left;
 }
 
 #stats_range {
@@ -192,8 +196,8 @@ form button[type="submit"] {
 
 #save_load_div {
   position: absolute;
-  right: 25px;
-  top: 5px;
+  right: 40px;
+  top: 15px;
   height: 30px;
   width: 205px;
   overflow: hidden;
