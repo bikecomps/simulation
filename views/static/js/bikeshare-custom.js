@@ -271,6 +271,53 @@ function displaySummaryStats(data, from, to) {
 	$("#avg_trip_time").text(toHours(data["avg_trip_time"]));
 	$("#std_trip_time").text(toHours(data["std_trip_time"]));
 
+        var value;
+        // set Accuracy based on manhattan distance and euclidean distance
+        if ("man_dist_score_arr" in data) {
+	    value = data["man_dist_score_arr"].toFixed(2) + "%";
+	    if ($("#man_dist_score_arr").length == 0) {
+		$("#overall_trip_stats table").append("<tr><td>" +
+						      "Arrival Prediction Accuracy based on Man-Distance" +
+						      "</td><td id='man_dist_score_arr'>" + 
+						      value + 
+						      "</td></tr>");
+	    } else {
+		$("#man_dist_score_arr").html(value);
+	    }
+	}
+        if ("man_dist_score_dep" in data) {
+	    value = data["man_dist_score_dep"].toFixed(2) + "%";
+	    if ($("#man_dist_score_dep").length == 0) {
+		$("#overall_trip_stats table").append("<tr><td>" +
+						      "Departure Prediction Accuracy based on Man-Distance" +
+						      "</td><td id='man_dist_score_dep'>" + 
+						      value + 
+						 "</td></tr>");
+	    } else {		
+		$("#man_dist_score_dep").html(value);
+	    }
+	}
+        if ("eucl_dist_score" in data) {
+	    value = data["eucl_dist_score"].toFixed(2) + "%";
+	    if ($("#eucl_dist_score").length == 0) {
+		$("#overall_trip_stats table").append("<tr><td>" +
+						      "Prediction Accuracy based on Euclidean Distance" +
+						      "</td><td id='eucl_dist_score'>" + 
+						      value + 
+						      "</td></tr>");
+	    } else {
+		$("#eucl_dist_score").html(value);
+	    }
+	}
+
+	// set 'total_num_trips', 'total_num_disappointments',
+	// 'avg_trip_time', and 'std_trip_time' 
+	$("#total_num_empty_disappointments").text(data["total_num_empty_disappointments"]);
+	$("#total_num_full_disappointments").text(data["total_num_full_disappointments"]);
+	$("#most_disappointing_dep_station").text(data["most_disappointing_dep_station"]);
+	$("#most_disappointing_arr_station").text(data["most_disappointing_arr_station"]);
+
+
 	// set 'min_duration_trip' 
 	var minTrip = data["min_duration_trip"];
 	var minTripHtml = $("#min_duration_trip");
@@ -329,8 +376,9 @@ function updateProgressBar(currentTime, percentProgress, isError) {
     var value = parseInt(percentProgress);
     if (value == 0) {
 	progressbar.progressbar("option", "value", false);	
+	progressbar.find(".progress-label").html("Loading...");
     } else {
-	progressbar.progressbar( "value", parseInt(percentProgress));	
+	progressbar.progressbar( "value", value);
     }
 }
 
@@ -367,6 +415,11 @@ function processStatsForm() {
 	var from = $("#from_date").val().trim(),
 		to = $("#to_date").val().trim(),
 		currentDate = (new Date()).dateFormat("Y-m-d H:i");
+	console.log("dict from within processStatsForm():");
+	console.log(typeof capacity_dict);
+	console.log(capacity_dict);
+
+	capacity_dict_string = JSON.stringify(capacity_dict);
 
 	if (!from.length) {
 		from = currentDate;
@@ -374,18 +427,22 @@ function processStatsForm() {
 	if (!to.length) {
 		to = currentDate;
 	}
-
+	var datatosend = { start: from, end: to, capacity: capacity_dict_string};
 	$.ajax({
 		type: "POST",
 		url: "/unified",
-		data: { start: from, end: to },
+		data: datatosend,
 		beforeSend: function() {
 			$("#stats_slider").animate({left: 20});
 
+			console.log("=== DATA ===");
+			console.log(datatosend);
+ 
                 // initialize 'loading_div'
                 var loadingDiv = $("#loading_div");            
                 var progressbar = $("#progressbar");
                 progressbar.progressbar("option", "value", false);            
+		progressbar.find(".progress-label").html("Loading...");
                 loadingDiv.find("#current_time").html("");
              	progressbar.find(".ui-progressbar-value").css({
 					"background" : "#" + Math.floor( Math.random() * 16777215 ).toString(16)

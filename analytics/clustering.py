@@ -54,13 +54,12 @@ def gen_hour_obs(conn, start_d, end_d, week_day=True, remove_zeroes=False):
     
     query = """
             SELECT start_station_id, end_station_id, 
-                   EXTRACT(DOW FROM start_date), 
-                   EXTRACT(HOUR FROM start_date),
+                   EXTRACT(DOW FROM start_date) as dow, 
+                   EXTRACT(HOUR FROM start_date) as hour,
                    COUNT(*)
             FROM trips 
             WHERE start_date BETWEEN '{s}' AND '{e}' 
-            GROUP BY start_station_id, end_station_id,
-                   EXTRACT(DOW FROM start_date), EXTRACT(HOUR FROM start_date);
+            GROUP BY start_station_id, end_station_id, dow, hour
             """.format(s=start_d, e=end_d)
     
     # Calculate the number of weekdays in a range, and weekend days
@@ -163,7 +162,6 @@ def op_cluster_obs(obs, max_k=30, npass=10):
     # Doesn't make any sense for clusters = 1
     for i in xrange(2, max_k + 1):
         label, error, nfound = pc.kcluster(obs, i, npass=npass)
-        print i
         errors[i - 2] = error
         labels[i - 2] = label
         
@@ -176,11 +174,9 @@ def op_cluster_obs(obs, max_k=30, npass=10):
     opt_i = -1
 
     n = len(error_deriv)
-    print "Error?!",errors
     for i in range(1, n): 
         # Approximate the slope of the derivative
         diff = abs(sum(error_deriv[0:i])/i - sum(error_deriv[i:])/(n-i))
-        print i, diff, error_deriv
         if diff > opt_diff:
             opt_diff = diff
             opt_i = i 
@@ -316,40 +312,44 @@ def json_dump_handler(obj):
         raise TypeError, 'Cannot serialize item %s of type %s' % (repr(obj), type(obj))
 
 
-def trip_count_cluster():
-    normalize = False
+def trip_count_cluster(start_d='2010-09-15', end_d='2013-12-31', normalize=True, cluster_empties=False, choice="totals",
+                       max_k=5):
     conn = Connector()
     engine = conn.getDBEngine()
-    s_id_map, from_v, to_v, total_v = generate_trip_count_obs(engine, '2010-5-1', '2013-6-30')
+
+    s_id_map, from_v, to_v, total_v = generate_trip_count_obs(engine, start_d, end_d, remove_zeroes=(not cluster_empties))
     orig_from, orig_to, orig_total = from_v, to_v, total_v
     if normalize:
         from_v = normalize_observations(from_v)
         to_v = normalize_observations(to_v)
         total_v = normalize_observations(total_v)
 
-
-    obs = total_v
-    raw_obs = orig_total
+    if choice == "totals":
+        obs = total_v
+        raw_obs = orig_total
+    elif choice == "departures":
+        obs = from_v
+        raw_obs = orig_total
+    elif choice == "arrivals":
+        obs = to_v
+        raw_obs = orig_total
 
     s_ids = sorted(s_id_map.iterkeys(), key=lambda k: s_id_map[k])
-    opt_clusters = op_cluster_obs(obs, 5)
+    opt_clusters = op_cluster_obs(obs, max_k)
     centroids = get_centroids_from_clusters(s_ids, obs, opt_clusters)
     centroids = normalize_centroids(centroids)
     info = info_from_trip_clusters(raw_obs, obs, s_ids, opt_clusters, centroids)
-    for c_id, data in info.iteritems():
-        print "-"*40,c_id,"-"*40
-        for label, d in data.iteritems():
-            print label+":",d
+
     clusters_dict = {}
     for c_id, data in info.iteritems():
         clusters_dict[c_id] = data["stations"]
     return clusters_dict
 
-def hour_count_cluster():   
-    normalize = False
+def hour_count_cluster(start_d='2010-09-15', end_d='2013-12-31', normalize=True, cluster_empties=False,
+                       choice="departures", max_k=8):
     conn = Connector()
     engine = conn.getDBEngine()
-    s_ids, departures, arrivals, totals = gen_hour_obs(engine, '2013-5-1', '2013-6-1', remove_zeroes=True)
+    s_ids, departures, arrivals, totals = gen_hour_obs(engine, start_d, end_d, remove_zeroes=(not cluster_empties))
     orig_deps, orig_arrs, orig_tots = departures, arrivals, totals
 
     if normalize:
@@ -357,19 +357,27 @@ def hour_count_cluster():
         arrivals = normalize_observations(arrivals)
         totals = normalize_observations(totals)
 
-    obs = departures
-    raw_obs = orig_deps
+    if choice == "totals":
+        obs = total_v
+        raw_obs = orig_tots
+    elif choice == "departures":
+        obs = departures 
+        raw_obs = orig_deps
+    elif choice == "arrivals":
+        obs = to_v
+        raw_obs = orig_arrs
 
-    opt_clusters = op_cluster_obs(obs, 8)
+    opt_clusters = op_cluster_obs(obs, max_k)
     centroids = get_centroids_from_clusters(s_ids, obs, opt_clusters)
     centroids = normalize_centroids(centroids)
-    print dump_centroids_to_csv(centroids)
-    print "\n\n\n"
+    #print dump_centroids_to_csv(centroids)
+    #print "\n\n\n"
     info = info_from_hour_clusters(raw_obs, obs, s_ids, opt_clusters, centroids)
-    for c_id, data in info.iteritems():
-        print "-"*40,c_id,"-"*40
-        for label, d in data.iteritems():
-            print label+":",d
+    #for c_id, data in info.iteritems():
+    #    print "-"*40,c_id,"-"*40
+    #    for label, d in data.iteritems():
+    #        print label+":",d
+
     clusters_dict = {}
     for c_id, data in info.iteritems():
         clusters_dict[c_id] = data["stations"]
@@ -377,8 +385,8 @@ def hour_count_cluster():
 
 
 def main():
-    print hour_count_cluster() 
-    # trip_count_cluster()
+    print hour_count_cluster('2012-05-01', '2012-06-1') 
+    print trip_count_cluster('2012-05-01', '2012-06-1')
     return
     conn = Connector()
     s = conn.getDBSession()

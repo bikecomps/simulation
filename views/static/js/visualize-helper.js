@@ -4,7 +4,7 @@ function changeMapVis() {
 			
 			s_cap = data_for_maps["simulated_station_caps"][station_id];
 			s_final_count = data_for_maps["final_station_counts"][station_id];
-			s_percentage = (s_final_count/s_cap).toFixed(2);	
+			s_percentage = s_final_count/s_cap;	
 			var s_color;
 			if (s_percentage <= .2) {
 				s_color = marker_cap_gradient[0];

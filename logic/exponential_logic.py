@@ -34,14 +34,10 @@ class ExponentialLogic(SimulationLogic):
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        self.update_rebalance() 
-        self.resolve_trips()
-
-        if self.rebalancing:
-            self.rebalance_stations()
-
+        self.rebalance_stations(self.time)
         # Increment after we run for the current timestep?
         self.time += timestep
+        self.resolve_trips()
 
     def initialize_trips(self):
         hour = self.start_time.hour
@@ -73,7 +69,7 @@ class ExponentialLogic(SimulationLogic):
 
         trip_start_time = time + datetime.timedelta(seconds=wait_time)
         # It should go somewhere depending on when the hour of its start_time (could be far in the future)
-        end_station_id = self.get_destination(s_id, trip_start_time)
+        end_station_id = self._get_destination(s_id, trip_start_time)
         if end_station_id not in self.stations:
             print "ERROR END_ID",end_station_id,"NOT IN STATIONS, FROM s_id",s_id
 
@@ -97,11 +93,11 @@ class ExponentialLogic(SimulationLogic):
             #raise Exception("Gamma doesn't exist")
         return new_trip
 
-    def get_destination(self, s_id, time):
+    def _get_destination(self, s_id, time):
         '''
             Returns a destination station given dest_distrs
         '''
-        vectors = self.dest_distrs[time.weekday() < 5][time.hour][s_id]
+        vectors = self.dest_distrs[time.year][time.month][time.weekday() < 5][time.hour][s_id]
         if len(vectors) > 0:
             cum_prob_vector = vectors[0]
             station_vector = vectors[1]
@@ -111,7 +107,6 @@ class ExponentialLogic(SimulationLogic):
         
             return station_vector[bisect.bisect(cum_prob_vector, x)]
         else:
-            print "Error getting destination: Weekday",time.weekday(),"hour",time.hour,"s_id",s_id
             # Send it to one of 273 randomly
             return random.choice(self.stations.keys())
 
@@ -157,7 +152,10 @@ class ExponentialLogic(SimulationLogic):
         Caches destination distributions into dictionary of day -> hour -> start_station_id -> [cumulative_distr, corresponding stations]
         # Change to a list of lists, faster, more space efficient
         '''
-        distr_dict = [[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)] for d in range(2)]
+        time_diff = end_time - start_time 
+        distr_dict = {y:{m:[[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)]
+                      for d in range(2)] for m in range(start_time.month, end_time.month + 1)}
+                          for y in range(start_time.year, end_time.year + 1)}
 
         # Inclusive
         #TODO figure out what to do if timespan > a week -> incline to say ignore it
@@ -180,11 +178,12 @@ class ExponentialLogic(SimulationLogic):
                 # Faster to do this than be smart about the db query
                 if distr.start_station_id in self.stations \
                         and distr.end_station_id in self.stations:
-                    result = distr_dict[distr.is_week_day][distr.hour][distr.start_station_id]
+                    result = distr_dict[distr.year][distr.month][distr.is_week_day][distr.hour][distr.start_station_id]
 
                     # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
                     if len(result) == 0:
-                        distr_dict[distr.is_week_day][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
+                        distr_dict[distr.year][distr.month][distr.is_week_day]\
+                                  [distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
                     else:
                         result[0].append(distr.prob)
                         result[1].append(distr.end_station_id)
@@ -192,7 +191,7 @@ class ExponentialLogic(SimulationLogic):
 
             print "\t\tStarting reductions"
             # Change all of the probability vectors into cumulative probability vectors
-            for hour in distr_dict[(dow < 5)]:
+            for hour in distr_dict[day.year][day.month][(dow < 5)]:
                 for s_id, vectors in hour.iteritems():
                     # We have data for choosing destination vector
                     if len(vectors) == 2:
@@ -224,9 +223,9 @@ class ExponentialLogic(SimulationLogic):
 
         # No bike to depart on, log a dissapointment
         if self.station_counts[departure_station_ID] == 0:
-            new_disappointment = Disappointment(departure_station_ID, trip.start_date, trip_id=None)
+            new_disappointment = Disappointment(departure_station_ID, trip.start_date, trip_id=None, is_full=False)
             self.session.add(new_disappointment)
-            self.disappointment_list.append(new_disappointment)
+            self.disappointments.append(new_disappointment)
             self.resolve_sad_departure(trip)
 
         # Using trip_end_time=None to indicate that we should just generate another trip
@@ -234,27 +233,14 @@ class ExponentialLogic(SimulationLogic):
         elif trip.end_date:
             self.station_counts[departure_station_ID] -= 1
             self.pending_arrivals.put((trip.end_date, trip))
+            # Perfect time to denote a now empty station
+            if self.station_counts[departure_station_ID] == 0\
+                   and not trip.start_station_id in self.unavailable_stations:
+                self.unavailable_stations.add(departure_station_ID)
+                self.empty_stations.put((trip.start_date, departure_station_ID))
 
         new_trip = self.generate_trip(departure_station_ID, trip.start_date)
         self.pending_departures.put((new_trip.start_date, new_trip))
-
-    def resolve_sad_arrival(self, trip):
-        '''
-        Changes trip.end_station_id to the id of the station nearest to it and updates trip.end_date accordingly. Puts the updated trip into pending_arrivals.
-        '''
-        station_list_index = 0
-        nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
-        visited_stations = [disappointment.station_id for disappointment in trip.disappointments]
-        while nearest_station in visited_stations:
-            station_list_index+=1
-            nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
-        
-        gamma = self.duration_distrs.get((trip.end_station_id, nearest_station), None)
-        if gamma:
-            trip.end_station_id = nearest_station
-            trip_duration = self.get_trip_duration(gamma)
-            trip.end_date += trip_duration
-            self.pending_arrivals.put((trip.end_date, trip))
 
     def clean_up(self):
         pass
