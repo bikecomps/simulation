@@ -17,7 +17,7 @@ function save_results() {
     opt.innerHTML = stats_name;
     $("#stats_picker, #comp_picker_1, #comp_picker_2").append(opt);
     $("#stats_namer").animate({left: "-260px"});
-    $("#save_stats").animate({width: "100px", left: "0px"}, function() {$(this).html('Save Results')})
+    $("#save_stats").animate({width: "100px", left: "0px"}, function() {$(this).html('Save Results');})
         .attr('onclick', 'save_trans()');
     $("#load_stats").animate({right: "125px"});
     $("#comp_toggle").animate({right: "0px"});
@@ -271,13 +271,16 @@ function displaySummaryStats(data, from, to, comp) {
 
         var value;
         // set Accuracy based on manhattan distance and euclidean distance
-        value = data["man_dist_score_arr"].toFixed(2) + "%";
+        // SEE: summary_stats.py
+        // 'man_dist_score_arr', 'man_dist_score_dep', and 'eucl_dist_score'
+        // are only included when year <= 2013
+        value = ("man_dist_score_arr" in data ? data["man_dist_score_arr"].toFixed(2) + "%" : "");
         $("#" + comps + "man_dist_score_arr").html(value);
 
-        value = data["man_dist_score_dep"].toFixed(2) + "%";
+        value = ("man_dist_score_dep" in data ? data["man_dist_score_dep"].toFixed(2) + "%" : "");
         $("#" + comps + "man_dist_score_dep").html(value);
 
-        value = data["eucl_dist_score"].toFixed(2) + "%";
+        value = ("eucl_dist_score" in data ? data["eucl_dist_score"].toFixed(2) + "%" : "");
         $("#" + comps + "eucl_dist_score").html(value);
 
 	// set 'total_num_trips', 'total_num_disappointments',
@@ -286,7 +289,7 @@ function displaySummaryStats(data, from, to, comp) {
 	$("#" + comps + "total_num_full_disappointments").text(data["total_num_full_disappointments"]);
 	$("#" + comps + "most_disappointing_dep_station").text(data["most_disappointing_dep_station"]);
 	$("#" + comps + "most_disappointing_arr_station").text(data["most_disappointing_arr_station"]);
-
+    console.log("got past the disappointments");
 
 	// set 'min_duration_trip' 
 	var minTrip = data["min_duration_trip"];
@@ -451,8 +454,11 @@ function processStatsForm() {
                 progressbar.progressbar("option", "value", false);            
                 progressbar.find(".progress-label").html("Loading...");
                 loadingDiv.find("#current_time").html("");
+
+		// spice it up a little bit
+		var possibleColors = ["#3987c7", "#96e62e", "#dfe62e", "#b52ee6", "#b2c2bd"];
              	progressbar.find(".ui-progressbar-value").css({
-                    "background" : "#3987c7"
+                    "background" : possibleColors[Math.floor(Math.random()*(possibleColors.length-1))]
                 });
                 loadingDiv.find("#error_alert").hide();
                 var slider_left_pos = parseInt($("#stats_slider").css('left'),10);
@@ -476,13 +482,13 @@ function processStatsForm() {
                 $("#stats_slider").animate({left: 660});
                 displaySummaryStats(jsond, from, to);
                 map.panBy(-320,0);
-
-		console.log(data_for_maps);	
-		$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
+        		console.log(data_for_maps);	
+		        $.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
             },
 
-                error: function() {
-                    updateProgressBar(null, null, true);
-                }
+        error: function() {
+            console.log("damn it.");
+            updateProgressBar(null, null, true);
+        }
 	});	
 }

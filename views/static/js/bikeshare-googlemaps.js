@@ -143,8 +143,10 @@ function appendCapacityChange(id) {
 
 function clusterColors() {
 	var clusterMethod = $("#clustering_method").val();
+        var startDate = $("#start_date").val();
+        var endDate = $("#end_date").val();
 	console.log(clusterMethod);
-	if (!clusterMethod.length) {
+	if (!clusterMethod.length || !startDate.length || !endDate.length) {
 		console.log("nope.");
 		return;
 	}
@@ -152,7 +154,9 @@ function clusterColors() {
 	$.ajax({
 		type: "POST",
 		url: "/clustering",
-		data: { clustering_method: clusterMethod },
+		data: { start_date: startDate, 
+			end_date: endDate, 
+			clustering_method: clusterMethod },
 		beforeSend: function() {
 			$("#loading_div").show();
 		},

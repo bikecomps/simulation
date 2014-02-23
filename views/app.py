@@ -19,20 +19,17 @@ class UnifiedHandler(RequestHandler):
     def post(self):
         start_date = datetime.datetime.strptime(self.get_argument("start"), "%Y-%m-%d %H:%M")
         end_date = datetime.datetime.strptime(self.get_argument("end"), "%Y-%m-%d %H:%M")
-	altered_capacity = json.loads(self.get_argument("capacity"))
 
+	altered_capacity = json.loads(self.get_argument("capacity"))
 	ac = {int(k): int(altered_capacity[k]) for k in altered_capacity}
 	altered_capacity = ac
 
         try:
             sstats = SummaryStats(start_date, end_date, altered_capacity)
-            print 'Woohoo! Got me summ stats!'
             self.write(sstats.get_stats())
         except Exception as e:
-            print e
             # some error occurred
             self.write("{}")
-
 
 class StatsHandler(RequestHandler):
     def get(self):
@@ -54,8 +51,14 @@ class ClusterHandler(RequestHandler):
         self.render("clustering.html", title="Clustering Tool", locations=stations)
 
     def post(self):
+        start_dstr = self.get_argument("start_date")
+        end_dstr = self.get_argument("end_date")
         cluster_type = self.get_argument("clustering_method")
-        clusters = clustering.get_clusters(cluster_type)        
+        
+        k = self.get_argument("max_k", default = 5)
+        choice = self.get_argument("choice", default = "totals")
+        
+        clusters = clustering.get_clusters(start_dstr, end_dstr, k, choice, cluster_type)
         self.write(clusters)
 
 
