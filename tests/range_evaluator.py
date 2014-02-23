@@ -288,7 +288,7 @@ def main():
     print "accuracy based on euclidean distance: ", eucl, "%"
     print "accuracy of arrivals by m-distance: ",man_arr, "%"
     print "accuracy of departures by m-distance: ",man_dep, "%"
-    print "p-value: ", re.calc_p_value_perm(re.eval_man_dist)
+    # print "p-value: ", re.calc_p_value_perm(re.eval_man_dist)
 
 if __name__ == "__main__":
     main()
