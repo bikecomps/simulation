@@ -452,8 +452,11 @@ function processStatsForm() {
                 progressbar.progressbar("option", "value", false);            
                 progressbar.find(".progress-label").html("Loading...");
                 loadingDiv.find("#current_time").html("");
+
+		// spice it up a little bit
+		var possibleColors = ["#3987c7", "#96e62e", "#dfe62e", "#b52ee6", "#b2c2bd"];
              	progressbar.find(".ui-progressbar-value").css({
-                    "background" : "#3987c7"
+                    "background" : possibleColors[Math.floor(Math.random()*(possibleColors.length-1))]
                 });
                 loadingDiv.find("#error_alert").hide();
                 var slider_left_pos = parseInt($("#stats_slider").css('left'),10);
