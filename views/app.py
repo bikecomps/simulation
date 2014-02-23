@@ -88,14 +88,14 @@ if __name__ == "__main__":
     ], **settings)
 
 
-    port_num = 1337
+    port_num = 3000
     application.listen(port_num)
     print "listening on port", port_num
 
     # run another server to use for long-polling
-    #cmd = ["python",
-    #       "-m",
-    #       "views.long_polling"]
-    #proc = subprocess.Popen(cmd)
+    cmd = ["python",
+           "-m",
+           "views.long_polling"]
+    proc = subprocess.Popen(cmd)
 
     tornado.ioloop.IOLoop.instance().start()
