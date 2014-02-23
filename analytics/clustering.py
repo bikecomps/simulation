@@ -149,8 +149,7 @@ def op_cluster_obs(obs, max_k=30, npass=10):
     ''' 
     Info on pycluster available here:
          http://bonsai.hgc.jp/~mdehoon/software/cluster/cluster.pdf 
-    '''
-
+    '''    
     obs = np.vstack(obs)
     # Minus 2 for at least two clusters
     errors = [0] * (max_k - 1)
@@ -388,10 +387,10 @@ def hour_count_cluster(start_d='2010-09-15 00:00', end_d='2013-12-31 00:00', nor
 
 
 def main():
-    # print hour_count_cluster('2012-05-01 00:00', '2012-06-1 00:00') 
-    # print trip_count_cluster('2012-05-01 00:00', '2012-06-1 00:00')
-    print hour_count_cluster('2012-11-07 01:21', '2012-11-08 01:21') 
-    print trip_count_cluster('2012-11-07 01:21', '2012-11-08 01:21')
+    print hour_count_cluster('2012-05-01 00:00', '2012-06-1 00:00') 
+    print trip_count_cluster('2012-05-01 00:00', '2012-06-1 00:00')
+    # print hour_count_cluster('2014-02-23 01:21', '2014-02-24 01:21') 
+    # print trip_count_cluster('2014-02-23 01:21', '2014-02-24 01:21')
     return
     conn = Connector()
     s = conn.getDBSession()

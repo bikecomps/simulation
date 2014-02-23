@@ -146,7 +146,7 @@ function clusterColors() {
         var startDate = $("#start_date").val();
         var endDate = $("#end_date").val();
 	console.log(clusterMethod);
-	if (!clusterMethod.length) {
+	if (!clusterMethod.length || !startDate.length || !endDate.length) {
 		console.log("nope.");
 		return;
 	}
