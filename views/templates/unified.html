@@ -60,9 +60,6 @@
                     flexy_tables.removeClass('large-6');
                     if (left_pos != 660) {
                         map.panBy(-320,0);
-                        $('#stats_name_div').css('left','825px');
-			$('#stats_name_div').css('top', '30px');
-			$('#stats_panel').css('top', '120px');
                     }
                     break;
                 
@@ -71,9 +68,6 @@
                         $("#stats_panel").css('width', '100%');
                         flexy_tables.addClass('large-6');
                         flexy_tables.removeClass('large-12');
-                        $("#stats_name_div").css('left', '65px');
-			$("#stats_name_div").css('top', '0px');
-			$('#stats_panel').css('top', '100px');
                         if (left_pos == 660) {map.panBy(320,0);}
                     });
                     break;
@@ -107,15 +101,11 @@
 {% block content %}
 <div id="stats_wrapper">
   <div id="stats_slider">
-      <div id="stats_name_div">
-          <h3 id="stats_name">Run a simulation!</h3><div id="stats_range"></div>
-      </div>
-
       <div id="save_load_div">
           <button type="button" class="button tiny" id="load_stats" onclick="load_trans()">Load Results</button>
           <button type="button" class="button tiny" id="save_stats" onclick="save_trans()">Save Results</button>
           <button type="button" class="button tiny" id="comp_toggle" onclick="toggle_comps()">Compare Results</button>
-          <input type="text" id="stats_namer" placeholder="Insert Name"></input>
+          <input type="text" id="stats_namer" placeholder="Insert Name (and make it a good one!)"></input>
           <select id="stats_picker"></select>
       </div>
       
@@ -126,6 +116,11 @@
       </div>
       
       <div id="stats_panel">
+	<div class="row" id="stats_name_div"><div class="large-12 columns">
+	    <h3 id="stats_name">Run a simulation first!</h3>
+            <div id="stats_range">You're not even supposed to see this.</div>
+            <select id="comp_picker_1"></select>
+	</div></div>
         <div class="row">
           <div class="large-12 columns" id="overall_trip_stats">
             <h5>Overall Statistics</h5>
@@ -260,6 +255,11 @@
 
       <!-- Stats panel for side-by-side comparisons -->
       <div id="comp_stats_panel">
+	<div class="row" id="comp_stats_name_div"><div class="large-12 columns">
+	    <h3 id="comp_stats_name">Run a simulation first!</h3>
+            <div id="comp_stats_range">You're not even supposed to see this.</div>
+            <select id="comp_picker_2"></select>
+	</div></div>
         <div class="row">
           <div class="large-12 columns" id="comp_overall_trip_stats">
             <h5>Overall Statistics</h5>

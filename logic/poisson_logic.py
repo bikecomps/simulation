@@ -171,8 +171,7 @@ class PoissonLogic(SimulationLogic):
                         trip_end_time = trip_start_time + trip_duration
                         new_trip = Trip(str(random.randint(1,500)), "Casual", 2, \
                                 trip_start_time, trip_end_time, start_station_id, end_station_id)
-
-                        self.pending_departures.put((start_time, new_trip))
+                        self.pending_departures.put((trip_start_time, new_trip))
 
 
     def predict_future_lambda(self, start_time, start_station_id, end_station_id):

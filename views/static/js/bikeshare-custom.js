@@ -2,9 +2,10 @@ var res;
 var data_for_maps;
 
 function save_trans() {
-    $("#load_stats").animate({right: "-100px"});
+    $("#load_stats").animate({right: "-330px"});
+    $("#comp_toggle").animate({right: "-330px"});
     $("#save_stats").html('Save')
-        .animate({width: "40px", left: "165px"})
+        .animate({width: "60px", left: "270px"})
         .attr('onclick', 'save_results()');
     $("#stats_namer").animate({left: "0px"});
 }
@@ -14,17 +15,21 @@ function save_results() {
     sessionStorage[stats_name] = res;
     var opt = document.createElement('option');
     opt.innerHTML = stats_name;
-    $("#stats_picker").append(opt);
-    $("#stats_namer").animate({left: "-165px"});
+    $("#stats_picker, #comp_picker_1, #comp_picker_2").append(opt);
+    $("#stats_namer").animate({left: "-260px"});
     $("#save_stats").animate({width: "100px", left: "0px"}, function() {$(this).html('Save Results');})
         .attr('onclick', 'save_trans()');
-    $("#load_stats").animate({right: "0px"});
+    $("#load_stats").animate({right: "125px"});
+    $("#comp_toggle").animate({right: "0px"});
 }
 
 function load_trans() {
-    $("#save_stats").animate({top: '35px'});
+    $("#save_stats, #comp_toggle").animate({top: '35px'});
     $("#load_stats").html('Load')
-        .animate({width: '40px'})
+        .animate({
+            width: '60px',
+            right: '0px'
+        })
         .attr('onclick', 'load_results()');
     $("#stats_picker").animate({left: '0px'});
 }
@@ -38,10 +43,10 @@ function load_results() {
     var to = desired_unpacked[2];
     displaySummaryStats(JSON.parse(desired),from,to);
     $("#stats_name").html(stats_name);
-    $("#load_stats").animate({width: '100px'}, function() {$(this).html('Load Results')})
+    $("#load_stats").animate({width: '100px', right: '125px'}, function() {$(this).html('Load Results')})
         .attr('onclick', 'load_trans()');
-    $("#stats_picker").animate({left: '-165px'});
-    $("#save_stats").animate({top: '0px'});
+    $("#stats_picker").animate({left: '-260px'});
+    $("#save_stats, #comp_toggle`").animate({top: '0px'});
 }
 
 function sliderSetup() {
@@ -324,16 +329,27 @@ function displaySummaryStats(data, from, to, comp) {
 
 var in_comp_mode = false;
 
+var flexy_tables =
+    "#overall_trip_stats, \
+     #disappointment_stats,\
+     #min_duration_trip,\
+     #max_duration_trip,\
+     #comp_overall_trip_stats,\
+     #comp_disappointment_stats,\
+     #comp_min_duration_trip,\
+     #comp_max_duration_trip"
+
 function toggle_comps() {
     if (in_comp_mode != true) {
         var slider = $('#stats_slider');
         var left_pos = parseInt(slider.css('left'),10);
         slider.animate({left: '50%'},600, function() {
             $('#stats_panel, #comp_stats_panel').css('width', '50%');
-            $('#stats_panel').animate({left: '20px', right: '', top: '100px'});
-            $('#flexy_tables').addClass('large-12');
-            $('#flexy_tables').removeClass('large-6');
+            $('#stats_panel').animate({left: '20px', right: ''});
+            $(flexy_tables).addClass('large-12');
+            $(flexy_tables).removeClass('large-6');
             $('#comp_stats_panel').css('display', 'inline');
+            $('#comp_picker_1, #comp_picker_2').css('display', 'inline');
             if (left_pos == 660) {map.panBy(320,0);}
         });
         in_comp_mode = true;
@@ -342,9 +358,9 @@ function toggle_comps() {
         $('#stats_panel').css('width', '100%')
             .css('right', '20px')
             .css('left', '');
-        $('#comp_stats_panel').css('display', 'none');
-        $('#flexy_tables').addClass('large-6');
-        $('#flexy_tables').removeClass('large-12');
+        $('#comp_stats_panel, #comp_picker_1, #comp_picker_2').css('display', 'none');
+        $(flexy_tables).addClass('large-6');
+        $(flexy_tables).removeClass('large-12');
         in_comp_mode = false;
     }
 }
@@ -436,7 +452,7 @@ function processStatsForm() {
                 progressbar.find(".progress-label").html("Loading...");
                 loadingDiv.find("#current_time").html("");
              	progressbar.find(".ui-progressbar-value").css({
-                    "background" : "#3787c3"
+                    "background" : "#3987c7"
                 });
                 loadingDiv.find("#error_alert").hide();
                 var slider_left_pos = parseInt($("#stats_slider").css('left'),10);
