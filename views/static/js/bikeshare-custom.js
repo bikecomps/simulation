@@ -324,6 +324,16 @@ function displaySummaryStats(data, from, to, comp) {
 
 var in_comp_mode = false;
 
+var flexy_tables =
+    "#overall_trip_stats, \
+     #disappointment_stats,\
+     #min_duration_trip,\
+     #max_duration_trip,\
+     #comp_overall_trip_stats,\
+     #comp_disappointment_stats,\
+     #comp_min_duration_trip,\
+     #comp_max_duration_trip"
+
 function toggle_comps() {
     if (in_comp_mode != true) {
         var slider = $('#stats_slider');
@@ -331,8 +341,8 @@ function toggle_comps() {
         slider.animate({left: '50%'},600, function() {
             $('#stats_panel, #comp_stats_panel').css('width', '50%');
             $('#stats_panel').animate({left: '20px', right: '', top: '100px'});
-            $('#flexy_tables').addClass('large-12');
-            $('#flexy_tables').removeClass('large-6');
+            $(flexy_tables).addClass('large-12');
+            $(flexy_tables).removeClass('large-6');
             $('#comp_stats_panel').css('display', 'inline');
             if (left_pos == 660) {map.panBy(320,0);}
         });
@@ -343,8 +353,8 @@ function toggle_comps() {
             .css('right', '20px')
             .css('left', '');
         $('#comp_stats_panel').css('display', 'none');
-        $('#flexy_tables').addClass('large-6');
-        $('#flexy_tables').removeClass('large-12');
+        $(flexy_tables).addClass('large-6');
+        $(flexy_tables).removeClass('large-12');
         in_comp_mode = false;
     }
 }
@@ -436,7 +446,7 @@ function processStatsForm() {
                 progressbar.find(".progress-label").html("Loading...");
                 loadingDiv.find("#current_time").html("");
              	progressbar.find(".ui-progressbar-value").css({
-                    "background" : "#3787c3"
+                    "background" : "#" + Math.floor( Math.random() * 16777215 ).toString(16)
                 });
                 loadingDiv.find("#error_alert").hide();
                 var slider_left_pos = parseInt($("#stats_slider").css('left'),10);
