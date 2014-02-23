@@ -286,7 +286,6 @@ form button[type="submit"] {
 
 #loading_div {
   width: 40%;
-  height: 200px;
   display: none;
   position: fixed;
   left: 50%;
