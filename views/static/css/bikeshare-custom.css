@@ -207,7 +207,7 @@ form button[type="submit"] {
 }
 
 #load_stats {
-  left: 105px;
+  right: 125px;
 }
 
 #comp_toggle {
@@ -218,9 +218,9 @@ form button[type="submit"] {
 #stats_namer,
 #stats_picker {
   height: 100%;
-  width: 155px;
+  width: 260px;
   position: absolute;
-  left: -160px;
+  left: -260px;
   top: 0px;
 }
 
