@@ -152,6 +152,9 @@ form button[type="submit"] {
   display: none;
   width: 640px;
   height: 100%;
+  position: absolute;
+  top: 100px;
+  right: 20px;
   overflow-y: auto;
 }
 
@@ -182,21 +185,21 @@ form button[type="submit"] {
   right: 40px;
   top: 15px;
   height: 30px;
-  width: 205px;
+  width: 330px;
   overflow: hidden;
 }
 
-#save_load_form {
+#save_stats,
+#load_stats, 
+#comp_toggle {
   height: 100%;
-  width: 100%;
+  background-color: green;
+  position: absolute;
 }
 
 #save_stats,
 #load_stats {
-  height: 100%;
   width: 100px;
-  background-color: green;
-  position: absolute;
 }
 
 #save_stats {
@@ -204,7 +207,12 @@ form button[type="submit"] {
 }
 
 #load_stats {
+  left: 105px;
+}
+
+#comp_toggle {
   right: 0px;
+  width: 120px;
 }
 
 #stats_namer,

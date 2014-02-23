@@ -253,9 +253,9 @@ function plotKeysVals(htmlIdName, map) {
 	nonGroupBarPlot(htmlIdName, names, counts);
 }
 
-function displaySummaryStats(data, from, to, comp=false) {
+function displaySummaryStats(data, from, to, comp) {
 	var comps = '';
-	if (comp) {comps = 'comp_';}
+	if (comp != undefined) {comps = 'comp_';}
 	// set 'total_num_trips', 'total_num_disappointments',
 	// 'avg_trip_time', and 'std_trip_time' 
 	$("#" + comps + "total_num_trips").text(data["total_num_trips"]);
@@ -322,14 +322,30 @@ function displaySummaryStats(data, from, to, comp=false) {
 				 data["num_trips_per_hour"]);
 }
 
-function enterCompMode() {
-    var left_pos = parseInt(slider.css('left'),10);
-    slider.animate({left: '50%'},600, function() {
-        $('#stats_panel, #comp_stats_panel').css('width', '50%');
-        $('#flexy_tables').addClass('large-12');
-        $('#flexy_tables').removeClass('large-6');
-        $('#comp_stats_panel').css('display', 'true');
-        if (left_pos == 660) {map.panBy(320,0);}
+var in_comp_mode = false;
+
+function toggle_comps() {
+    if (in_comp_mode != true) {
+        var slider = $('#stats_slider');
+        var left_pos = parseInt(slider.css('left'),10);
+        slider.animate({left: '50%'},600, function() {
+            $('#stats_panel, #comp_stats_panel').css('width', '50%');
+            $('#stats_panel').animate({left: '20px', right: '', top: '100px'});
+            $('#flexy_tables').addClass('large-12');
+            $('#flexy_tables').removeClass('large-6');
+            $('#comp_stats_panel').css('display', 'inline');
+            if (left_pos == 660) {map.panBy(320,0);}
+        });
+        in_comp_mode = true;
+    }
+    else {
+        $('#stats_panel').css('width', '100%')
+            .css('right', '20px')
+            .css('left', '');
+        $('#comp_stats_panel').css('display', 'none');
+        $('#flexy_tables').addClass('large-6');
+        $('#flexy_tables').removeClass('large-12');
+        in_comp_mode = false;
     }
 }
 
