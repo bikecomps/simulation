@@ -248,7 +248,8 @@ class SimulationLogic:
             self.full_stations.put((self.time, s_id))
 
         for s_id, count in self.station_counts.iteritems():
-            if count == 0:
+            # The second condition is to deal with the cap=0 case
+            if count == 0 and s_id not in self.unavailable_stations:
                 self.unavailable_stations.add(s_id)
                 self.empty_stations.put((self.time, s_id))
         #print "TOTAL NUM BIKES",sum(self.station_counts.itervalues())

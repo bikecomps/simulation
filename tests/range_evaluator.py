@@ -272,7 +272,7 @@ def main():
         outfile = open("results2.txt", "w")
 
         for (start, end) in date_ranges:
-            re = RangeEvaluator(start, end)
+            re = RangeEvaluator(start, end, logic_options={'drop_stations':[31704]})
             man = re.eval_man_dist()
             eucl = re.eval_eucl_dist()
             start_date_string = datetime.strftime(start, '%Y-%m-%d')
@@ -309,7 +309,7 @@ def main():
     else:
         sys.exit("You need a start date and an end date")
 
-    re = RangeEvaluator(start_date, end_date)
+    re = RangeEvaluator(start_date, end_date, logic_options={'drop_stations':[31704]})
     re.verbose = False
     man = re.eval_man_dist()
     eucl = re.eval_eucl_dist()
