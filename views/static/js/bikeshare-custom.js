@@ -15,7 +15,7 @@ function save_results() {
     sessionStorage[stats_name] = res;
     var opt = document.createElement('option');
     opt.innerHTML = stats_name;
-    $("#stats_picker").append(opt);
+    $("#stats_picker, #comp_picker_1, #comp_picker_2").append(opt);
     $("#stats_namer").animate({left: "-260px"});
     $("#save_stats").animate({width: "100px", left: "0px"}, function() {$(this).html('Save Results')})
         .attr('onclick', 'save_trans()');
@@ -349,6 +349,7 @@ function toggle_comps() {
             $(flexy_tables).addClass('large-12');
             $(flexy_tables).removeClass('large-6');
             $('#comp_stats_panel').css('display', 'inline');
+            $('#comp_picker_1, #comp_picker_2').css('display', 'inline');
             if (left_pos == 660) {map.panBy(320,0);}
         });
         in_comp_mode = true;

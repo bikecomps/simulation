@@ -178,6 +178,13 @@ form button[type="submit"] {
   color: #3987c7;
 }
 
+#comp_picker_1,
+#comp_picker_2 {
+  width: 50%;
+  float: left;
+  display: none;
+}
+
 #save_load_div {
   position: absolute;
   right: 40px;
