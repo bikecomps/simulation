@@ -22,10 +22,6 @@ class UnifiedHandler(RequestHandler):
         end_date = datetime.datetime.strptime(self.get_argument("end"), "%Y-%m-%d %H:%M")
 	altered_capacity = json.loads(self.get_argument("capacity"))
 
-	print "DO YOU EVEN GET HERE?"
-	print altered_capacity
-	print type(altered_capacity)
-
 	ac = {int(k): int(altered_capacity[k]) for k in altered_capacity}
 	altered_capacity = ac
 
