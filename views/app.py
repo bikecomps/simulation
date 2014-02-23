@@ -20,16 +20,13 @@ class UnifiedHandler(RequestHandler):
     def post(self):
         start_date = datetime.datetime.strptime(self.get_argument("start"), "%Y-%m-%d %H:%M")
         end_date = datetime.datetime.strptime(self.get_argument("end"), "%Y-%m-%d %H:%M")
-	altered_capacity = json.loads(self.get_argument("capacity"))
-
-	ac = {int(k): int(altered_capacity[k]) for k in altered_capacity}
-	altered_capacity = ac
-
+        altered_capacity = json.loads(self.get_argument("capacity"))
+        ac = {int(k): int(altered_capacity[k]) for k in altered_capacity}
+        altered_capacity = ac
         try:
             sstats = SummaryStats(start_date, end_date, altered_capacity)
             self.write(sstats.get_stats())
         except Exception as e:
-            print e
             # some error occurred
             self.write("{}")
 

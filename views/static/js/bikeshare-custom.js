@@ -289,7 +289,7 @@ function displaySummaryStats(data, from, to, comp) {
 	$("#" + comps + "total_num_full_disappointments").text(data["total_num_full_disappointments"]);
 	$("#" + comps + "most_disappointing_dep_station").text(data["most_disappointing_dep_station"]);
 	$("#" + comps + "most_disappointing_arr_station").text(data["most_disappointing_arr_station"]);
-
+    console.log("got past the disappointments");
 
 	// set 'min_duration_trip' 
 	var minTrip = data["min_duration_trip"];
@@ -482,13 +482,13 @@ function processStatsForm() {
                 $("#stats_slider").animate({left: 660});
                 displaySummaryStats(jsond, from, to);
                 map.panBy(-320,0);
-
-		console.log(data_for_maps);	
-		$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
+        		console.log(data_for_maps);	
+		        $.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
             },
 
-                error: function() {
-                    updateProgressBar(null, null, true);
-                }
+        error: function() {
+            console.log("damn it.");
+            updateProgressBar(null, null, true);
+        }
 	});	
 }
