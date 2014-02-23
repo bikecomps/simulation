@@ -10,6 +10,8 @@ var station_markers;
 var marker_colors;
 var marker_cap_gradient;
 
+var capacity_dict = {};
+
 function initialize() {
 	connections = [];
 	var mapOptions = {
@@ -32,7 +34,7 @@ function initialize() {
 	// red, red-purple, purple, blue-purple, blue
 	//marker_cap_gradient = ["ED5A1D","C34E31","843D50","452B6E","1B2083"]
 	// light-green to dark-blue gradient?
-	marker_cap_gradient = ["16E31E","14BA3B","137C68","115385","1016B2"]
+	marker_cap_gradient = ["#16E31E","#14BA3B","#137C68","#115385","#1016B2"]
 
 
 	for (station=0; station < Object.keys(locations).length; station++) {
@@ -76,8 +78,9 @@ function bindInfoWindow(marker, map, infoWindow) {
 		var contentString = '<div class="infoWindow_wrapper">' + 
 			'<div class="infoWindow_id">' + marker.id + '</div>' +
 			'<div class="infoWindow_title">' + marker.title + '</div>' +
-			'<div class="infoWindow_capacity">Capacity : <div class="infoWindow_capacity_label">' + marker.capacity +
-			'</div></div>' +
+			'<div class="infoWindow_capacity"><label>Capacity<input type="text" id="infoWindow_capacity_text" value="' + marker.alt_capacity + '" />' +  
+			'<a class="button tiny" id="infoWindow_capacity_button" onclick="appendCapacityChange(' + marker.id +
+			'); return false;">Save</a></label></div>' +
 			'</div>';
 
 		//console.log("MARKER CAPACITY FOR STA #" + marker.id + " = " + marker.capacity);
@@ -103,20 +106,6 @@ function addLine(fromStation, toStation, color) {
 	connection.setMap(map);
 }
 
-function visualizeSim() {
-	/*$.getScript("static/js/bikeshare-custom.js").done(function() {
-		results = processStatsForm();
-    	for (var station_id in station_counts) {
-			console.log(station_id + " " + station_counts[station_id]);
-		}
-	});*/
-	// console.log("final counts:" + " " + data_for_maps['final_station_counts']);
-	// console.log("caps:" + " " + data_for_maps['simulation_station_caps']);
-	$.when($.getScript("static/js/bikeshare-custom.js")).done(function () {
-		console.log("hello.");
-	});
-}
-
 function removeLines() {
 	for (var index in connections) {
 		var connection = connections[index];
@@ -124,10 +113,40 @@ function removeLines() {
 	}
 }
 
+function appendCapacityChange(id) {
+	var newCapacity = $('#infoWindow_capacity_text').val(); //get
+	$('#infoWindow_capacity_text').val(newCapacity); //set
+
+	console.log("CAPACITY FOR STA #" + id + " IS UPDATED TO "+ newCapacity);		
+
+	station_markers[id].alt_capacity = newCapacity;
+
+	capacity_dict[id] = newCapacity;
+
+	//capacity_dict.push({
+	//	key: id,
+	//	value: newCapacity
+	//});
+
+	console.log("CAPACITY DICTIONARY:");
+	console.log(capacity_dict);
+
+	//$.ajax({
+	//	type: "POST",
+	//	url: "/unified",
+	//	data: { capacity_dict: capacity_dictionary },
+	//	error: function() {
+	//		console.log("AJAX is not happy about your capacity_dictionary.");
+	//	}
+	//});
+}
+
 function clusterColors() {
 	var clusterMethod = $("#clustering_method").val();
+        var startDate = $("#start_date").val();
+        var endDate = $("#end_date").val();
 	console.log(clusterMethod);
-	if (!clusterMethod.length) {
+	if (!clusterMethod.length || !startDate.length || !endDate.length) {
 		console.log("nope.");
 		return;
 	}
@@ -135,7 +154,12 @@ function clusterColors() {
 	$.ajax({
 		type: "POST",
 		url: "/clustering",
-		data: { clustering_method: clusterMethod },
+		data: { start_date: startDate, 
+			end_date: endDate, 
+			clustering_method: clusterMethod },
+		beforeSend: function() {
+			$("#loading_div").show();
+		},
 		success: function(data) {
 			var jsond = JSON.parse(data);
 			for (var num in jsond) {
@@ -151,7 +175,7 @@ function clusterColors() {
 			for (var marker_id in dic) {
 				changeMarkerColor(marker_id, dic[marker_id]);
 			}
-
+			$("#loading_div").hide();
 		},
 		error: function() {
 			console.log("ajax error while clustering");

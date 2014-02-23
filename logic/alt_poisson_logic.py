@@ -117,25 +117,26 @@ class AltPoissonLogic(SimulationLogic):
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        self.update_rebalance() 
+        self.rebalance_stations(self.time)
         self.generate_new_trips(self.time)
-        if self.rebalancing:
-            self.rebalance_stations()
-
-        self.resolve_trips()
-
-        # Increment after we run for the current timestep?
         self.time += timestep
+        self.resolve_trips()
 
     def load_dest_distrs(self, start_time, end_time):
         '''
         Caches destination distributions into dictionary of day -> hour -> start_station_id -> [cumulative_distr, corresponding stations]
         # Change to a list of lists, faster, more space efficient
         '''
-        distr_dict = [[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)] for d in range(2)]
+        time_diff = end_time - start_time 
+        '''
+        distr_dict = {y:{m:[[{s_id:[] for s_id in self.stations.iterkeys()} for h in range(24)]
+                      for d in range(2)] for m in range(start_time.month, end_time.month + 1)}
+                          for y in range(start_time.year, end_time.year + 1)}
+        '''
+        # Maps s_id->year->month->is_weekday->hour
+        distr_dict = defaultdict(lambda: defaultdict(lambda: 
+                        defaultdict(lambda: defaultdict(lambda: defaultdict(list)))))
 
-
-        station_list = self.stations.keys()
         # Inclusive
         #TODO figure out what to do if timespan > a week -> incline to say ignore it
         #TODO Bug: loading too much data at the moment, by a fair amount
@@ -152,16 +153,17 @@ class AltPoissonLogic(SimulationLogic):
                .filter(DestDistr.is_week_day == (dow < 5)) \
                .filter(DestDistr.hour.between(start_hour, end_hour))\
                .yield_per(10000)
-               #.filter(DestDistr.start_station_id.in_(station_list))\
 
             for distr in date_distrs:
+                # Faster to do this than be smart about the db query
                 if distr.start_station_id in self.stations \
                         and distr.end_station_id in self.stations:
-                    result = distr_dict[distr.is_week_day][distr.hour][distr.start_station_id]
+                    result = distr_dict[distr.start_station_id][distr.year][distr.month][distr.is_week_day][distr.hour]
 
                     # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
                     if len(result) == 0:
-                        distr_dict[distr.is_week_day][distr.hour][distr.start_station_id] = [[distr.prob], [distr.end_station_id]]
+                        distr_dict[distr.start_station_id][distr.year][distr.month][distr.is_week_day]\
+                                  [distr.hour] = [[distr.prob], [distr.end_station_id]]
                     else:
                         result[0].append(distr.prob)
                         result[1].append(distr.end_station_id)
@@ -169,8 +171,8 @@ class AltPoissonLogic(SimulationLogic):
 
             print "\t\tStarting reductions"
             # Change all of the probability vectors into cumulative probability vectors
-            for hour in distr_dict[(dow < 5)]:
-                for s_id, vectors in hour.iteritems():
+            for s_id, s_id_info in distr_dict.iteritems():
+                for hour, vectors in s_id_info[day.year][day.month][(dow < 5)].iteritems():
                     # We have data for choosing destination vector
                     if len(vectors) == 2:
                         prob_vector = vectors[0]
@@ -182,12 +184,11 @@ class AltPoissonLogic(SimulationLogic):
         return distr_dict
 
 
-    def get_destination(self, s_id, time):
+    def _get_destination(self, s_id, time):
         '''
             Returns a destination station given dest_distrs
         '''
-        #print time.day, time.hour, s_id
-        vectors = self.dest_distrs[time.weekday() < 5][time.hour][s_id]
+        vectors = self.dest_distrs[s_id][time.year][time.month][time.weekday() < 5][time.hour]
         if vectors:
             cum_prob_vector = vectors[0]
             station_vector = vectors[1]
@@ -213,7 +214,7 @@ class AltPoissonLogic(SimulationLogic):
             if lam:
                 num_trips = self.get_num_trips(lam)
                 for i in xrange(num_trips):
-                    e_id = self.get_destination(s_id, start_time)
+                    e_id = self._get_destination(s_id, start_time)
                     gamma = self.duration_distrs.get((s_id, e_id), None)
                     if gamma:
                         added_time = datetime.timedelta(seconds=random.randint(0, 3600))
@@ -406,35 +407,6 @@ class AltPoissonLogic(SimulationLogic):
             return datetime.timedelta(seconds=0)
         trip_length = numpy.random.gamma(gamma.shape, gamma.scale)
         return datetime.timedelta(seconds=trip_length)
-
-    def resolve_sad_departure(self, trip):
-        '''
-        Currently does nothing. Used to do this: changes trip.start_station_id to the id of the station nearest to it. Updates both trip.start_date and trip.end_date using get_trip_duration(), puts the updated trip into pending_departures. 
-        '''
-        pass
-
-
-    def resolve_sad_arrival(self, trip):
-        '''
-        Changes trip.end_station_id to the id of the station nearest to it and updates trip.end_date accordingly. Puts the updated trip into pending_arrivals.
-        '''
-        station_list_index = 0
-        nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
-        visited_stations = [disappointment.station_id for disappointment in trip.disappointments]
-        while nearest_station in visited_stations:
-            station_list_index+=1
-            nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
-        
-        #gauss = self.gaussian_distrs.get((trip.end_station_id, nearest_station), None)
-        gamma = self.duration_distrs.get((trip.end_station_id, nearest_station), None)
-        #if gauss:
-        if gamma:
-            trip.end_station_id = nearest_station
-            #trip_duration = self.get_trip_duration(gauss)
-            trip_duration = self.get_trip_duration(gamma)
-            trip.end_date += trip_duration
-            self.pending_arrivals.put((trip.end_date, trip))
-
 
     def clean_up(self):
         pass

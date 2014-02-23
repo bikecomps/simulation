@@ -29,6 +29,9 @@ class Simulator:
         logic_options must have keywords EXACTLY the sim_logic's named params
         '''
 
+	print "[simulator run] logic_options = "
+	print logic_options
+
         self.sim_logic.initialize(start_time, end_time, **logic_options)
 
         cur_time = start_time
@@ -105,9 +108,9 @@ def main():
         raw_start_date = "2012-6-2 00:00:00"
         raw_end_date = "2012-6-3 00:00:00"
         file_name = "/tmp/test.csv"
-        logic = ExponentialLogic
+        #logic = ExponentialLogic
         #logic = AltPoissonLogic
-        #logic = PoissonLogic
+        logic = PoissonLogic
         start_date = datetime.datetime.strptime(raw_start_date, '%Y-%m-%d %H:%M:%S')
         end_date = datetime.datetime.strptime(raw_end_date, '%Y-%m-%d %H:%M:%S')
     else:
@@ -137,47 +140,28 @@ def main():
     logic = logic(session)
     simulator = Simulator(logic) 
     print start_date, end_date
-    logic_options = {'station_caps':{31237:0}, 'drop_stations':[]}
+    #logic_options = {'station_caps':{31237:5}, 'drop_stations':[31704,31000,31001,31002],
+    #                 'rebalancing_time':datetime.timedelta(seconds=3600)}
+    logic_options = {'rebalancing_time':datetime.timedelta(seconds=0), 'drop_stations':[31704]}
+
     results = simulator.run(start_date, end_date, logic_options=logic_options)
     print "trips:", len(results['trips'])
-    ds = results['disappointments']
-    print "disappointments:", len(ds)
-    num_ds = len([x for x in ds if x.trip == None])
-    print "Empty diss", num_ds
-    print "Full diss", len(ds) - num_ds
+    print "Num rebalances",results['total_rebalances']
+    #ds = results['disappointments']
+    #print "disappointments:", len(ds)
+    #num_ds = len([x for x in ds if x.trip == None])
+    #print "Empty diss", num_ds
+    #print "Full diss", len(ds) - num_ds
+    print "Arrival dissapointments", len(results['full_station_disappointments'])
+    print "Dep. dissapointments", len(results['empty_station_disappointments'])
+
     print "Arrival dis stations:"
     print results['arr_dis_stations']
     print "Departure dis stations:"
     print results['dep_dis_stations']
-    
-    # simulator.write_out(results, file_name)
-    # simulator.save_to_db(results['trips'])
-    #simulator.write_out(results, file_name)
-    #simulator.save_to_db(results['trips'])
     hours = [[0]*24 for d in range(7)]
     for t in results['trips']:
         hours[t.start_date.weekday()][t.start_date.hour] += 1
-
-    # print "Times?"
-    # for d in range(7):
-    #    for i in range(24):
-    #        print d,i,": ",hours[d][i]
-
-    
-    """
-    stations = {}
-    for t in results['trips']:
-        if t.start_station_id in stations:
-            stations[t.start_station_id] += 1
-        else:
-            stations[t.start_station_id] = 1
-
-    print "Stations?"
-    print len(stations.keys())
-    for s_id, count in stations.iteritems():
-        print s_id,count
-    """
-
     session.close()
     
 

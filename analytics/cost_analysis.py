@@ -15,7 +15,7 @@ def calculate_cost(sim_results):
     num_bikes = sim_results['total_num_bikes']
     num_rebalances = sim_results['total_rebalances']
     num_trips = len(sim_results['trips'])
-    num_dep_diss = len([d for d in sim_results['disappointments'] if not d.trip_id])
+    num_dep_diss = len([d for d in sim_results['disappointments'] if not d.trip])
     
 
     bike_cost = num_bikes * BIKE_COST
@@ -27,8 +27,79 @@ def calculate_cost(sim_results):
             'gross_cost':bike_cost + rebalance_cost,
             'missed_rev':missed_revenue}
 
+def long_run_optimize(start_d, end_d, step=100, max_over=1.35, iters=10, fname='opt.out'):
+    session = Connector().getDBSession()
+    logic = PoissonLogic(session)
+    simulator = Simulator(logic)
 
-def optimize_num_bikes(start_d, end_d, step_factor=.5, iters=10):
+    # Get a baseline using default method of getting number of bikes
+    run_options = {'bike_total':None, 'rebalancing_time':dt.timedelta(seconds=3600)}
+    sim_results = simulator.run(start_d, end_d, 
+                                logic_options=run_options)
+    base_line = sim_results['total_num_bikes']
+    costs = calculate_cost(sim_results)
+    errors = {}
+    errors[base_line] = costs['gross_rev'] - costs['gross_cost']
+    print "BASELINE",base_line
+    print "Trying from %d, %f" % (100, max_over*base_line)
+
+    f = open(fname, 'w')
+    f.write('nbikes, nrebalances, ntrips, n_arr_dis, n_dep_dis\n')
+    ds = sim_results['disappointments']
+    num_dep_diss = len([d for d in ds if not d.trip])
+    num_arr_diss = len(ds) - num_dep_diss
+    f.write('%d, %d, %d, %d, %d\n' % (base_line, sim_results['total_rebalances'],
+             len(sim_results['trips']), num_arr_diss, num_dep_diss))
+    for nbikes in range(100, int(max_over*base_line), step):
+        print "Trying %d bikees" % nbikes
+        logic = PoissonLogic(session)
+        simulator = Simulator(logic)
+
+        run_options['bike_total'] = nbikes
+        sim_results = simulator.run(start_d, end_d,
+                                    logic_options=run_options) 
+        costs = calculate_cost(sim_results)
+        errors[nbikes] = costs['gross_rev'] - costs['gross_cost']
+
+        num_dep_diss = len([d for d in sim_results['disappointments'] if not d.trip])
+        num_arr_diss = len(sim_results['disappointments']) - num_dep_diss
+        f.write('%d, %d, %d, %d, %d\n' % (nbikes, sim_results['total_rebalances'],
+             len(sim_results['trips']), num_arr_diss, num_dep_diss))
+
+    print errors
+    f.close()
+
+    best_num_bikes = max(errors, key=errors.get)
+    # Now try traditional searching from here
+    optimize_num_bikes(best_num_bikes, start_d, end_d, iters=3)
+
+def long_run_optimize(start_d, end_d, step=100, max_over=2, iters=10):
+    session = Connector().getDBSession()
+    logic = PoissonLogic(session)
+    simulator = Simulator(logic)
+
+    # Get a baseline using default method of getting number of bikes
+    run_options = {'bike_total':None}
+    sim_results = simulator.run(start_d, end_d, 
+                                logic_options=run_options)
+    base_line = sim_results['total_num_bikes']
+    costs = calculate_cost(sim_results)
+    errors = {}
+    errors[base_line] = costs['gross_rev'] - costs['gross_cost']
+
+    for nbikes in range(100, max_over*base_line, step):
+        logic = PoissonLogic(session)
+        simulator = Simulator(logic)
+
+        sim_results = simulator.run(start_d, end_d,
+                                    logic_options={'bike_total':nbikes}) 
+        costs = calculate_costs(sim_results)
+        errors[nbikes] = costs['gross_rev'] - costs['gross_cost']
+    print errors
+
+
+def optimize_num_bikes(starting_point, start_d, end_d, 
+                       step_factor=.15, iters=5):
     '''
     iters: the number of times which to run the optimizer.
     step_factor: the max percentage by which to change the number of bikes at
@@ -39,22 +110,20 @@ def optimize_num_bikes(start_d, end_d, step_factor=.5, iters=10):
     simulator = Simulator(logic)
 
     # Get a baseline using default method of getting number of bikes
-    run_options = {'bike_total':None}
+    run_options = {'bike_total':starting_point}
     sim_results = simulator.run(start_d, end_d, 
                                 logic_options=run_options)
-    best_num_bikes = sim_results['total_num_bikes']
     costs = calculate_cost(sim_results)
 
     best_profit = costs['gross_rev'] - costs['gross_cost']
     best_costs = costs
     best_run_options = run_options
-    # Small hack to get it working
-    best_run_options['bike_total'] = best_num_bikes
+    best_run_options['bike_total'] = starting_point 
     best_sim_data = sim_results
 
     print "Starting point:"
     print "Profit",best_profit
-    print "Num bikes",best_num_bikes
+    print "Num bikes",starting_point
     for i in xrange(iters):
         best_num_bikes = best_run_options['bike_total']
 
@@ -111,7 +180,8 @@ def main():
     raw_end_date = '2012-6-3 00:00:00'
     start_date = dt.datetime.strptime(raw_start_date, '%Y-%m-%d %H:%M:%S')
     end_date = dt.datetime.strptime(raw_end_date, '%Y-%m-%d %H:%M:%S')
-    optimize_num_bikes(start_date, end_date, iters=3)
+    #optimize_num_bikes(start_date, end_date, iters=3)
+    long_run_optimize(start_date, end_date,  max_over=1.5, step=100, iters=10)
     return
 
     session = Connector().getDBSession()

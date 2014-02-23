@@ -116,14 +116,15 @@ def train_exp_lambdas(conn, start_d, end_d):
     #AND trip_type_id=1
     # Hard code in training data for now
     raw_query = """
-                SELECT EXTRACT(YEAR FROM start_date), EXTRACT(MONTH FROM start_date), 
-                       EXTRACT(DOW FROM start_date), 
-                       EXTRACT(HOUR FROM start_date), COUNT(*) 
+                SELECT EXTRACT(YEAR FROM start_date) as y, 
+                       EXTRACT(MONTH FROM start_date) as m, 
+                       EXTRACT(DOW FROM start_date) as d, 
+                       EXTRACT(HOUR FROM start_date) as h,
+                       COUNT(*) 
                 FROM trips 
                 WHERE start_date BETWEEN '{sd}' AND '{ed}' 
                       AND start_station_id={sid}
-                GROUP BY EXTRACT(YEAR FROM start_date), EXTRACT(MONTH FROM start_date),
-                       EXTRACT(DOW FROM start_date), EXTRACT(HOUR FROM start_date);
+                GROUP BY y, m, d, h
             """
     days_info = get_num_days(start_date, end_date)
 

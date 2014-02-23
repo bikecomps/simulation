@@ -200,15 +200,24 @@ class PoissonLogic(SimulationLogic):
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        self.update_rebalance()
-        # print "\tPost rebalance. Moving bikes:", self.moving_bikes
-        #if len(self.full_stations_set) > 0:
-        #        print "\t\tNow full:\n" + "\t\t" + str(self.full_stations_set)
-        #if len(self.empty_stations_set) > 0:
-        #    print "\t\tNow empty:\n" + "\t\t" + str(self.empty_stations_set)
+        #print "Num bikes at stations", sum([x for x in self.station_counts.itervalues()])
+        #print "Num bikes in transit", self.pending_arrivals.qsize()
+        #print "Moving bikes", self.moving_bikes
+        #print "Total?", sum([x for x in self.station_counts.itervalues()]) + self.pending_arrivals.qsize() + self.moving_bikes
+        #print "Stations with more count than cap? ", len([s_id for s_id, count in self.station_counts.iteritems() if count > self._get_station_cap(s_id)])
+        #print [(count, self._get_station_cap(s_id)) for s_id, count in self.station_counts.iteritems()]
+
+        """
+        x = len(self.unavailable_stations)
+        if x > 0:
+            print "BEFORE: Num unavailable", x
+            """
+        self.rebalance_stations(self.time)
+        """
+        if x > 0:
+            print "AFTER: Num unavailable", len(self.unavailable_stations)
+            """
         self.generate_new_trips(self.time)
-        if self.rebalancing:
-            self.rebalance_stations()
         self.time+=timestep
         self.resolve_trips()
 
@@ -234,16 +243,13 @@ class PoissonLogic(SimulationLogic):
  #                   print "lambda =", lam, " & ", num_trips, "trips during", start_time
                     for i in range(num_trips):
                         # Starting time of the trip is randomly chosen within the Lambda's time range, which is hard-coded to be an hour.
-                        added_time = datetime.timedelta(0, random.randint(0, 59),
-                                                        0, 0, random.randint(0, 59), 
-                                                        0, 0)
+                        added_time = datetime.timedelta(minutes=random.randint(0, 59), seconds=random.randint(0, 59))
                         trip_start_time = start_time + added_time
                         trip_duration = self.get_trip_duration(gamma)
                         trip_end_time = trip_start_time + trip_duration
                         new_trip = Trip(str(random.randint(1,500)), "Casual", 2, \
                                 trip_start_time, trip_end_time, start_station_id, end_station_id)
-
-                        self.pending_departures.put((start_time, new_trip))
+                        self.pending_departures.put((trip_start_time, new_trip))
 
 
     def predict_future_lambda(self, start_time, start_station_id, end_station_id):
@@ -499,35 +505,6 @@ class PoissonLogic(SimulationLogic):
             return datetime.timedelta(seconds=0)
         trip_length = numpy.random.gamma(gamma.shape, gamma.scale)
         return datetime.timedelta(seconds=trip_length)
-
-    def resolve_sad_departure(self, trip):
-        '''
-        Currently does nothing. Used to do this: changes trip.start_station_id to the id of the station nearest to it. Updates both trip.start_date and trip.end_date using get_trip_duration(), puts the updated trip into pending_departures. 
-        '''
-        pass
-
-
-    def resolve_sad_arrival(self, trip):
-        '''
-        Changes trip.end_station_id to the id of the station nearest to it and updates trip.end_date accordingly. Puts the updated trip into pending_arrivals.
-        '''
-        station_list_index = 0
-        nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
-        visited_stations = [disappointment.station_id for disappointment in trip.disappointments]
-        while nearest_station in visited_stations:
-            station_list_index+=1
-            nearest_station = self.nearest_station_dists.get(trip.end_station_id)[station_list_index].station2_id
-        
-        #gauss = self.gaussian_distrs.get((trip.end_station_id, nearest_station), None)
-        gamma = self.duration_distrs.get((trip.end_station_id, nearest_station), None)
-        #if gauss:
-        if gamma:
-            trip.end_station_id = nearest_station
-            #trip_duration = self.get_trip_duration(gauss)
-            trip_duration = self.get_trip_duration(gamma)
-            trip.end_date += trip_duration
-            self.pending_arrivals.put((trip.end_date, trip))
-
 
     def clean_up(self):
         pass

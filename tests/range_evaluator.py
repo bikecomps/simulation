@@ -18,9 +18,15 @@ import sys
 import random
 
 class RangeEvaluator:
-    def __init__(self, start_date, end_date):
+    def __init__(self, start_date, end_date, logic_options = {}):
+        year = end_date.year
+        if year > 2013:
+            print "We don't have testing data for 2014 and beyond"
+            exit()
+
         self.start_date = start_date
         self.end_date = end_date
+        self.logic_options = logic_options
 
         # by default, evaluator is not verbose
         self.verbose = False
@@ -31,7 +37,7 @@ class RangeEvaluator:
 
         # store produced and real trips in dictionaries
         # station id -> [number of departures, number of arrivals]
-        produced, total_produced, total_dp = self.get_produced_trips()
+        produced, total_produced, total_full_dp, total_empty_dp  = self.get_produced_trips()
         real, total_real = self.get_real_trips()
 
         self.station_ids = []
@@ -41,12 +47,13 @@ class RangeEvaluator:
             self.station_ids.append(k)
             self.produced.append(produced[k])
             self.real.append(real[k])
-        
         print "----------------------------------------------"
         print "From:", datetime.strftime(start_date, "%Y-%m-%d %H:%M")
         print "To:", datetime.strftime(end_date, "%Y-%m-%d %H:%M")
         print "total produced: ", total_produced
-        print "total disappointments: ", total_dp
+        print "total disappointments: ", total_full_dp + total_empty_dp
+        print "total arrival disappointments: ", total_full_dp
+        print "total departure disappointments: ", total_empty_dp
         print "total real: ", total_real
 
     def get_produced_trips(self):
@@ -54,8 +61,17 @@ class RangeEvaluator:
         #logic = ExponentialLogic(self.session)
         #logic = AltPoissonLogic(self.session)
         simulator = Simulator(logic)
-        results = simulator.run(self.start_date, self.end_date)
+        results = simulator.run(self.start_date, self.end_date,
+                                logic_options = self.logic_options)
         
+        self.trips = results['trips']
+        self.full_station_disappointments = results['full_station_disappointments']
+        self.empty_station_disappointments = results['empty_station_disappointments']
+        self.station_counts = results['station_counts']
+        self.sim_station_caps = results['sim_station_caps']
+        self.arr_dis_station_counts = results['arr_dis_stations']
+        self.dep_dis_station_counts = results['dep_dis_stations']
+
         total_trips = 0
 
         trips = {}
@@ -68,7 +84,7 @@ class RangeEvaluator:
 
             total_trips += 1
 
-        return trips, total_trips, len(results['disappointments'])
+        return trips, total_trips, len(self.full_station_disappointments), len(self.empty_station_disappointments)
         
     def get_real_trips(self):
         start_date_string = self.start_date.strftime('%Y-%m-%d %H:%M')
@@ -111,16 +127,28 @@ class RangeEvaluator:
         '''
         Returns the P-value using permutation tests.
         For a large number of times, it permutes the rows of the 
-        produced trips and calculates metric on the 'new' data.
+        produced trips and real trips and calculates metric on the 'new' data.
         It returns the proportion of times the permuted data produced better 
         results than the observed.
         '''
-        dist_observed = metric()
-        shuffle_times = 10**5
+        shuffle_times = 10**4 - 1
         perm_results = []
+        dist_observed = metric()
 
+        all_trips = (self.produced + self.real)[:]
+        dist_observed = metric()
+        
         for i in range(shuffle_times):
-            random.shuffle(self.produced)
+            shuffled_indices = range(0, len(all_trips))
+            random.shuffle(shuffled_indices)
+            shuffled_indices_p = shuffled_indices[:len(self.produced)]
+            shuffled_indices_r = shuffled_indices[len(self.produced):]
+            
+            new_produced = [all_trips[j] for j in shuffled_indices_p]
+            new_real = [all_trips[j] for j in shuffled_indices_r]
+            self.produced = new_produced
+            self.real = new_real
+            
             dist_new = metric()
             perm_results.append(dist_new)
             
@@ -161,7 +189,8 @@ class RangeEvaluator:
             total_diff += diff
             total_real += max(sum(self.real[i]), sum(self.produced[i]))
 
-        return (1-(float(total_diff)/total_real))*100
+        result = (1-(float(total_diff)/total_real))*100 if total_real > 0 else 100
+        return result
 
     def eval_man_indiv_dist(self, get_arrivals):
         total_diff = 0
@@ -185,7 +214,8 @@ class RangeEvaluator:
             total_diff += diff
             total_real += max(self.real[i][get_arrivals], self.produced[i][get_arrivals])
 
-        return (1-(float(total_diff)/total_real))*100
+        result = (1-(float(total_diff)/total_real))*100 if total_real > 0 else 100
+        return result
 
     def eval_eucl_dist(self):
         total_diff = 0
@@ -216,7 +246,9 @@ class RangeEvaluator:
             total_real += max(self.real[i][0]**2 + self.real[i][1]**2,
                               self.produced[i][0]**2 + self.produced[i][1]**2)
             
-        return (1-(float(total_diff)/total_real))*100
+        result = (1-(float(total_diff)/total_real))*100 if total_real > 0 else 100
+        return result
+
 
 
 def main():
@@ -240,7 +272,7 @@ def main():
         outfile = open("results2.txt", "w")
 
         for (start, end) in date_ranges:
-            re = RangeEvaluator(start, end)
+            re = RangeEvaluator(start, end, logic_options={'drop_stations':[31704]})
             man = re.eval_man_dist()
             eucl = re.eval_eucl_dist()
             start_date_string = datetime.strftime(start, '%Y-%m-%d')
@@ -277,7 +309,7 @@ def main():
     else:
         sys.exit("You need a start date and an end date")
 
-    re = RangeEvaluator(start_date, end_date)
+    re = RangeEvaluator(start_date, end_date, logic_options={'drop_stations':[31704]})
     re.verbose = False
     man = re.eval_man_dist()
     eucl = re.eval_eucl_dist()

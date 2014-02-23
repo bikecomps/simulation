@@ -481,16 +481,17 @@ class Disappointment(Base):
 
     time = Column(DateTime)
 
-    def __init__(self, station_id, time, trip_id):
+    def __init__(self, station_id, time, trip_id, is_full):
         self.station_id = station_id
         self.time = time
         self.trip_id = trip_id 
+        self.is_full = is_full
 
     def __repr__(self):
-        if self.trip_id:
-            return 'Disappointment: Mid-trip at station {s} at time {t} on trip'\
+        if self.is_full:
+            return 'Disappointment: Full at station {s} at time {t} on trip'\
                     ' {tr}'.format(s=self.station_id, t=self.time, tr=self.trip_id)
-        return 'Disappointment: Arrival at station {s} at time {t}'\
+        return 'Disappointment: Empty at station {s} at time {t}'\
                 .format(s=self.station_id, t=self.time)
 
 
