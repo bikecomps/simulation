@@ -36,27 +36,6 @@ footer p {
     height: 100%;
 }
 
-.full-screen-wrapper {
-    width: 100%;
-    max-width: 100%;
-    height: 100%;
-}
-
-#time-slider {
-    z-index: 99999;
-    width: 540px;
-    position: absolute;
-    left: 87px;
-    top: 63px;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-#trigger-button {
-    line-height: 22px;
-    margin-bottom: 0;
-}
-
 /*Style elements from unified.html*/
 
 #map_canvas {
@@ -68,6 +47,14 @@ footer p {
 #simulation_control,
 #cluster_control {
   height: auto;
+}
+
+#cluster_control #from_div {
+  margin-left: 10px;
+}
+
+#cluster_control #to_div {
+  margin-left: 10px;
 }
 
 #cluster_by_txt {
@@ -94,10 +81,21 @@ footer p {
   float: left;
 }
 
+#clustering_method, #max_k {
+  margin-top: 15px;
+  width: 100px;
+}
 #clustering_method {
-	float: left;
-	margin-top: 15px;
-	width: 100px;
+  float: left;
+}
+
+#max_cluster_txt {
+  margin-left: 10px;
+  float:left;
+}
+
+#cluster_control #submit {
+  float: left;
 }
 
 #from_date,
@@ -138,6 +136,7 @@ form button[type="submit"] {
   background-color: #ffffff;
   overflow: hidden;
   z-index: 999;
+  box-shadow: 2px 2px 2px rgba(128, 128, 128, 0.5);
 }
 
 #stats_button {
@@ -146,8 +145,6 @@ form button[type="submit"] {
   position: absolute;
   right: 0px;
   top: 0px;
-  background-color: #959595;
-  /*cursor: ew-resize;*/
 }
 
 .slide_button {
@@ -158,51 +155,75 @@ form button[type="submit"] {
   border-width: 1px;
   border-color: white;
   border-radius: 100%;
-  background-color: gray;
-  /*cursor: initial;*/
+  background-color: #595959;
 }
 
 #stats_panel {
   position: absolute;
-  top: 40px;
+  top: 60px;
   right: 20px;
   width: 640px;
   height: 100%;
   overflow-y: auto;
 }
 
-#stats_name_div {
-  position: relative;
-  left: 490px;
-  height: 30px;
-  overflow: hidden;
+#comp_stats_panel {
+  display: none;
+  width: 640px;
+  height: 100%;
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  overflow-y: auto;
 }
 
-#stats_name {
+#stats_name_div,
+#comp_stats_name_div {
+  margin-bottom: 15px;
+}
+
+#stats_name,
+#comp_stats_name {
   color: #3987c7;
-  font-size: 18px;
+  margin-bottom: 0;
+  float: left;
+}
+
+#stats_range,
+#comp_stats_range {
+  width: 100%;
+  height: 20px;
+  float: left;
+  color: #3987c7;
+}
+
+#comp_picker_1,
+#comp_picker_2 {
+  width: 50%;
+  float: left;
+  display: none;
 }
 
 #save_load_div {
   position: absolute;
-  right: 25px;
-  top: 5px;
+  right: 40px;
+  top: 15px;
   height: 30px;
-  width: 205px;
+  width: 330px;
   overflow: hidden;
 }
 
-#save_load_form {
+#save_stats,
+#load_stats, 
+#comp_toggle {
   height: 100%;
-  width: 100%;
+  background-color: green;
+  position: absolute;
 }
 
 #save_stats,
 #load_stats {
-  height: 100%;
   width: 100px;
-  background-color: green;
-  position: absolute;
 }
 
 #save_stats {
@@ -210,15 +231,20 @@ form button[type="submit"] {
 }
 
 #load_stats {
+  right: 125px;
+}
+
+#comp_toggle {
   right: 0px;
+  width: 120px;
 }
 
 #stats_namer,
 #stats_picker {
   height: 100%;
-  width: 155px;
+  width: 260px;
   position: absolute;
-  left: -160px;
+  left: -260px;
   top: 0px;
 }
 
@@ -292,19 +318,15 @@ form button[type="submit"] {
 
 #loading_div {
   width: 40%;
-  height: 40%;
   display: none;
   position: fixed;
   left: 50%;
-  top: 25%;
+  top: 40%;
   margin: 0 0 0 -20%;
-  border-style: solid;
-  border-color: steelblue;
-  border-width: 5px;
-  border-radius: 10%;
-  background-color: rgba(0,0,0,.8);
+  background-color: #fff;
   padding: 20px;
-  color: #fff;
+  color: #222;
+  box-shadow: 2px 2px 2px rgba(128,128,128,0.5);
 }
 
 #loading {
@@ -314,38 +336,29 @@ form button[type="submit"] {
   margin: -25px 0 0 -25px;
 }
 
+#progressbar {
+  border-radius: 0;
+  border: none;
+  margin-bottom: 20px;
+}
+
+#error_alert {
+  border: none;
+  font-weight: normal;
+}
+
 .ui-progressbar {
   position: relative;
 }
 
 .progress-label {
   position: absolute;
-  left: 50%;
-  top: 4px;
+  text-align: center;
+  top: 6px;
+  width: 100%;
   font-weight: bold;
   text-shadow: 1px 1px 0 #fff;
 }
-
-/*
-NOTE : DEPRECATING OBSOLETE CSS STYLES. by ahnjo. Feb 16, 2014
-#overall_trip_stats {
-  float: left;
-  width: auto;
-}
-
-#min_duration_trip {
-  float: left;
-  width: auto;
-  padding-left: 20px;
-}
-
-#max_duration_trip {
-  float: left;
-  width: auto;
-  padding-left: 20px;
-}
-*/
-
 
 .infoWindow_wrapper {
     overflow-y: hidden;
@@ -365,4 +378,10 @@ NOTE : DEPRECATING OBSOLETE CSS STYLES. by ahnjo. Feb 16, 2014
 }
 
 .infoWindow_capacity_label { 
+}
+
+#loading_div_text {
+    margin-bottom: 0;
+    font-size: 0.9em;
+    font-style: italic;
 }

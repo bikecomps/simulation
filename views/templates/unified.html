@@ -29,6 +29,17 @@
 
 <script type="application/javascript">
     $(document).ready(function(){
+        var flexy_tables = $(
+            "#overall_trip_stats, \
+             #disappointment_stats,\
+             #min_duration_trip,\
+             #max_duration_trip,\
+             #comp_overall_trip_stats,\
+             #comp_disappointment_stats,\
+             #comp_min_duration_trip,\
+             #comp_max_duration_trip"
+        );
+
         $(".slide_button").click(function() {
             var slider = $("#stats_slider");
             var left_pos = parseInt(slider.css('left'),10);
@@ -45,20 +56,18 @@
                 case "slide_button_2":
                     slider.animate({left: '660px'},400);
                     $("#stats_panel").css('width', '640px');
-                    $(".large-6").css('width', '100%');
-                    $(".large-12").css('width', '100%');
+                    flexy_tables.addClass('large-12');
+                    flexy_tables.removeClass('large-6');
                     if (left_pos != 660) {
                         map.panBy(-320,0);
-                        $('#stats_name_div').css('left','490px');
                     }
                     break;
                 
                 case "slide_button_3":
                     slider.animate({left: '50%'},600, function() {
                         $("#stats_panel").css('width', '100%');
-                        $(".large-6").css('width', '50%');
-                        $(".large-12").css('width', '50%');
-                        $("#stats_name_div").css('left', '20px');
+                        flexy_tables.addClass('large-6');
+                        flexy_tables.removeClass('large-12');
                         if (left_pos == 660) {map.panBy(320,0);}
                     });
                     break;
@@ -66,32 +75,25 @@
         });
 
         $("#slide_button_1").hover(
-            function() {$("#slide_button_1").css('background-color', 'steelblue');},
-            function() {$("#slide_button_1").css('background-color', 'gray');}
+            function() {$("#slide_button_1").css('background-color', '#3987c7');},
+            function() {$("#slide_button_1").css('background-color', '#595959');}
         );
 
         $("#slide_button_2").hover(
             function() {
-                $("#slide_button_1, #slide_button_2").css('background-color', 'steelblue');
+                $("#slide_button_1, #slide_button_2").css('background-color', '#3987c7');
             },
             function() {
-                $("#slide_button_1, #slide_button_2").css('background-color', 'gray');
+                $("#slide_button_1, #slide_button_2").css('background-color', '#595959');
             });
 
         $("#slide_button_3").hover(
             function() {
-                $(".slide_button").css('background-color', 'steelblue');
+                $(".slide_button").css('background-color', '#3987c7');
             },
             function() {
-                $(".slide_button").css('background-color', 'gray');
-            });
-
-        /*
-        $('#stats_slider').draggable({
-            axis: 'x',
-            containment: 'parent',
-        });
-        */
+                $(".slide_button").css('background-color', '#595959');
+            }); 
   });
 </script>
 {% end %}
@@ -99,17 +101,12 @@
 {% block content %}
 <div id="stats_wrapper">
   <div id="stats_slider">
-      <div id="stats_name_div">
-          <h5 id="stats_name">Run a simulation!</h5>
-      </div>
-
       <div id="save_load_div">
-         <form id="save_load_form">
-            <button type="button" class="button tiny" id="load_stats" onclick="load_trans()">Load Results</button>
-            <button type="button" class="button tiny" id="save_stats" onclick="save_trans()">Save Results</button>
-            <input type="text" id="stats_namer" placeholder="Insert Name"></input>
-            <select id="stats_picker"></select>
-         </form>
+          <button type="button" class="button tiny" id="load_stats" onclick="load_trans()">Load Results</button>
+          <button type="button" class="button tiny" id="save_stats" onclick="save_trans()">Save Results</button>
+          <button type="button" class="button tiny" id="comp_toggle" onclick="toggle_comps()">Compare Results</button>
+          <input type="text" id="stats_namer" placeholder="Insert Name (and make it a good one!)"></input>
+          <select id="stats_picker"></select>
       </div>
       
       <div id="stats_button">
@@ -119,17 +116,18 @@
       </div>
       
       <div id="stats_panel">
+	<div class="row" id="stats_name_div"><div class="large-12 columns">
+	    <h3 id="stats_name">Run a simulation first!</h3>
+            <div id="stats_range">You're not even supposed to see this.</div>
+            <select id="comp_picker_1"></select>
+	</div></div>
         <div class="row">
-          <div class="large-6 columns" id="overall_trip_stats">
+          <div class="large-12 columns" id="overall_trip_stats">
             <h5>Overall Statistics</h5>
             <table>
               <tr>
-                <td>Total Number of Trips Completed</td>
+                <td>Number of Trips Completed</td>
                 <td id="total_num_trips"></td>
-              </tr>
-              <tr>
-                <td>Total Number of Disappointments</td>
-                <td id="total_num_disappointments"></td>
               </tr>
               <tr>
                 <td>Average Trip Time</td>
@@ -139,11 +137,27 @@
                 <td>Standard Deviation of Trip Times</td>
                 <td id="std_trip_time"></td>
               </tr>
+              <tr>
+                <td>Arrival Prediction Accurracy: Manhattan Distance</td>
+                <td id='man_dist_score_arr'></td>
+              </tr>
+              <tr>
+                <td>Departure Prediction Accuracy: Manhattan Distance</td>
+                <td id='man_dist_score_dep'></td>
+              </tr>
+              <tr>
+                <td>Overall Prediction Accuracy: Euclidean Distance</td>
+                <td id='eucl_dist_score'></td>
+              </tr>
             </table>
           </div>
-          <div class="large-6 columns" id="disappointment_stats">
+          <div class="large-12 columns" id="disappointment_stats">
             <h5>Disappointment Statistics</h5>
             <table>
+              <tr>
+                <td>Number of Disappointments</td>
+                <td id="total_num_disappointments"></td>
+              </tr>
               <tr>
                 <td>Total Empty Station Station Disappointments</td>
                 <td id="total_num_empty_disappointments"></td>
@@ -157,7 +171,7 @@
                 <td id="most_disappointing_dep_station"></td>
               </tr>
                <tr>
-                <td>Station Most Likely to Disappint (when arriving)</td>
+                <td>Station Most Likely to Disappoint (when arriving)</td>
                 <td id="most_disappointing_arr_station"></td>
               </tr>
            </table>
@@ -165,7 +179,7 @@
         </div>
 
         <div class="row">
-          <div class="large-6 columns" id="min_duration_trip">
+          <div class="large-12 columns" id="min_duration_trip">
             <h5>Minimum Duration Trip</h5>
             <table>
               <tr>
@@ -190,7 +204,7 @@
               </tr>
             </table>
           </div>
-          <div class="large-6 columns" id="max_duration_trip">
+          <div class="large-12 columns" id="max_duration_trip">
             <h5>Maximum Duration Trip</h5>
             <table>
               <tr>
@@ -238,6 +252,147 @@
           </div>
         </div>
       </div>
+
+      <!-- Stats panel for side-by-side comparisons -->
+      <div id="comp_stats_panel">
+	<div class="row" id="comp_stats_name_div"><div class="large-12 columns">
+	    <h3 id="comp_stats_name">Run a simulation first!</h3>
+            <div id="comp_stats_range">You're not even supposed to see this.</div>
+            <select id="comp_picker_2"></select>
+	</div></div>
+        <div class="row">
+          <div class="large-12 columns" id="comp_overall_trip_stats">
+            <h5>Overall Statistics</h5>
+            <table>
+              <tr>
+                <td>Number of Trips Completed</td>
+                <td id="comp_total_num_trips"></td>
+              </tr>
+              <tr>
+                <td>Average Trip Time</td>
+                <td id="comp_avg_trip_time"></td>
+              </tr>
+              <tr>
+                <td>Standard Deviation of Trip Times</td>
+                <td id="comp_std_trip_time"></td>
+              </tr>
+              <tr>
+                <td>Arrival Prediction Accurracy: Manhattan Distance</td>
+                <td id='comp_man_dist_score_arr'></td>
+              </tr>
+              <tr>
+                <td>Departure Prediction Accuracy: Manhattan Distance</td>
+                <td id='comp_man_dist_score_dep'></td>
+              </tr>
+              <tr>
+                <td>Overall Prediction Accuracy: Euclidean Distance</td>
+                <td id='comp_eucl_dist_score'></td>
+              </tr>
+            </table>
+          </div>
+          <div class="large-12 columns" id="comp_disappointment_stats">
+            <h5>Disappointment Statistics</h5>
+            <table>
+              <tr>
+                <td>Number of Disappointments</td>
+                <td id="comp_total_num_disappointments"></td>
+              </tr>
+              <tr>
+                <td>Total Empty Station Station Disappointments</td>
+                <td id="comp_total_num_empty_disappointments"></td>
+              </tr>
+              <tr>
+                <td>Total Full Station Disappointments</td>
+                <td id="comp_total_num_full_disappointments"></td>
+              </tr>
+              <tr>
+                <td>Station Most Likely to Disappoint (when departing)</td>
+                <td id="comp_most_disappointing_dep_station"></td>
+              </tr>
+               <tr>
+                <td>Station Most Likely to Disappoint (when arriving)</td>
+                <td id="comp_most_disappointing_arr_station"></td>
+              </tr>
+           </table>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="large-12 columns" id="comp_min_duration_trip">
+            <h5>Minimum Duration Trip</h5>
+            <table>
+              <tr>
+                <td>Start Station</td>
+                <td class="comp_start_station_name"></td>
+              </tr>
+              <tr>
+                <td>End Station</td>
+                <td class="comp_end_station_name"></td>              
+              </tr>
+              <tr>
+                <td>Duration</td>
+                <td class="comp_duration"></td>
+              </tr>
+              <tr>
+                <td>Trip Start Time</td>
+                <td class="comp_start_datetime"></td>
+              </tr>
+              <tr>
+                <td>Trip End Time</td>
+                <td class="comp_end_datetime"></td>
+              </tr>
+            </table>
+          </div>
+          <div class="large-12 columns" id="comp_max_duration_trip">
+            <h5>Maximum Duration Trip</h5>
+            <table>
+              <tr>
+                <td>Start Station</td>
+                <td class="start_station_name"></td>
+              </tr>
+              <tr>
+                <td>End Station</td>
+                <td class="end_station_name"></td>              
+              </tr>
+              <tr>
+                <td>Duration</td>
+                <td class="duration"></td>
+              </tr>
+              <tr>
+                <td>Trip Start Time</td>
+                <td class="start_datetime"></td>
+              </tr>
+              <tr>
+                <td>Trip End Time</td>
+                <td class="end_datetime"></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="row">
+          <div id="num_departures_per_station">
+            <h5>Number of Departures per Station</h5>
+            <div style = "max-width:878px;"></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div id="num_arrivals_per_station">
+            <h5>Number of Arrivals per Station</h5>
+            <div style = "max-width:878px;"></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="large-12 columns" id="num_trips_per_hour">
+            <h5>Number of Trips per Hour</h5>
+            <div></div>
+          </div>
+        </div>
+      </div>
+
+
   </div>
 </div>
 
@@ -250,10 +405,10 @@
 <div id="map_canvas"></div>
 
 <div id="loading_div">
+  <p id="loading_div_text">Simulation Time at <b id="current_time"></b></p>
   <div id="progressbar"><div class="progress-label">Loading...</div></div>
-  <p>Simulation Time at <b id="current_time"></b></p>
-  <div id="error_alert" style="background-color: #f11; display:none;" data-alert class="alert-box warning round">
-    An error might have occurred in the back-end!
+  <div id="error_alert" style="background-color: #c60f13; display:none;" data-alert class="alert-box warning">
+    Simba ran into a problem and needs to restart. :(
     <a href="#" class="close">&times;</a>
   </div>
 
