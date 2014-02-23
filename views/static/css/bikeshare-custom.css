@@ -141,7 +141,7 @@ form button[type="submit"] {
 
 #stats_panel {
   position: absolute;
-  top: 100px;
+  top: 60px;
   right: 20px;
   width: 640px;
   height: 100%;
@@ -152,25 +152,26 @@ form button[type="submit"] {
   display: none;
   width: 640px;
   height: 100%;
+  position: absolute;
+  top: 60px;
+  right: 20px;
   overflow-y: auto;
 }
 
-#stats_name_div {
-  position: relative;
-  height: 60px;
-  overflow: hidden;
-  margin-top: 20px;
-  left: 825px;
-  top: 30px;
+#stats_name_div,
+#comp_stats_name_div {
+  margin-bottom: 15px;
 }
 
-#stats_name {
+#stats_name,
+#comp_stats_name {
   color: #3987c7;
   margin-bottom: 0;
   float: left;
 }
 
-#stats_range {
+#stats_range,
+#comp_stats_range {
   width: 100%;
   height: 20px;
   float: left;
@@ -182,21 +183,21 @@ form button[type="submit"] {
   right: 40px;
   top: 15px;
   height: 30px;
-  width: 205px;
+  width: 330px;
   overflow: hidden;
 }
 
-#save_load_form {
+#save_stats,
+#load_stats, 
+#comp_toggle {
   height: 100%;
-  width: 100%;
+  background-color: green;
+  position: absolute;
 }
 
 #save_stats,
 #load_stats {
-  height: 100%;
   width: 100px;
-  background-color: green;
-  position: absolute;
 }
 
 #save_stats {
@@ -204,15 +205,20 @@ form button[type="submit"] {
 }
 
 #load_stats {
+  right: 125px;
+}
+
+#comp_toggle {
   right: 0px;
+  width: 120px;
 }
 
 #stats_namer,
 #stats_picker {
   height: 100%;
-  width: 155px;
+  width: 260px;
   position: absolute;
-  left: -160px;
+  left: -260px;
   top: 0px;
 }
 
@@ -286,19 +292,15 @@ form button[type="submit"] {
 
 #loading_div {
   width: 40%;
-  height: 40%;
   display: none;
   position: fixed;
   left: 50%;
-  top: 25%;
+  top: 40%;
   margin: 0 0 0 -20%;
-  border-style: solid;
-  border-color: steelblue;
-  border-width: 5px;
-  border-radius: 10%;
-  background-color: rgba(0,0,0,.8);
+  background-color: #fff;
   padding: 20px;
-  color: #fff;
+  color: #222;
+  box-shadow: 2px 2px 2px rgba(128,128,128,0.5);
 }
 
 #loading {
@@ -308,14 +310,26 @@ form button[type="submit"] {
   margin: -25px 0 0 -25px;
 }
 
+#progressbar {
+  border-radius: 0;
+  border: none;
+  margin-bottom: 20px;
+}
+
+#error_alert {
+  border: none;
+  font-weight: normal;
+}
+
 .ui-progressbar {
   position: relative;
 }
 
 .progress-label {
   position: absolute;
-  left: 50%;
-  top: 4px;
+  text-align: center;
+  top: 6px;
+  width: 100%;
   font-weight: bold;
   text-shadow: 1px 1px 0 #fff;
 }
@@ -338,4 +352,10 @@ form button[type="submit"] {
 }
 
 .infoWindow_capacity_label { 
+}
+
+#loading_div_text {
+    margin-bottom: 0;
+    font-size: 0.9em;
+    font-style: italic;
 }
