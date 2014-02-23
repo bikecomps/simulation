@@ -436,7 +436,7 @@ function processStatsForm() {
                 progressbar.find(".progress-label").html("Loading...");
                 loadingDiv.find("#current_time").html("");
              	progressbar.find(".ui-progressbar-value").css({
-                    "background" : "#" + Math.floor( Math.random() * 16777215 ).toString(16)
+                    "background" : "#3787c3"
                 });
                 loadingDiv.find("#error_alert").hide();
                 var slider_left_pos = parseInt($("#stats_slider").css('left'),10);
