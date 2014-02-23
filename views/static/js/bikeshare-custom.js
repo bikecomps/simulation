@@ -259,6 +259,7 @@ function plotKeysVals(htmlIdName, map) {
 }
 
 function displaySummaryStats(data, from, to, comp) {
+    console.log("display function");
 	var comps = '';
 	if (comp != undefined) {comps = 'comp_';}
 	// set 'total_num_trips', 'total_num_disappointments',
@@ -269,24 +270,24 @@ function displaySummaryStats(data, from, to, comp) {
 	$("#" + comps + "avg_trip_time").text(toHours(data["avg_trip_time"]));
 	$("#" + comps + "std_trip_time").text(toHours(data["std_trip_time"]));
 
-        var value;
-        // set Accuracy based on manhattan distance and euclidean distance
-        value = data["man_dist_score_arr"].toFixed(2) + "%";
-        $("#" + comps + "man_dist_score_arr").html(value);
+    var value;
+    // set Accuracy based on manhattan distance and euclidean distance
+    value = data["man_dist_score_arr"].toFixed(2) + "%";
+    $("#" + comps + "man_dist_score_arr").html(value);
 
-        value = data["man_dist_score_dep"].toFixed(2) + "%";
-        $("#" + comps + "man_dist_score_dep").html(value);
+    value = data["man_dist_score_dep"].toFixed(2) + "%";
+    $("#" + comps + "man_dist_score_dep").html(value);
 
-        value = data["eucl_dist_score"].toFixed(2) + "%";
-        $("#" + comps + "eucl_dist_score").html(value);
-
+    value = data["eucl_dist_score"].toFixed(2) + "%";
+    $("#" + comps + "eucl_dist_score").html(value);
+    console.log("got past the scores")
 	// set 'total_num_trips', 'total_num_disappointments',
 	// 'avg_trip_time', and 'std_trip_time' 
 	$("#" + comps + "total_num_empty_disappointments").text(data["total_num_empty_disappointments"]);
 	$("#" + comps + "total_num_full_disappointments").text(data["total_num_full_disappointments"]);
 	$("#" + comps + "most_disappointing_dep_station").text(data["most_disappointing_dep_station"]);
 	$("#" + comps + "most_disappointing_arr_station").text(data["most_disappointing_arr_station"]);
-
+    console.log("got past the disappointments");
 
 	// set 'min_duration_trip' 
 	var minTrip = data["min_duration_trip"];
@@ -462,6 +463,7 @@ function processStatsForm() {
             },
 
 	    success: function(data) {
+                console.log("got here.");
                 res = data.concat('!?!',from,'!?!',to);
                 var jsond = JSON.parse(data);
                 data_for_maps = jsond;
@@ -474,15 +476,17 @@ function processStatsForm() {
                 $("#stats_range").html(from + ' to ' + to);
                 $("#loading_div").hide();
                 $("#stats_slider").animate({left: 660});
+                console.log("and here");
                 displaySummaryStats(jsond, from, to);
+                console.log("aaaand here?");
                 map.panBy(-320,0);
-
-		console.log(data_for_maps);	
-		$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
+        		console.log(data_for_maps);	
+		        $.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
             },
 
-                error: function() {
-                    updateProgressBar(null, null, true);
-                }
+        error: function() {
+            console.log("damn it.");
+            updateProgressBar(null, null, true);
+        }
 	});	
 }
