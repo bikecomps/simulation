@@ -174,8 +174,8 @@ class SummaryStats:
         self.stats['num_disappointments_per_station'] = self.dis_station_counts
         self.stats['num_dep_disappointments_per_station'] = self.dep_dis_station_counts 
         self.stats['num_arr_disappointments_per_station'] = self.arr_dis_station_counts
-        self.stats['most_disappointing_dep_station'] = self.station_name_dict[max(self.dep_dis_station_counts, key = lambda x: self.dep_dis_station_counts[x])]
-        self.stats['most_disappointing_arr_station'] = self.station_name_dict[max(self.arr_dis_station_counts, key = lambda x: self.arr_dis_station_counts[x])]
+        self.stats['most_disappointing_dep_station'] = max(self.dep_dis_station_counts, key = lambda x: self.dep_dis_station_counts[x])
+        self.stats['most_disappointing_arr_station'] = max(self.arr_dis_station_counts, key = lambda x: self.arr_dis_station_counts[x])
 
 
     def calculate_per_hour_stats(self):

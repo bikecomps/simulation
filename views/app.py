@@ -33,7 +33,6 @@ class UnifiedHandler(RequestHandler):
             # some error occurred
             self.write("{}")
 
-
 class StatsHandler(RequestHandler):
 
     def get(self):

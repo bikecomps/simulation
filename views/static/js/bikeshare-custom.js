@@ -271,13 +271,16 @@ function displaySummaryStats(data, from, to, comp) {
 
         var value;
         // set Accuracy based on manhattan distance and euclidean distance
-        value = data["man_dist_score_arr"].toFixed(2) + "%";
+        // SEE: summary_stats.py
+        // 'man_dist_score_arr', 'man_dist_score_dep', and 'eucl_dist_score'
+        // are only included when year <= 2013
+        value = ("man_dist_score_arr" in data ? data["man_dist_score_arr"].toFixed(2) + "%" : "");
         $("#" + comps + "man_dist_score_arr").html(value);
 
-        value = data["man_dist_score_dep"].toFixed(2) + "%";
+        value = ("man_dist_score_dep" in data ? data["man_dist_score_dep"].toFixed(2) + "%" : "");
         $("#" + comps + "man_dist_score_dep").html(value);
 
-        value = data["eucl_dist_score"].toFixed(2) + "%";
+        value = ("eucl_dist_score" in data ? data["eucl_dist_score"].toFixed(2) + "%" : "");
         $("#" + comps + "eucl_dist_score").html(value);
 
 	// set 'total_num_trips', 'total_num_disappointments',
