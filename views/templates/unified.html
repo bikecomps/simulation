@@ -105,7 +105,7 @@
           <button type="button" class="button tiny" id="load_stats" onclick="load_trans()">Load Results</button>
           <button type="button" class="button tiny" id="save_stats" onclick="save_trans()">Save Results</button>
           <button type="button" class="button tiny" id="comp_toggle" onclick="toggle_comps()">Compare Results</button>
-          <input type="text" id="stats_namer" placeholder="Insert Name (and make it a good one!)"></input>
+          <input type="text" id="stats_namer" placeholder="Insert Name (and make it a good one!)" autocomplete='off'></input>
           <select id="stats_picker"></select>
       </div>
       
@@ -139,15 +139,15 @@
               </tr>
               <tr>
                 <td>Arrival Prediction Accurracy: Manhattan Distance</td>
-                <td id='man_dist_score_arr'></td>
+                <td id='man_dist_score_arr'>NA</td>
               </tr>
               <tr>
                 <td>Departure Prediction Accuracy: Manhattan Distance</td>
-                <td id='man_dist_score_dep'></td>
+                <td id='man_dist_score_dep'>NA</td>
               </tr>
               <tr>
                 <td>Overall Prediction Accuracy: Euclidean Distance</td>
-                <td id='eucl_dist_score'></td>
+                <td id='eucl_dist_score'>NA</td>
               </tr>
             </table>
           </div>
@@ -278,15 +278,15 @@
               </tr>
               <tr>
                 <td>Arrival Prediction Accurracy: Manhattan Distance</td>
-                <td id='comp_man_dist_score_arr'></td>
+                <td id='comp_man_dist_score_arr'>NA</td>
               </tr>
               <tr>
                 <td>Departure Prediction Accuracy: Manhattan Distance</td>
-                <td id='comp_man_dist_score_dep'></td>
+                <td id='comp_man_dist_score_dep'>NA</td>
               </tr>
               <tr>
                 <td>Overall Prediction Accuracy: Euclidean Distance</td>
-                <td id='comp_eucl_dist_score'></td>
+                <td id='comp_eucl_dist_score'>NA</td>
               </tr>
             </table>
           </div>

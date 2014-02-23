@@ -167,7 +167,6 @@ class SummaryStats:
             arr_counts[end_station_name] += 1
             pair_counts[start_station_name][end_station_name] += 1
             
-
         self.stats['num_departures_per_station'] = dep_counts
         self.stats['num_arrivals_per_station'] = arr_counts
         self.stats['num_trips_per_pair_station'] = pair_counts
@@ -229,10 +228,13 @@ class SummaryStats:
 
 
     def calculate_stats(self):
-        # now important to calculate station stats first so as to populate self.station_name_dict before calculating overall stats
+        # calculate station stats first so as to populate self.station_name_dict before calculating overall stats
         self.calculate_per_station_stats()
+        print 'finished per_station_stats'
         self.calculate_overall_stats()
+        print 'finished overall_stats'
         self.calculate_per_hour_stats()
+        print 'finished per_hour_stats'
         
     def get_disappointments(self):
         return self.dump_json(self.disappointments)

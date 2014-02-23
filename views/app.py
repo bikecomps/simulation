@@ -12,7 +12,6 @@ from analytics import SummaryStats
 from analytics import clustering
 
 class UnifiedHandler(RequestHandler):
-
     def get(self):        
         stations = PlotMap().stations
         self.render("unified.html",title="Simba | Washington DC",locations=stations)
@@ -20,9 +19,11 @@ class UnifiedHandler(RequestHandler):
     def post(self):
         start_date = datetime.datetime.strptime(self.get_argument("start"), "%Y-%m-%d %H:%M")
         end_date = datetime.datetime.strptime(self.get_argument("end"), "%Y-%m-%d %H:%M")
-        altered_capacity = json.loads(self.get_argument("capacity"))
-        ac = {int(k): int(altered_capacity[k]) for k in altered_capacity}
-        altered_capacity = ac
+
+	altered_capacity = json.loads(self.get_argument("capacity"))
+	ac = {int(k): int(altered_capacity[k]) for k in altered_capacity}
+	altered_capacity = ac
+
         try:
             sstats = SummaryStats(start_date, end_date, altered_capacity)
             self.write(sstats.get_stats())
@@ -30,9 +31,7 @@ class UnifiedHandler(RequestHandler):
             # some error occurred
             self.write("{}")
 
-
 class StatsHandler(RequestHandler):
-
     def get(self):
         self.render("stats.html", title="Get Summary Stats on Generated Bike Trips")
 
@@ -44,6 +43,7 @@ class StatsHandler(RequestHandler):
         
         sstats = SummaryStats(start_date, end_date)
         self.write(sstats.get_stats())
+
 
 class ClusterHandler(RequestHandler):
     def get(self):
@@ -63,14 +63,14 @@ class ClusterHandler(RequestHandler):
 
 
 class AboutHandler(RequestHandler):
-
     def get(self):
         self.render("about.html", title="About Us")
 
-class BaseHandler(RequestHandler):
-    
+
+class BaseHandler(RequestHandler):    
     def get(self):
         self.render("base.html", title="Base File")
+
 
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)

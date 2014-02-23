@@ -16,6 +16,8 @@ function save_results() {
     var opt = document.createElement('option');
     opt.innerHTML = stats_name;
     $("#stats_picker, #comp_picker_1, #comp_picker_2").append(opt);
+
+    $("#stats_namer").val('');
     $("#stats_namer").animate({left: "-260px"});
     $("#save_stats").animate({width: "100px", left: "0px"}, function() {$(this).html('Save Results');})
         .attr('onclick', 'save_trans()');
@@ -41,12 +43,15 @@ function load_results() {
     var desired = desired_unpacked[0];
     var from = desired_unpacked[1];
     var to = desired_unpacked[2];
-    displaySummaryStats(JSON.parse(desired),from,to);
-    $("#stats_name").html(stats_name);
-    $("#load_stats").animate({width: '100px', right: '125px'}, function() {$(this).html('Load Results')})
-        .attr('onclick', 'load_trans()');
+
     $("#stats_picker").animate({left: '-260px'});
-    $("#save_stats, #comp_toggle`").animate({top: '0px'});
+    $("#save_stats, #comp_toggle").animate({top: '0px'});
+    $("#load_stats").html('Load Results');
+    $("#load_stats").animate({width: '100px', right: '125px'}, function() {
+        $("#stats_name").html(stats_name);
+        displaySummaryStats(JSON.parse(desired),from,to);
+    })
+        .attr('onclick', 'load_trans()');
 }
 
 function sliderSetup() {
@@ -269,17 +274,20 @@ function displaySummaryStats(data, from, to, comp) {
 	$("#" + comps + "avg_trip_time").text(toHours(data["avg_trip_time"]));
 	$("#" + comps + "std_trip_time").text(toHours(data["std_trip_time"]));
 
-    var value;
-    // set Accuracy based on manhattan distance and euclidean distance
-    value = data["man_dist_score_arr"].toFixed(2) + "%";
-    $("#" + comps + "man_dist_score_arr").html(value);
+        var value;
+        // set Accuracy based on manhattan distance and euclidean distance
+        // SEE: summary_stats.py
+        // 'man_dist_score_arr', 'man_dist_score_dep', and 'eucl_dist_score'
+        // are only included when year <= 2013
+        value = ("man_dist_score_arr" in data ? data["man_dist_score_arr"].toFixed(2) + "%" : "NA");
+        $("#" + comps + "man_dist_score_arr").html(value);
 
-    value = data["man_dist_score_dep"].toFixed(2) + "%";
-    $("#" + comps + "man_dist_score_dep").html(value);
+        value = ("man_dist_score_dep" in data ? data["man_dist_score_dep"].toFixed(2) + "%" : "NA");
+        $("#" + comps + "man_dist_score_dep").html(value);
 
-    value = data["eucl_dist_score"].toFixed(2) + "%";
-    $("#" + comps + "eucl_dist_score").html(value);
-    console.log("got past the scores")
+        value = ("eucl_dist_score" in data ? data["eucl_dist_score"].toFixed(2) + "%" : "NA");
+        $("#" + comps + "eucl_dist_score").html(value);
+
 	// set 'total_num_trips', 'total_num_disappointments',
 	// 'avg_trip_time', and 'std_trip_time' 
 	$("#" + comps + "total_num_empty_disappointments").text(data["total_num_empty_disappointments"]);
@@ -476,11 +484,14 @@ function processStatsForm() {
                 $("#stats_name").html('Summary for most recent simulation:');
                 $("#stats_range").html(from + ' to ' + to);
                 $("#loading_div").hide();
-                $("#stats_slider").animate({left: 660});
+                $("#stats_slider").animate({left: 660},400);
+                $("#stats_panel").css('width','640px');
+                $(flexy_tables).addClass('large-12');
+                $(flexy_tables).removeClass('large-6');
                 displaySummaryStats(jsond, from, to);
                 map.panBy(-320,0);
-        		console.log(data_for_maps);	
-		        $.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
+                console.log(data_for_maps);	
+		$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
             },
 
         error: function() {
