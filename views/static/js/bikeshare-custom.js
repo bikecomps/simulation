@@ -345,7 +345,7 @@ function toggle_comps() {
         var left_pos = parseInt(slider.css('left'),10);
         slider.animate({left: '50%'},600, function() {
             $('#stats_panel, #comp_stats_panel').css('width', '50%');
-            $('#stats_panel').animate({left: '20px', right: '', top: '100px'});
+            $('#stats_panel').animate({left: '20px', right: ''});
             $(flexy_tables).addClass('large-12');
             $(flexy_tables).removeClass('large-6');
             $('#comp_stats_panel').css('display', 'inline');
