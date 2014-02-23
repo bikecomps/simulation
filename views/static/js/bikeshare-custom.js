@@ -41,12 +41,16 @@ function load_results() {
     var desired = desired_unpacked[0];
     var from = desired_unpacked[1];
     var to = desired_unpacked[2];
-    displaySummaryStats(JSON.parse(desired),from,to);
-    $("#stats_name").html(stats_name);
-    $("#load_stats").animate({width: '100px', right: '125px'}, function() {$(this).html('Load Results')})
-        .attr('onclick', 'load_trans()');
+
     $("#stats_picker").animate({left: '-260px'});
-    $("#save_stats, #comp_toggle`").animate({top: '0px'});
+    $("#save_stats, #comp_toggle").animate({top: '0px'});
+    $("#load_stats").html('Load Results');
+    $("#load_stats").animate({width: '100px', right: '125px'}, function() {
+        //$(this).html('Load Results');
+        $("#stats_name").html(stats_name);
+        displaySummaryStats(JSON.parse(desired),from,to);
+    })
+        .attr('onclick', 'load_trans()');
 }
 
 function sliderSetup() {
