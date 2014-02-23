@@ -259,7 +259,6 @@ function plotKeysVals(htmlIdName, map) {
 }
 
 function displaySummaryStats(data, from, to, comp) {
-    console.log("display function");
 	var comps = '';
 	if (comp != undefined) {comps = 'comp_';}
 	// set 'total_num_trips', 'total_num_disappointments',
@@ -466,7 +465,6 @@ function processStatsForm() {
             },
 
 	    success: function(data) {
-                console.log("got here.");
                 res = data.concat('!?!',from,'!?!',to);
                 var jsond = JSON.parse(data);
                 data_for_maps = jsond;
@@ -479,9 +477,7 @@ function processStatsForm() {
                 $("#stats_range").html(from + ' to ' + to);
                 $("#loading_div").hide();
                 $("#stats_slider").animate({left: 660});
-                console.log("and here");
                 displaySummaryStats(jsond, from, to);
-                console.log("aaaand here?");
                 map.panBy(-320,0);
         		console.log(data_for_maps);	
 		        $.getScript("static/js/visualize-helper.js", function(){changeMapVis();});

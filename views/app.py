@@ -24,12 +24,9 @@ class UnifiedHandler(RequestHandler):
         ac = {int(k): int(altered_capacity[k]) for k in altered_capacity}
         altered_capacity = ac
         try:
-            print "initializing sstats"
             sstats = SummaryStats(start_date, end_date, altered_capacity)
             self.write(sstats.get_stats())
         except Exception as e:
-            print "got exception"
-            print "exception:", e
             # some error occurred
             self.write("{}")
 
