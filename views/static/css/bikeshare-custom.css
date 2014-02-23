@@ -38,10 +38,26 @@ footer p {
 
 /*Style elements from unified.html*/
 
+#map_wrapper {
+    position: relative;
+    height: 100%;
+    margin: 0px;
+    padding: 0px;
+}
+
 #map_canvas {
   height: 100%;
   margin: 0px;
   padding: 0px;
+}
+
+#options_wrapper_div {
+    position: absolute;
+    background-color: transparent;
+    bottom: 15px;
+    right: 10px;
+    z-index: 99;
+    background: blue;
 }
 
 #simulation_control,

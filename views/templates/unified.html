@@ -402,8 +402,13 @@
   $(document).foundation();
 </script>
 
-<div id="map_canvas"></div>
-
+<div id="map_wrapper">
+    <div id="map_canvas"></div>
+    <div id = "options_wrapper_div">hey hey hey</div>
+</div>
+<script>
+    console.log(document.getElementById("test_div").parentNode);
+</script>
 <div id="loading_div">
   <p id="loading_div_text">Simulation Time at <b id="current_time"></b></p>
   <div id="progressbar"><div class="progress-label">Loading...</div></div>

@@ -193,6 +193,25 @@ function changeMarkerColor(marker_id, color) {
 		strokeColor: 'Navy',
 		strokeWeight: 1
 	});
-}
+} 
+
+var oDiv = document.createElement('div');
+console.log("oDiv?");
+$.getScript("/static/js/map-overlay.js")
+    .done(function(script, textStatus) {
+        console.log("hello");
+        overlay = new OptionsOverlay(map, oDiv);
+        overlay.onAdd();
+        overlay.setSizeAndPos("100px","100px", "relative");
+        overlay.show();
+        console.log("should be showing now");
+       
+    })
+    .fail(function(jqxhr, settings, exception) {
+        console.log("error");
+        console.log(exception);
+        console.log(jqxhr);
+        console.log(settings);
+    });
 
 google.maps.event.addDomListener(window, 'load', initialize);
