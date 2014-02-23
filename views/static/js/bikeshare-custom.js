@@ -358,7 +358,7 @@ function toggle_comps() {
         $('#stats_panel').css('width', '100%')
             .css('right', '20px')
             .css('left', '');
-        $('#comp_stats_panel').css('display', 'none');
+        $('#comp_stats_panel, #comp_picker_1, #comp_picker_2').css('display', 'none');
         $(flexy_tables).addClass('large-6');
         $(flexy_tables).removeClass('large-12');
         in_comp_mode = false;
