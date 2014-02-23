@@ -58,8 +58,13 @@ class ClusterHandler(RequestHandler):
         self.render("clustering.html", title="Clustering Tool", locations=stations)
 
     def post(self):
+        start_dstr = self.get_argument("start_date")
+        end_dstr = self.get_argument("end_date")
+        k = self.get_argument("k")
+        choice = self.get_argument("choice")
         cluster_type = self.get_argument("clustering_method")
-        clusters = clustering.get_clusters(cluster_type)        
+        
+        clusters = clustering.get_clusters(start_dstr, end_dstr, k, choice, cluster_type)
         self.write(clusters)
 
 

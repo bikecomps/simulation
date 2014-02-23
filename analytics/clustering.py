@@ -282,16 +282,22 @@ def info_from_trip_clusters(raw_obs, obs, s_ids, opt_clusters, centroids):
     
     return data
 
-def get_clusters_as_dict(cluster_type):
+def get_clusters_as_dict(start_dstr, end_dstr, k, choice_str, cluster_type):
     if cluster_type == "Trip counts":
-        return trip_count_cluster()
+        return trip_count_cluster(start_d=start_dstr, end_d=end_dstr, 
+                                  normalize=True, cluster_empties=False, 
+                                  choice=choice_str,
+                                  max_k=k)
     elif cluster_type == "Hours of high traffic":
-        return hour_count_cluster()
+        return hour_count_cluster(start_d=start_dstr, end_d=end_dstr, 
+                                  normalize=True, cluster_empties=False, 
+                                  choice=choice_str,
+                                  max_k=k)
     else:
         return {}
 
-def get_clusters(cluster_type):
-    return dump_json(get_clusters_as_dict(cluster_type))
+def get_clusters(start_dstr, end_dstr, k, choice_str, cluster_type):
+    return dump_json(get_clusters_as_dict(start_dstr, end_dstr, k, choice_str, cluster_type))
         
 def dump_json(to_dump):
     '''
@@ -312,7 +318,7 @@ def json_dump_handler(obj):
         raise TypeError, 'Cannot serialize item %s of type %s' % (repr(obj), type(obj))
 
 
-def trip_count_cluster(start_d='2010-09-15', end_d='2013-12-31', normalize=True, cluster_empties=False, choice="totals",
+def trip_count_cluster(start_d='2010-09-15 00:00', end_d='2013-12-31 00:00', normalize=True, cluster_empties=False, choice="totals",
                        max_k=5):
     conn = Connector()
     engine = conn.getDBEngine()
@@ -345,7 +351,7 @@ def trip_count_cluster(start_d='2010-09-15', end_d='2013-12-31', normalize=True,
         clusters_dict[c_id] = data["stations"]
     return clusters_dict
 
-def hour_count_cluster(start_d='2010-09-15', end_d='2013-12-31', normalize=True, cluster_empties=False,
+def hour_count_cluster(start_d='2010-09-15 00:00', end_d='2013-12-31 00:00', normalize=True, cluster_empties=False,
                        choice="departures", max_k=8):
     conn = Connector()
     engine = conn.getDBEngine()
