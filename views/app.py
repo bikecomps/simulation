@@ -56,9 +56,10 @@ class ClusterHandler(RequestHandler):
     def post(self):
         start_dstr = self.get_argument("start_date")
         end_dstr = self.get_argument("end_date")
-        k = self.get_argument("k")
-        choice = self.get_argument("choice")
         cluster_type = self.get_argument("clustering_method")
+        
+        k = self.get_argument("max_k", default = 5)
+        choice = self.get_argument("choice", default = "totals")
         
         clusters = clustering.get_clusters(start_dstr, end_dstr, k, choice, cluster_type)
         self.write(clusters)

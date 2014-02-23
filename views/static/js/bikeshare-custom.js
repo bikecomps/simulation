@@ -16,7 +16,7 @@ function save_results() {
     opt.innerHTML = stats_name;
     $("#stats_picker").append(opt);
     $("#stats_namer").animate({left: "-165px"});
-    $("#save_stats").animate({width: "100px", left: "0px"}, function() {$(this).html('Save Results')})
+    $("#save_stats").animate({width: "100px", left: "0px"}, function() {$(this).html('Save Results');})
         .attr('onclick', 'save_trans()');
     $("#load_stats").animate({right: "0px"});
 }

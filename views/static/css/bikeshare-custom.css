@@ -49,6 +49,14 @@ footer p {
   height: auto;
 }
 
+#cluster_control #from_div {
+  margin-left: 10px;
+}
+
+#cluster_control #to_div {
+  margin-left: 10px;
+}
+
 #cluster_by_txt {
 	float: left;
 	margin-right: 5px;
@@ -73,10 +81,21 @@ footer p {
   float: left;
 }
 
-#clustering_method {
-  float: left;
+#clustering_method, #max_k {
   margin-top: 15px;
   width: 100px;
+}
+#clustering_method {
+  float: left;
+}
+
+#max_cluster_txt {
+  margin-left: 10px;
+  float:left;
+}
+
+#cluster_control #submit {
+  float: left;
 }
 
 #from_date,

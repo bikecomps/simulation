@@ -38,14 +38,19 @@
         </div>
 
         <div class="left" id="cluster_control">
-			<div id="cluster_by_txt">Cluster stations by:</div>
 			<form id="control_form" onsubmit="clusterColors(); return false;">
-				<select id="clustering_method">
-					<option></option>
-					<option>Trip counts</option>
-					<option>Hours of high traffic</option>
-				</select>
-				<button type="submit" id="submit">Cluster</button>
+			  <div id="cluster_by_txt">Cluster stations by:</div>
+			  <select id="clustering_method">
+			    <option>Trip counts</option>
+			    <option>Hours of high traffic</option>
+			  </select>
+			  <div id="from_div">
+			    <input type="text" id="start_date" placeholder="Start Date">
+			  </div>
+			  <div id="to_div">
+			    <input type="text" id="end_date" placeholder="End Date">
+			  </div>
+			  <button type="submit" id="submit">Cluster</button>			  
 			</form>
         </div>
         
@@ -67,7 +72,7 @@
       $(document).foundation();
     </script>
 	<script>
-		$('#from_date, #to_date').datetimepicker({
+		$('#from_date, #to_date, #start_date, #end_date').datetimepicker({
 			closeOnDateSelect: true,
 			yearStart: 2010,
 			yearEnd: 2015,
