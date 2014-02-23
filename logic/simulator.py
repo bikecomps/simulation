@@ -153,6 +153,8 @@ def main():
     #print "Full diss", len(ds) - num_ds
     print "Arrival dissapointments", len(results['arr_dis_stations'])
     print "Dep. dissapointments", len(results['dep_dis_stations'])
+    print "By station - arrs", sum(results['arr_dis_stations'].itervalues())
+    print "By station - dep", sum(results['dep_dis_stations'].itervalues())
 
     print "Arrival dis stations:"
     print results['arr_dis_stations']

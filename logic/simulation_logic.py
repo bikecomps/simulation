@@ -246,10 +246,13 @@ class SimulationLogic:
         for s_id in full_stations:
             self.unavailable_stations.add(s_id)
             self.full_stations.put((self.time, s_id))
-        print "TOTAL NUM BIKES",sum(self.station_counts.itervalues())
-        print "Stations with more count than cap? ", len([s_id for s_id, count in self.station_counts.iteritems() if count > self._get_station_cap(s_id)])
-        print [(count, self._get_station_cap(s_id)) for s_id, count in self.station_counts.iteritems()]
+        #print "TOTAL NUM BIKES",sum(self.station_counts.itervalues())
+        #print "Stations with more count than cap? ", len([s_id for s_id, count in self.station_counts.iteritems() if count > self._get_station_cap(s_id)])
+        #print [(count, self._get_station_cap(s_id)) for s_id, count in self.station_counts.iteritems()]
 
+
+        for s_id, count in self.station_counts.iteritems():
+            assert 0 <= count <= self._get_station_cap(s_id)    
 
 
     def update(self, timestep):
@@ -416,8 +419,8 @@ class SimulationLogic:
         # NOTE: potential error, if you have a rebalance time < 1 hour 
         # could potentially exceed that time
 
-        print "Start", reduce(lambda x, y: x and y >= 0, self.station_counts.itervalues(), True)
-        print self.station_counts.values()
+        #print "Start", reduce(lambda x, y: x and y >= 0, self.station_counts.itervalues(), True)
+        #print self.station_counts.values()
         while not self.full_stations.empty():
             time = self.full_stations.queue[0][0]
             if cur_time - time  >= self.rebalancing_time:
@@ -431,7 +434,7 @@ class SimulationLogic:
                 self.unavailable_stations.remove(s_id)
             else:
                 break
-        print "After Fulls!", reduce(lambda x, y: x and y >= 0, self.station_counts.itervalues(), True)
+        #print "After Fulls!", reduce(lambda x, y: x and y >= 0, self.station_counts.itervalues(), True)
 
         # If there are empty stations that are empty add to them
         need_bikes = []
@@ -443,7 +446,7 @@ class SimulationLogic:
                 need_bikes.append(s_id)
             else:
                 break
-        print "After Empties!", reduce(lambda x, y: x and y >= 0, self.station_counts.itervalues(), True)
+        #print "After Empties!", reduce(lambda x, y: x and y >= 0, self.station_counts.itervalues(), True)
 
         crowded_stations = sorted(self.stations,
             key=lambda x: self._get_station_cap(x) - self.station_counts[x])
@@ -463,12 +466,12 @@ class SimulationLogic:
                     break
 
             self.station_counts[s_id] -= to_remove
-            if self.station_counts[s_id] < 0:
-                print "Station",s_id, self.station_counts[s_id], to_remove
+            #if self.station_counts[s_id] < 0:
+            #    print "Station",s_id, self.station_counts[s_id], to_remove
             self.moving_bikes += to_remove
             self.total_rebalances += to_remove
        
-        print "After Additionals!", reduce(lambda x, y: x and y >= 0, self.station_counts.itervalues(), True)
+        #print "After Additionals!", reduce(lambda x, y: x and y >= 0, self.station_counts.itervalues(), True)
         if len(need_bikes) > 0:
             bikes_to_distr = self.moving_bikes / len(need_bikes) 
             for s_id in need_bikes:
@@ -478,7 +481,11 @@ class SimulationLogic:
                 self.moving_bikes -= max_bikes
                 self.unavailable_stations.remove(s_id)
         #print "MOVING BIKES: ",self.moving_bikes
-        print "After Moves!", reduce(lambda x, y: x and y >= 0, self.station_counts.itervalues(), True)
+        #print "After Moves!", reduce(lambda x, y: x and y >= 0, self.station_counts.itervalues(), True)
+
+        for s_id, count in self.station_counts.iteritems():
+            assert 0 <= count <= self._get_station_cap(s_id)    
+
 
     def flush(self):
         '''Returns list of all trips since initialization, or adds them to the database if to_database is True'''

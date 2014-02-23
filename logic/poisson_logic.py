@@ -122,12 +122,12 @@ class PoissonLogic(SimulationLogic):
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        print "Num bikes at stations", sum([x for x in self.station_counts.itervalues()])
-        print "Num bikes in transit", self.pending_arrivals.qsize()
-        print "Moving bikes", self.moving_bikes
-        print "Total?", sum([x for x in self.station_counts.itervalues()]) + self.pending_arrivals.qsize() + self.moving_bikes
-        print "Stations with more count than cap? ", len([s_id for s_id, count in self.station_counts.iteritems() if count > self._get_station_cap(s_id)])
-        print [(count, self._get_station_cap(s_id)) for s_id, count in self.station_counts.iteritems()]
+        #print "Num bikes at stations", sum([x for x in self.station_counts.itervalues()])
+        #print "Num bikes in transit", self.pending_arrivals.qsize()
+        #print "Moving bikes", self.moving_bikes
+        #print "Total?", sum([x for x in self.station_counts.itervalues()]) + self.pending_arrivals.qsize() + self.moving_bikes
+        #print "Stations with more count than cap? ", len([s_id for s_id, count in self.station_counts.iteritems() if count > self._get_station_cap(s_id)])
+        #print [(count, self._get_station_cap(s_id)) for s_id, count in self.station_counts.iteritems()]
 
         """
         x = len(self.unavailable_stations)
