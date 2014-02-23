@@ -100,9 +100,9 @@ function bindInfoWindow(marker, map, infoWindow) {
 		var contentString = '<div class="infoWindow_wrapper">' + 
 			'<div class="infoWindow_id">' + marker.id + '</div>' +
 			'<div class="infoWindow_title">' + marker.title + '</div>' +
-			'<div class="infoWindow_capacity"><label>Capacity<input type="text" id="infoWindow_capacity_text" value="' + marker.alt_capacity + '" />' +  
+			'<div class="infoWindow_capacity"><label class="left inline infoWindow_capacity_label">Capacity</label><input type="text" id="infoWindow_capacity_text" value="' + marker.alt_capacity + '" />' +  
 			'<a class="button tiny" id="infoWindow_capacity_button" onclick="appendCapacityChange(' + marker.id +
-			'); return false;">Save</a></label></div>' +
+			'); return false;">Save</a></div>' +
 			'</div>';
 
 		//console.log("MARKER CAPACITY FOR STA #" + marker.id + " = " + marker.capacity);
