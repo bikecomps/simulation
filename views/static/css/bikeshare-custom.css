@@ -81,7 +81,7 @@ footer p {
 
 #from_date,
 #to_date {
-  height: auto;
+  height: 100%;
 }
 
 input[type="text"] {
@@ -98,6 +98,7 @@ form button[type="submit"] {
   font-size: 12px;
   position: relative;
   top: 11px;
+  background-color: #3987C7;
 }
 
 #stats_wrapper {
@@ -198,7 +199,7 @@ form button[type="submit"] {
 #load_stats, 
 #comp_toggle {
   height: 100%;
-  background-color: green;
+  background-color: #3987C7;
   position: absolute;
 }
 
