@@ -6,10 +6,6 @@
   #cluster_control {
     display: none;
   }
-
-  #map_wrapper {
-    display: visible;
-  }
 </style>
 
 <!-- Datetime Pickers -->
@@ -406,9 +402,9 @@
   $(document).foundation();
 </script>
 
-<script>
-    console.log(document.getElementById("test_div").parentNode);
-</script>
+
+<div id= "map_wrapper"><div id="map_canvas"></div></div> 
+
 <div id="loading_div">
   <p id="loading_div_text">Simulation Time at <b id="current_time"></b></p>
   <div id="progressbar"><div class="progress-label">Loading...</div></div>
