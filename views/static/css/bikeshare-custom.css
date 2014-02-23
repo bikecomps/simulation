@@ -141,7 +141,7 @@ form button[type="submit"] {
 
 #stats_panel {
   position: absolute;
-  top: 100px;
+  top: 60px;
   right: 20px;
   width: 640px;
   height: 100%;
@@ -159,12 +159,7 @@ form button[type="submit"] {
 }
 
 #stats_name_div {
-  position: relative;
-  height: 60px;
-  overflow: hidden;
-  margin-top: 20px;
-  left: 825px;
-  top: 30px;
+  margin-bottom: 15px;
 }
 
 #stats_name {
