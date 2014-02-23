@@ -74,7 +74,7 @@ class SimulationLogic:
         '''
         Sets states of stations at the start_time
         '''
-        print "Initializing"
+        #print "Initializing"
         self.time = start_time
 
         self.start_time = start_time
@@ -95,7 +95,7 @@ class SimulationLogic:
         self.trip_list = []
         self.full_station_disappointments = []
         self.empty_station_disappointments = []
-        print "\tInitializing stations"
+        #print "\tInitializing stations"
         # Make sure all stations are initialized correctly
         self.stations = {}
         self.station_counts = {}
@@ -187,7 +187,7 @@ class SimulationLogic:
                 elif count < 0:
                     count = 0
             else:
-                print 'Error initializing stations, unknown station'
+                #print 'Error initializing stations, unknown station'
                 count = random.randint(0, s_cap)
             distributed_bikes += count
             self.stations[s.id] = s
@@ -205,7 +205,7 @@ class SimulationLogic:
         
         # Don't keep trying to reassign bikes to full stations
         full_stations = set()
-        print "New init stations"
+        #print "New init stations"
         while bike_delta > 0 and len(full_stations) < len(self.stations): 
             # Determine the proportion of bikes to add to each station based on percentage of total
             bike_sum = sum([s_count for s_id, s_count in 
@@ -246,6 +246,11 @@ class SimulationLogic:
         for s_id in full_stations:
             self.unavailable_stations.add(s_id)
             self.full_stations.put((self.time, s_id))
+
+        for s_id, count in self.station_counts.iteritems():
+            if count == 0:
+                self.unavailable_stations.add(s_id)
+                self.empty_stations.put((self.time, s_id))
         #print "TOTAL NUM BIKES",sum(self.station_counts.itervalues())
         #print "Stations with more count than cap? ", len([s_id for s_id, count in self.station_counts.iteritems() if count > self._get_station_cap(s_id)])
         #print [(count, self._get_station_cap(s_id)) for s_id, count in self.station_counts.iteritems()]
@@ -257,6 +262,8 @@ class SimulationLogic:
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
+        for count in self.station_counts.itervalues():
+            assert count != 0
         self.generate_new_trips(self.time)
         self.time += timestep
         self.resolve_trips()
@@ -272,12 +279,13 @@ class SimulationLogic:
                 # Nobody takes longer than 2 hours to bike anywhere, duh!
                 end_time = start_time + datetime.timedelta(minutes=random.randint(0, 120))
                 new_trip = data_model.Trip(str(random.randint(1,500)), "Casual", "Produced", start_time, end_time, station, end_station_ID)
-
                 self.pending_departures.put((start_time, new_trip))
 
 
     def resolve_trips(self):
         '''Resolves departures & arrivals within the current time interval'''
+
+        #print "BEGIN RESOLVE TRIPS"
         # Get the first event, be it a departure or arrival.
         eventTuple = self.get_first_trip_event()
         eventType = eventTuple[0]
@@ -289,6 +297,7 @@ class SimulationLogic:
                 #print "Resolving-BEFORE: Num unavailable", x
                 #print "IDS:",[y for y in self.unavailable_stations]
             if eventType == DEPARTURE_TYPE:
+                #print "\tDEALING WITH DEPARTURE TRIP",trip.start_date, trip.start_station_id
                 self.rebalance_stations(trip.start_date)
                 if trip.start_date > self.time:
                     # Put trip back in proper queue if it's over the time, and stop the while loop
@@ -297,6 +306,7 @@ class SimulationLogic:
                 else:
                     self.resolve_departure(trip)
             elif eventType == ARRIVAL_TYPE:
+                #print "\tDEALING WITH ARRIVAL TRIP",trip.end_date
                 self.rebalance_stations(trip.end_date)
                 if trip.end_date > self.time:
                     self.pending_arrivals.put((trip.end_date, trip))
@@ -311,6 +321,7 @@ class SimulationLogic:
             eventTuple = self.get_first_trip_event()
             eventType = eventTuple[0]
             trip = eventTuple[1]
+        #print "END RESOLVE TRIPS"
             
         
     def resolve_departure(self, trip):
@@ -318,14 +329,11 @@ class SimulationLogic:
         departure_station_ID = trip.start_station_id
 
         if self.station_counts[departure_station_ID] < 1:
+            #print "STATION COUNT LOW!", trip.start_date, self.station_counts[departure_station_ID], departure_station_ID
             self.empty_stations_set.add(departure_station_ID)
             new_disappointment = Disappointment(departure_station_ID, trip.start_date, trip_id=None, is_full=False)
             self.session.add(new_disappointment) # ??????
-
-            if departure_station_ID not in self.dep_dis_stations:
-                self.dep_dis_stations[departure_station_ID] = 1
-            else:
-                self.dep_dis_stations[departure_station_ID] += 1
+            self.dep_dis_stations[departure_station_ID] = self.dep_dis_stations.get(departure_station_ID, 0) + 1
             self.empty_station_disappointments.append(new_disappointment)
             self.resolve_sad_departure(trip)
         else:
@@ -333,8 +341,9 @@ class SimulationLogic:
             self.pending_arrivals.put((trip.end_date, trip))
 
             # Perfect time to denote a now empty station
-            if self.station_counts[departure_station_ID] < 0\
-                   and not trip.start_station_id in self.unavailable_stations:
+            if self.station_counts[departure_station_ID] <= 0\
+                   and not departure_station_ID in self.unavailable_stations:
+                #print "Adding empty station", departure_station_ID, trip.start_date
                 self.unavailable_stations.add(departure_station_ID)
                 self.empty_stations.put((trip.start_date, departure_station_ID))
 
@@ -346,16 +355,15 @@ class SimulationLogic:
 
     def resolve_arrival(self, trip):
         '''Increment station count, put in trips list. If desired station is full, add a disappointment, set a new end station, and try again.'''
+        #print "RESOLVE ARRIVAL"
         arrival_station_ID = trip.end_station_id
 
         capacity = self._get_station_cap(arrival_station_ID)
         if self.station_counts[arrival_station_ID] >= capacity:
+            #print "\tArrival disappointment at time",trip.end_date,"at station",arrival_station_ID
             self.full_stations_set.add(arrival_station_ID)
             new_disappointment = Disappointment(arrival_station_ID, trip.end_date, trip_id=None, is_full=True)
-            if arrival_station_ID not in self.arr_dis_stations:
-                self.arr_dis_stations[arrival_station_ID] = 1
-            else:
-                self.arr_dis_stations[arrival_station_ID] += 1
+            self.arr_dis_stations[arrival_station_ID] = self.arr_dis_stations.get(arrival_station_ID, 0) + 1
             self.full_station_disappointments.append(new_disappointment)
             self.resolve_sad_arrival(trip)
         else:
@@ -363,10 +371,12 @@ class SimulationLogic:
             self.trip_list.append(trip)
 
             # Check here to see if it's full for rebalancing to work perfectly
-            if self.station_counts[arrival_station_ID] >= self._get_station_cap(arrival_station_ID)\
+            if self.station_counts[arrival_station_ID] >= capacity\
                     and not arrival_station_ID in self.unavailable_stations:
+                #print "\tAdding full station arriving at time", trip.end_date,"at station",arrival_station_ID
                 self.unavailable_stations.add(arrival_station_ID)
                 self.full_stations.put((trip.end_date, arrival_station_ID))
+        #print "END RESOLVE ARRIVAL"
 
 
     def resolve_sad_arrival(self, trip):
@@ -387,19 +397,25 @@ class SimulationLogic:
 
     def get_first_trip_event(self):
         '''Returns a tuple for the first departure or arrival's trip including (type of event, trip). Type of event is either departure, arrival, or None.'''
+        #print "BEGIN GET FIRST TRIP"
+        #print self.pending_departures.queue[:4]
+        
         if self.pending_departures.empty() and self.pending_arrivals.empty():
             trip = None
             eventType = None
         elif self.pending_arrivals.empty():
             trip = self.pending_departures.get()[1]
+            #print "\tONLY DEPS->",trip.end_date
             eventType = DEPARTURE_TYPE
         elif self.pending_departures.empty():
             trip = self.pending_arrivals.get()[1]
+            #print "\tONLY ARRS->",trip.start_date
             eventType = ARRIVAL_TYPE
         else:
             # Peek at the first elements of both queues
             first_departure = self.pending_departures.queue[0][1]
             first_arrival = self.pending_arrivals.queue[0][1]
+            #print "\tARR-DEP\n\t\tDEP:",first_departure, "\n\t\tARR:", first_arrival
 
             # If a departure and arrival happen at the exact same time, departures resolve first. This decision was completely arbitrary.
             if (first_departure.start_date <= first_arrival.end_date):
@@ -412,6 +428,7 @@ class SimulationLogic:
                 eventType = ARRIVAL_TYPE
                 # Remove the arrival from the awaiting q
                 self.pending_arrivals.get()
+        #print "END GET FIRST TRIP"
         return (eventType, trip)
 
     def rebalance_stations(self, cur_time):		
@@ -421,8 +438,10 @@ class SimulationLogic:
 
         #print "Start", reduce(lambda x, y: x and y >= 0, self.station_counts.itervalues(), True)
         #print self.station_counts.values()
+        #print "BEGIN REBALANCE"
         while not self.full_stations.empty():
             time = self.full_stations.queue[0][0]
+            #print "\tFULL STATION STUFF AT TIME",time
             if cur_time - time  >= self.rebalancing_time:
                 time, s_id  = self.full_stations.get()
                 #to_remove = self._get_station_cap(s_id)/2
@@ -441,7 +460,9 @@ class SimulationLogic:
         while not self.empty_stations.empty():
             # Peak at the time
             time = self.empty_stations.queue[0][0]
+            #print "\tAttempting to deal with DEPARTURE", self.empty_stations.queue[0][1], "having time",time,"At time",cur_time, "diff =",cur_time - time,"Rebalncing time",self.rebalancing_time
             if cur_time - time >= self.rebalancing_time:
+                #print "\tActually dealing with it"
                 time, s_id = self.empty_stations.get()
                 need_bikes.append(s_id)
             else:
@@ -470,13 +491,13 @@ class SimulationLogic:
             #    print "Station",s_id, self.station_counts[s_id], to_remove
             self.moving_bikes += to_remove
             self.total_rebalances += to_remove
-       
+        #print "\tNUMBER MOVING BIKES", self.moving_bikes,"NUM NEED BIKES",len(need_bikes)
         #print "After Additionals!", reduce(lambda x, y: x and y >= 0, self.station_counts.itervalues(), True)
         if len(need_bikes) > 0:
             bikes_to_distr = self.moving_bikes / len(need_bikes) 
             for s_id in need_bikes:
                 max_bikes = int(min(bikes_to_distr, 
-                                max(self.station_counts[s_id] - self._get_station_cap(s_id), 0)))
+                                self._get_station_cap(s_id) - self.station_counts[s_id]))
                 self.station_counts[s_id] += max_bikes
                 self.moving_bikes -= max_bikes
                 self.unavailable_stations.remove(s_id)
@@ -485,6 +506,7 @@ class SimulationLogic:
 
         for s_id, count in self.station_counts.iteritems():
             assert 0 <= count <= self._get_station_cap(s_id)    
+        #print "END REBALANCE"
 
 
     def flush(self):
