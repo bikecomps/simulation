@@ -16,6 +16,8 @@ function save_results() {
     var opt = document.createElement('option');
     opt.innerHTML = stats_name;
     $("#stats_picker, #comp_picker_1, #comp_picker_2").append(opt);
+
+    $("#stats_namer").val('');
     $("#stats_namer").animate({left: "-260px"});
     $("#save_stats").animate({width: "100px", left: "0px"}, function() {$(this).html('Save Results');})
         .attr('onclick', 'save_trans()');
@@ -46,7 +48,6 @@ function load_results() {
     $("#save_stats, #comp_toggle").animate({top: '0px'});
     $("#load_stats").html('Load Results');
     $("#load_stats").animate({width: '100px', right: '125px'}, function() {
-        //$(this).html('Load Results');
         $("#stats_name").html(stats_name);
         displaySummaryStats(JSON.parse(desired),from,to);
     })
@@ -483,11 +484,14 @@ function processStatsForm() {
                 $("#stats_name").html('Summary for most recent simulation:');
                 $("#stats_range").html(from + ' to ' + to);
                 $("#loading_div").hide();
-                $("#stats_slider").animate({left: 660});
+                $("#stats_slider").animate({left: 660},400);
+                $("#stats_panel").css('width','640px');
+                $(flexy_tables).addClass('large-12');
+                $(flexy_tables).removeClass('large-6');
                 displaySummaryStats(jsond, from, to);
                 map.panBy(-320,0);
-        		console.log(data_for_maps);	
-		        $.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
+                console.log(data_for_maps);	
+		$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
             },
 
         error: function() {
