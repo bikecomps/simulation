@@ -12,7 +12,13 @@ var marker_cap_gradient;
 
 var display_modes = {};
 
+var popularity_maps = {};
+
+var disappointment_maps = {};
+
 var capacity_dict = {};
+
+var current_display_mode;
 
 function initialize() {
 	connections = [];
@@ -38,9 +44,24 @@ function initialize() {
 
 	// light-green to dark-blue gradient? for grouping after sim?
 	marker_cap_gradient = ["#16E31E","#14BA3B","#137C68","#115385","#1016B2"]
+    
+    current_display_mode = "default";
 
-    display_modes
-
+    display_modes = {
+        'default': {"average":"CornFlowerBlue"},
+        'by_popularity': {"low":"red", "average":"yellow", "high":"green"},
+        'by_disappointedness': {"average":"CornFlowerBlue","full":"yellow","empty":"black"}
+    };
+    
+    popularity_maps = {
+        'arrival': 'num_arrivals_per_station',
+        'departure': 'num_departures_per_station'
+    };
+    
+    disappointment_maps = {
+        'full':'num_arr_disappointments_per_station',
+        'empty':'num_dep_disappointments_per_station',
+    };
 
 	for (station=0; station < Object.keys(locations).length; station++) {
 		var stationLatLng = new google.maps.LatLng(locations[station][0], locations[station][1]);
@@ -69,7 +90,7 @@ function initialize() {
 		bindInfoWindow(marker, map, infoWindow);
 	}
 
-    /*
+    
     var controlWrap = document.createElement('div');
     controlWrap.className = 'mapControl_wrapper';
 
@@ -83,7 +104,7 @@ function initialize() {
     controlU.appendChild(controlT);
 
     addControlCustom(controlWrap, controlU, turnEverythingOrange, google.maps.ControlPosition.TOP_RIGHT);
-    */
+
 }
 
 function set_coordinates(val) {
@@ -218,19 +239,29 @@ function changeMarkerColor(marker_id, color) {
 } 
 
 function addControlCustom(cDivWrapper, cUI, cFunction, mapPosition) {
-    $.getScript("/static/js/add-control.js")
-        .done(function(script, textStatus) {
+//        .done(function(script, textStatus) {
             newControl = new CustomControl(cDivWrapper, cUI, cFunction);
             newControl.index = 1;
             map.controls[mapPosition].push(cDivWrapper);
-        })
-        .fail(function(jqxhr, settings, exception) {
-            console.log("error!");
-            console.log(exception);
-            console.log(jqxhr);
-            console.log(settings);
-        });
+            console.log("wtf is happening");
+            console.log(cUI, cFunction);
+//        })
+//        .fail(function(jqxhr, settings, exception) {
+//            console.log("error!");
+//            console.log(exception);
+//            console.log(jqxhr);
+//            console.log(settings);
+//        });
 }
 
+function CustomControl(controlDiv, controlUI, controlFunction) {
 
+  // Setup the click event listeners: simply set the map to
+  // Chicago
+  google.maps.event.addDomListener(controlUI, 'click', function() {
+    controlFunction()
+  });
+
+
+}
 google.maps.event.addDomListener(window, 'load', initialize);

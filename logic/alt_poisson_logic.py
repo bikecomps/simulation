@@ -180,7 +180,7 @@ class AltPoissonLogic(SimulationLogic):
                         result[1].append(distr.end_station_id)
                     num_distrs += 1
 
-                    print "Appended", distr.prob, "for station", distr.end_station_id
+                    # print "Appended", distr.prob, "for station", distr.end_station_id
             print "Total count", count, "\ts_count", s_count
 
             print "\t\tStarting reductions"

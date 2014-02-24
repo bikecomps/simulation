@@ -272,7 +272,7 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
 }
 
 function plotKeysVals(htmlIdName, map) {
-	sortedMap = [];
+	var sortedMap = [];
 	for (var key in map) {
 		sortedMap.push([key, map[key]]);
 		console.log(sortedMap[key]);
@@ -515,9 +515,15 @@ function processStatsForm() {
                 $(flexy_tables).removeClass('large-6');
                 displaySummaryStats(jsond, from, to);
                 map.panBy(-320,0);
-                console.log(data_for_maps);	
-		$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
-            },
+		        
+                $.getScript("static/js/visualize-helper.js")
+                .done(function(){changeMapVis();})
+                .fail(function(jqxhr, settings, exception) {
+                    console.log(jqxhr);
+                    console.log(settings);
+                    console.log(exception);
+                });
+        },
 
         error: function() {
             console.log("damn it.");
