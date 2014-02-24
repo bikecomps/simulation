@@ -197,7 +197,7 @@ form button[type="submit"] {
 
 #comp_picker_1,
 #comp_picker_2 {
-  width: 50%;
+  width: 275px;
   float: left;
   display: none;
 }
@@ -264,52 +264,65 @@ form button[type="submit"] {
   fill: #000;
 }
 
-#num_departures_per_station {
+#num_departures_per_station,
+#comp_num_departures_per_station {
   margin-top: 30px;
   width: 100%;
 }
 
-#num_departures_per_station div {
+#num_departures_per_station div,
+#comp_num_departures_per_station div {
   height: 300px;
   overflow-x: hidden;
   overflow-y: scroll;
   width: inherit;
 }
 
-#num_arrivals_per_station {
+#num_arrivals_per_station,
+#comp_num_arrivals_per_station {
   margin-top: 30px;
   width: 100%;
 }
 
-#num_arrivals_per_station div {
+#num_arrivals_per_station div,
+#comp_num_arrivals_per_station div {
   height: 300px;
   width: inherit;
   overflow-x: hidden;
   overflow-y: scroll;
 }
 
-#num_trips_per_hour {
+#num_trips_per_hour,
+#comp_num_trips_per_hour {
   margin-top: 30px;
 }
 
-#num_trips_per_hour div {
+#num_trips_per_hour div,
+#comp_num_trips_per_hour div {
   font: 10px sans-serif;
 }
 
 #num_trips_per_hour div
 .axis path,
+#comp_num_trips_per_hour div
+.axis path,
 #num_trips_per_hour div
+.axis line,
+#comp_num_trips_per_hour div
 .axis line {
   fill: none;
   stroke: #000;
   shape-rendering: crispEdges;
 }
 
-#num_trips_per_hour .bar {
+#num_trips_per_hour .bar,
+#comp_num_trips_per_hour .bar {
   fill: steelblue;
 }
 
 #num_trips_per_hour
+.x.axis path,
+#comp_num_trips_per_hour
 .x.axis path {
   display: none;
 }
@@ -374,11 +387,12 @@ form button[type="submit"] {
 
 .infoWindow_capacity {
     margin-top: 15px;
-    float: right;
 }
 
 .infoWindow_capacity_label { 
     line-height: 15px;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
 }
 
 #infoWindow_capacity_text {
@@ -386,6 +400,7 @@ form button[type="submit"] {
     width: 70px;
     margin-left: 5px;
     margin-right: 10px;
+    margin-bottom: 0;
     top: 0;
 }
 
@@ -393,6 +408,29 @@ form button[type="submit"] {
     height: 30px;
     line-height: 15px;
     background-color: #3987c7;
+    margin-bottom: 0;
+}
+
+.infoWindow_item {
+    margin-top: 10px;
+}
+
+.infoWindow_item_text {
+    font-size: 12px !important;
+}
+
+.infoWindow_trip_number {
+    font-size: 1.3em !important;
+    font-weight: 400 !important;
+    display: inline;
+    color: #3987c7;
+}
+
+.infoWindow_disappointment_number {
+    font-size: 1.3em !important;
+    font-weight: 400 !important;
+    display: inline;
+    color: #c60f13;
 }
 
 .mapControl_wrapper {

@@ -1,85 +1,136 @@
-function changeMapVis() {
-//need to put in view_mode arg
-//    var categories = display_modes[view_mode];
+function setDisplayMode(mode) {
+    current_display_mode = mode;
+}
 
-    groupByPopularity("arrival");
 
-/*
+function changeMapVis(view_mode, secondary_mode) {
 
+    if (typeof data_for_maps == 'undefined') {
+        return;
+    }
+
+    view_mode = typeof view_mode !== 'undefined' ? view_mode : "default";
+    console.log(data_for_maps);
+
+
+    var num_stations = Object.keys(data_for_maps["num_departures_per_station"]).length;
+    var mean;
+    var s_dev;
+
+    switch(view_mode) {
+        case "default":
+            break;
+        case "by_popularity":
+            mean = data_for_maps["avg_trips"];
+            s_dev = data_for_maps["std_trips"];
+            break;
+        case "by_disappointments":
+            mean = data_for_maps["avg_disappointments"];
+            s_dev = data_for_maps["std_disappointments"];
+            break;
+        case "end_caps":
+            break;
+    }
+    console.log("mean and s_dev");
+    console.log(mean);
+    console.log(s_dev);
 	for (station_id in station_markers) {
 		if (station_id in data_for_maps["simulated_station_caps"]) {
 			
 			s_cap = data_for_maps["simulated_station_caps"][station_id];
 			s_final_count = data_for_maps["final_station_counts"][station_id];
-			s_percentage = s_final_count/s_cap;	
-			var s_color;
-			if (s_percentage <= .2) {
-				s_color = marker_cap_gradient[0];
-			} else if (s_percentage <= .4) {
-				s_color = marker_cap_gradient[1];
-			} else if (s_percentage <=.6) {
-				s_color = marker_cap_gradient[2];
-			} else if (s_percentage <= .8) {
-				s_color = marker_cap_gradient[3];
-			} else {
-				s_color = marker_cap_gradient[4];
-			}
-	
-			station_markers[station_id].setIcon({
-			path: google.maps.SymbolPath.CIRCLE,
-				fillColor: s_color,
-				fillOpacity: 1.0,
-				scale: 6,
-				strokeColor: "Navy",
-				strokeWeight: 1
-			});
+			s_percentage = s_final_count/s_cap;
+			station_markers[station_id].departure = data_for_maps["num_departures_per_station"][data_for_maps["station_name_dict"][station_id]];
+			station_markers[station_id].arrival = data_for_maps["num_arrivals_per_station"][data_for_maps["station_name_dict"][station_id]];	
+			station_markers[station_id].trip_total = station_markers[station_id].departure + station_markers[station_id].arrival;
+            station_markers[station_id].disappointment = data_for_maps["num_disappointments_per_station"][station_id];
+			station_markers[station_id].dep_disappointment = data_for_maps["num_dep_disappointments_per_station"][station_id];
+			station_markers[station_id].arr_disappointment = data_for_maps["num_arr_disappointments_per_station"][station_id];
+
+            var s_color; 
+
+            switch(view_mode) {
+                case "default":
+                    s_color = "CornFlowerBlue";
+                    break;
+                case "by_popularity":
+                    s_color = colorByPopularity(station_markers[station_id], secondary_mode, mean, s_dev);
+                    break;
+                case "by_disappointments":
+                    s_color = colorByDisappointment(station_markers[station_id], mean, s_dev);
+                case "end_caps":
+        			if (s_percentage <= .2) {
+        				s_color = marker_cap_gradient[0];
+        			} else if (s_percentage <= .4) {
+      			    	s_color = marker_cap_gradient[1];
+      			    } else if (s_percentage <=.6) {
+    			    	s_color = marker_cap_gradient[2];
+    			    } else if (s_percentage <= .8) {
+    			    	s_color = marker_cap_gradient[3];
+    			    } else {
+    			    	s_color = marker_cap_gradient[4];
+    			    }
+                    break;
+    		}	
+    		station_markers[station_id].setIcon({
+    		path: google.maps.SymbolPath.CIRCLE,
+    			fillColor: s_color,
+    			fillOpacity: 1.0,
+    			scale: 6,
+    			strokeColor: "Navy",
+    			strokeWeight: 1
+    		});
+            
 		}
 	}
-*/
 }
 
-function groupByPopularity(popularity_type) {
+function colorByPopularity(marker, pop_type, mean, s_dev) {
 
-        var myDict = data_for_maps[popularity_maps[popularity_type]];
-        console.log(myDict);
-        var sortable = [];
-        for (var stat in myDict) {
-            sortable.push([stat, myDict[stat]]);
-        }
-        sortable.sort(function(a,b){return b[1] - a[1]});
-        // this should be improved to take into account the average number of trips per station
-        var max = sortable[0][1];
-        console.log(sortable);
-        console.log(max);
+    pop_type = typeof pop_type !== 'undefined' ? pop_type : "total";
+
+    var score;
+    switch(pop_type) {
+        case "total":
+            score = (marker.trip_total - mean) / s_dev['total'];
+            break;
+        case "arr":
+            score = (marker.arrival - mean) / s_dev['arr'];
+            break;
+        case "dep":
+            score = (marker.departure - mean) / s_dev['dep'];
+            break;
+    }
+
+    if (score < -1.0) {
+        return display_modes['by_popularity']['low']; 
+    }
+    else if (score > 1.0) {
+        return display_modes['by_popularity']['high'];
+    }
+    else {
+        return display_modes['by_popularity']['average'];
+    }
+}
+
+function colorByDisappointment(marker, mean, s_dev) {
+
+    t_score = (marker.trip_total - mean['total']) / s_dev['total'];
+    a_score = (marker.arrival - mean['arr']) / s_dev['arr'];
+    d_score = (marker.departure - mean['dep']) / s_dev['dep'];
    
-        console.log(station_markers);
-        for (station_id in station_markers) {
-            var s_color;
-            var current_marker = station_markers[station_id];
-            if (current_marker.title in myDict) {
-                
-                if (myDict[current_marker.title] <= (max - myDict[current_marker.title])/4) {
-                    s_color = display_modes["by_popularity"]["low"];
-                }
-                else if (myDict[current_marker.title] <= 3*(max - myDict[current_marker.title]/4)) {
-                    s_color = display_modes["by_popularity"]["average"];
-                }
-                else {
-                    s_color = display_modes["by_popularity"]["high"];
-                }
-            }
-            else {
-                s_color = "CornFlowerBlue";
-            }
-            console.log(s_color);
-	    	station_markers[station_id].setIcon({
-	        	path: google.maps.SymbolPath.CIRCLE,
-	    		fillColor: s_color,
-	    		fillOpacity: 1.0,
-	    		scale: 6,
-		    	strokeColor: "Navy",
-	    		strokeWeight: 1
-		    });	
-        }
+    if (a_score > 1.0) {
+        return display_modes['by_disappointments']['full']; 
+    }
+    else if (d_score > 1.0) {
+        return display_modes['by_disappointments']['empty'];
+    }
+    else if (t_score > 1.0) {
+        return 'red';
+    }
+    else {
+        return display_modes['by_disappointments']['average'];
+    }
+
 }
 
