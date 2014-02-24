@@ -444,6 +444,7 @@ function pollProgress(hasZero, currentUrl) {
             }
             , error: function() {
                 hasError = true;
+		console.log("found some error");
                 updateProgressBar(null, null, true);
             }
         });
