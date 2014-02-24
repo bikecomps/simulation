@@ -397,6 +397,7 @@ form button[type="submit"] {
 
 .mapControl_wrapper {
     padding: 5px;
+    display: none;
 }
 
 .mapControl_UI {

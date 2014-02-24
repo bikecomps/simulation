@@ -10,6 +10,8 @@ var station_markers;
 var marker_colors;
 var marker_cap_gradient;
 
+var display_modes = {};
+
 var capacity_dict = {};
 
 function initialize() {
@@ -34,8 +36,10 @@ function initialize() {
     // currently used for clustering
 	marker_colors = ["blue", "orange", "green", "red", "purple", "yellow"];
 
-	// light-green to dark-blue gradient?
+	// light-green to dark-blue gradient? for grouping after sim?
 	marker_cap_gradient = ["#16E31E","#14BA3B","#137C68","#115385","#1016B2"]
+
+    display_modes
 
 
 	for (station=0; station < Object.keys(locations).length; station++) {
@@ -65,7 +69,7 @@ function initialize() {
 		bindInfoWindow(marker, map, infoWindow);
 	}
 
-
+    /*
     var controlWrap = document.createElement('div');
     controlWrap.className = 'mapControl_wrapper';
 
@@ -79,7 +83,7 @@ function initialize() {
     controlU.appendChild(controlT);
 
     addControlCustom(controlWrap, controlU, turnEverythingOrange, google.maps.ControlPosition.TOP_RIGHT);
-
+    */
 }
 
 function set_coordinates(val) {

@@ -22,7 +22,6 @@ class SimulationLogic:
 
     def __init__(self, session):
 
-        random.seed(1231352)
         # For database connectivity
         self.session = session
         # self.time is a datetime, representing the current time in the simulator.
@@ -72,7 +71,7 @@ class SimulationLogic:
         return self.session
 
     def initialize(self, start_time, end_time, 
-                    rebalancing_time=datetime.timedelta(seconds=1),
+                    rebalancing_time=datetime.timedelta(seconds=7200),
                     bike_total=None, station_caps={}, drop_stations=[]):
         '''
         Sets states of stations at the start_time
