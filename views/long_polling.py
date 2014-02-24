@@ -7,6 +7,15 @@ import pickle
 import datetime
 
 class PollingHandler(RequestHandler):
+    """
+    We run a polling server on port 3001. 
+    This is used to report the progress of the simulation on every timestep.
+    It returns 'current_time' and 'percent_progress' back to the front-end.
+
+    Note: Because of CORS (Cross-Origin-Resource-Sharing) implementation,
+    we have to allow communication via only one port. So for now,
+    we do all communication via port 3000.
+    """
 
     def set_default_headers(self):
         self.set_header("Access-Control-Allow-Origin", "http://cmc307-04.mathcs.carleton.edu:3000")

@@ -38,15 +38,39 @@ footer p {
 
 /*Style elements from unified.html*/
 
+#map_wrapper {
+    position: relative;
+    height: 100%;
+    margin: 0px;
+    padding: 0px;
+}
+
 #map_canvas {
   height: 100%;
   margin: 0px;
   padding: 0px;
 }
 
+#options_wrapper_div {
+    position: absolute;
+    background-color: transparent;
+    bottom: 15px;
+    right: 10px;
+    z-index: 99;
+    background: blue;
+}
+
 #simulation_control,
 #cluster_control {
   height: auto;
+}
+
+#cluster_control #from_div {
+  margin-left: 10px;
+}
+
+#cluster_control #to_div {
+  margin-left: 10px;
 }
 
 #cluster_by_txt {
@@ -73,15 +97,26 @@ footer p {
   float: left;
 }
 
-#clustering_method {
-  float: left;
+#clustering_method, #max_k {
   margin-top: 15px;
   width: 100px;
+}
+#clustering_method {
+  float: left;
+}
+
+#max_cluster_txt {
+  margin-left: 10px;
+  float:left;
+}
+
+#cluster_control #submit {
+  float: left;
 }
 
 #from_date,
 #to_date {
-  height: auto;
+  height: 100%;
 }
 
 input[type="text"] {
@@ -98,6 +133,7 @@ form button[type="submit"] {
   font-size: 12px;
   position: relative;
   top: 11px;
+  background-color: #3987C7;
 }
 
 #stats_wrapper {
@@ -198,7 +234,7 @@ form button[type="submit"] {
 #load_stats, 
 #comp_toggle {
   height: 100%;
-  background-color: green;
+  background-color: #3987C7;
   position: absolute;
 }
 
@@ -356,9 +392,26 @@ form button[type="submit"] {
 }
 
 .infoWindow_capacity {
+    margin-top: 15px;
+    float: right;
 }
 
 .infoWindow_capacity_label { 
+    line-height: 15px;
+}
+
+#infoWindow_capacity_text {
+    float: left;
+    width: 70px;
+    margin-left: 5px;
+    margin-right: 10px;
+    top: 0;
+}
+
+#infoWindow_capacity_button {
+    height: 30px;
+    line-height: 15px;
+    background-color: #3987c7;
 }
 
 #loading_div_text {

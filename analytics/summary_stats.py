@@ -139,21 +139,21 @@ class SummaryStats:
         pair_counts = {}
         # disapointment counts per station
         #dis_counts = {}
-
+        
         for station1 in self.station_list:
             station1_name = station1.name.encode('ascii', 'ignore')
             self.station_name_dict[station1.id] = station1_name
 
             dep_counts[station1_name] = 0
             arr_counts[station1_name] = 0            
-            
+ 
             if station1_name not in self.arr_dis_station_counts: 
-                self.arr_dis_station_counts[station1_name] = 0
+                self.arr_dis_station_counts[station1.id] = 0
         
             if station1_name not in self.dep_dis_station_counts: 
-                self.dep_dis_station_counts[station1_name] = 0
+                self.dep_dis_station_counts[station1.id] = 0
 
-            self.dis_station_counts[station1_name] = self.arr_dis_station_counts[station1_name] + self.dep_dis_station_counts[station1_name]
+            self.dis_station_counts[station1.id] = self.arr_dis_station_counts[station1.id] + self.dep_dis_station_counts[station1.id]
             
             pair_counts[station1_name] = {}
             for station2 in self.station_list:
@@ -167,7 +167,6 @@ class SummaryStats:
             arr_counts[end_station_name] += 1
             pair_counts[start_station_name][end_station_name] += 1
             
-
         self.stats['num_departures_per_station'] = dep_counts
         self.stats['num_arrivals_per_station'] = arr_counts
         self.stats['num_trips_per_pair_station'] = pair_counts
@@ -229,10 +228,13 @@ class SummaryStats:
 
 
     def calculate_stats(self):
-        # now important to calculate station stats first so as to populate self.station_name_dict before calculating overall stats
+        # calculate station stats first so as to populate self.station_name_dict before calculating overall stats
         self.calculate_per_station_stats()
+        print 'finished per_station_stats'
         self.calculate_overall_stats()
+        print 'finished overall_stats'
         self.calculate_per_hour_stats()
+        print 'finished per_hour_stats'
         
     def get_disappointments(self):
         return self.dump_json(self.disappointments)
@@ -271,7 +273,7 @@ def main():
 
     sstats = SummaryStats(start_date, end_date, {})
     sstats.indent = True
-    print sstats.get_stats()
+    # print sstats.get_stats()
 
 if __name__ == '__main__':
     main()

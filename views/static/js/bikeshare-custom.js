@@ -16,8 +16,10 @@ function save_results() {
     var opt = document.createElement('option');
     opt.innerHTML = stats_name;
     $("#stats_picker, #comp_picker_1, #comp_picker_2").append(opt);
+
+    $("#stats_namer").val('');
     $("#stats_namer").animate({left: "-260px"});
-    $("#save_stats").animate({width: "100px", left: "0px"}, function() {$(this).html('Save Results')})
+    $("#save_stats").animate({width: "100px", left: "0px"}, function() {$(this).html('Save Results');})
         .attr('onclick', 'save_trans()');
     $("#load_stats").animate({right: "125px"});
     $("#comp_toggle").animate({right: "0px"});
@@ -41,12 +43,15 @@ function load_results() {
     var desired = desired_unpacked[0];
     var from = desired_unpacked[1];
     var to = desired_unpacked[2];
-    displaySummaryStats(JSON.parse(desired),from,to);
-    $("#stats_name").html(stats_name);
-    $("#load_stats").animate({width: '100px', right: '125px'}, function() {$(this).html('Load Results')})
-        .attr('onclick', 'load_trans()');
+
     $("#stats_picker").animate({left: '-260px'});
-    $("#save_stats, #comp_toggle`").animate({top: '0px'});
+    $("#save_stats, #comp_toggle").animate({top: '0px'});
+    $("#load_stats").html('Load Results');
+    $("#load_stats").animate({width: '100px', right: '125px'}, function() {
+        $("#stats_name").html(stats_name);
+        displaySummaryStats(JSON.parse(desired),from,to);
+    })
+        .attr('onclick', 'load_trans()');
 }
 
 function sliderSetup() {
@@ -271,13 +276,16 @@ function displaySummaryStats(data, from, to, comp) {
 
         var value;
         // set Accuracy based on manhattan distance and euclidean distance
-        value = data["man_dist_score_arr"].toFixed(2) + "%";
+        // SEE: summary_stats.py
+        // 'man_dist_score_arr', 'man_dist_score_dep', and 'eucl_dist_score'
+        // are only included when year <= 2013
+        value = ("man_dist_score_arr" in data ? data["man_dist_score_arr"].toFixed(2) + "%" : "NA");
         $("#" + comps + "man_dist_score_arr").html(value);
 
-        value = data["man_dist_score_dep"].toFixed(2) + "%";
+        value = ("man_dist_score_dep" in data ? data["man_dist_score_dep"].toFixed(2) + "%" : "NA");
         $("#" + comps + "man_dist_score_dep").html(value);
 
-        value = data["eucl_dist_score"].toFixed(2) + "%";
+        value = ("eucl_dist_score" in data ? data["eucl_dist_score"].toFixed(2) + "%" : "NA");
         $("#" + comps + "eucl_dist_score").html(value);
 
 	// set 'total_num_trips', 'total_num_disappointments',
@@ -286,7 +294,7 @@ function displaySummaryStats(data, from, to, comp) {
 	$("#" + comps + "total_num_full_disappointments").text(data["total_num_full_disappointments"]);
 	$("#" + comps + "most_disappointing_dep_station").text(data["most_disappointing_dep_station"]);
 	$("#" + comps + "most_disappointing_arr_station").text(data["most_disappointing_arr_station"]);
-
+    console.log("got past the disappointments");
 
 	// set 'min_duration_trip' 
 	var minTrip = data["min_duration_trip"];
@@ -358,7 +366,7 @@ function toggle_comps() {
         $('#stats_panel').css('width', '100%')
             .css('right', '20px')
             .css('left', '');
-        $('#comp_stats_panel').css('display', 'none');
+        $('#comp_stats_panel, #comp_picker_1, #comp_picker_2').css('display', 'none');
         $(flexy_tables).addClass('large-6');
         $(flexy_tables).removeClass('large-12');
         in_comp_mode = false;
@@ -451,8 +459,11 @@ function processStatsForm() {
                 progressbar.progressbar("option", "value", false);            
                 progressbar.find(".progress-label").html("Loading...");
                 loadingDiv.find("#current_time").html("");
+
+		// spice it up a little bit
+		var possibleColors = ["#3987c7", "#96e62e", "#dfe62e", "#b52ee6", "#b2c2bd"];
              	progressbar.find(".ui-progressbar-value").css({
-                    "background" : "#3987c7"
+                    "background" : possibleColors[Math.floor(Math.random()*(possibleColors.length-1))]
                 });
                 loadingDiv.find("#error_alert").hide();
                 var slider_left_pos = parseInt($("#stats_slider").css('left'),10);
@@ -473,16 +484,19 @@ function processStatsForm() {
                 $("#stats_name").html('Summary for most recent simulation:');
                 $("#stats_range").html(from + ' to ' + to);
                 $("#loading_div").hide();
-                $("#stats_slider").animate({left: 660});
+                $("#stats_slider").animate({left: 660},400);
+                $("#stats_panel").css('width','640px');
+                $(flexy_tables).addClass('large-12');
+                $(flexy_tables).removeClass('large-6');
                 displaySummaryStats(jsond, from, to);
                 map.panBy(-320,0);
-
-		console.log(data_for_maps);	
+                console.log(data_for_maps);	
 		$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
             },
 
-                error: function() {
-                    updateProgressBar(null, null, true);
-                }
+        error: function() {
+            console.log("damn it.");
+            updateProgressBar(null, null, true);
+        }
 	});	
 }
