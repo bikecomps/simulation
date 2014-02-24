@@ -1,5 +1,12 @@
 function changeMapVis(view_mode, secondary_mode) {
 
+    console.log("in change map vis");
+    console.log(view_mode);
+
+    console.log(secondary_mode);
+
+    console.log(data_for_maps);
+
     if (typeof data_for_maps == 'undefined') {
         return;
     }

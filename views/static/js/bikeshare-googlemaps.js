@@ -278,30 +278,17 @@ function MapControl(controlDiv, controlUI, view_mode, secondary_mode) {
  
     $.getScript("static/js/visualize-helper.js")
     .done(function(){
-        google.maps.event.addDomListener(controlUI, 'click', function(view_mode, secondary_mode) {
-            changeMapVis(view_mode, secondary_mode);
+        google.maps.event.addDomListener(controlUI, 'click', function(e) {
+            console.log(e.target.innerHTML);
+            console.log(control_dict[e.target.innerHTML]);
+            console.log(control_dict[e.target.innerHTML][0]);
+            changeMapVis(control_dict[e.target.innerHTML][0], control_dict[e.target.innerHTML][1]);
         });
     })
     .fail(function(kqxhr, settings, exception) {
         console.log(exception);
     });
 
-/*
-  google.maps.event.addDomListener(controlUI, 'click', 
-    $.getScript("static/js/visualize-helper.js")
-    .done(function(){changeMapVis(view_mode, secondary_mode);})
-    .fail(function(kqxhr, settings, exception) {
-        console.log(exception);
-    }));
-
-    google.maps.event.addListener(map, 'click', function(e) {
-        
-    }
-*/
-}
-
-function stupidFun(evt) {
-    window.alert(evt.target.my_parameter);
 }
 
 
