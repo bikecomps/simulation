@@ -13,25 +13,6 @@
     font-weight: bold;
 }
 
-footer {
-    border-style: solid;
-    border-width: 1px;
-    border-color: #959595;
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    width: 330px;
-    height: 20px;
-    font-size: 12px;
-    background-color: #ffffff;
-    z-index: 99999;
-    display: none;
-}
-
-footer p {
-    text-align: center;
-}
-
 #content {
     height: 100%;
 }
@@ -412,6 +393,27 @@ form button[type="submit"] {
     height: 30px;
     line-height: 15px;
     background-color: #3987c7;
+}
+
+.mapControl_wrapper {
+    padding: 5px;
+    display: none;
+}
+
+.mapControl_UI {
+    background-color: #3987C7;
+    cursor: pointer;
+    text-align: center;
+}
+
+.mapControl_text {
+    font-family: Roboto,Arial,sans-serif;
+    font-size: 12px;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    color: white;
 }
 
 #loading_div_text {

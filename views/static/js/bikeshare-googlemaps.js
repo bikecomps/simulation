@@ -10,9 +10,9 @@ var station_markers;
 var marker_colors;
 var marker_cap_gradient;
 
+var display_modes = {};
+
 var capacity_dict = {};
-var oDiv = document.createElement('div');
-var oControl;
 
 function initialize() {
 	connections = [];
@@ -32,16 +32,18 @@ function initialize() {
 							  mapOptions);
 	
 	station_markers = {};
+
+    // currently used for clustering
 	marker_colors = ["blue", "orange", "green", "red", "purple", "yellow"];
-	// red, red-purple, purple, blue-purple, blue
-	//marker_cap_gradient = ["ED5A1D","C34E31","843D50","452B6E","1B2083"]
-	// light-green to dark-blue gradient?
+
+	// light-green to dark-blue gradient? for grouping after sim?
 	marker_cap_gradient = ["#16E31E","#14BA3B","#137C68","#115385","#1016B2"]
+
+    display_modes
 
 
 	for (station=0; station < Object.keys(locations).length; station++) {
 		var stationLatLng = new google.maps.LatLng(locations[station][0], locations[station][1]);
-		// console.log("lat = " + locations[station][0] + "and lon = " + locations[station][1]);
 		var marker = new google.maps.Marker({
 			position: stationLatLng,
 			map: map,
@@ -66,26 +68,22 @@ function initialize() {
 		openWindow = infoWindow;
 		bindInfoWindow(marker, map, infoWindow);
 	}
-    // addControlPlz();
-   // Set CSS for the control border
-    var controlUI = document.createElement('div');
-    controlUI.style.backgroundColor = 'white';
-    controlUI.style.borderStyle = 'solid';
-    controlUI.style.borderWidth = '2px';
-    controlUI.style.cursor = 'pointer';
-    controlUI.style.textAlign = 'center';
-    controlUI.title = 'Click to set the map to Home';   
-    // Set CSS for the control interior
-    var controlText = document.createElement('div');
-    controlText.style.fontFamily = 'Arial,sans-serif';
-    controlText.style.fontSize = '12px';
-    controlText.style.paddingLeft = '4px';
-    controlText.style.paddingRight = '4px';
-    controlText.innerHTML = '<b>Say hi</b>';
-    controlUI.appendChild(controlText);
-    
-    addControlCustom(controlUI);
 
+    /*
+    var controlWrap = document.createElement('div');
+    controlWrap.className = 'mapControl_wrapper';
+
+    var controlU = document.createElement('div');
+    controlU.className = 'mapControl_UI';
+    controlWrap.appendChild(controlU);
+
+    var controlT = document.createElement('div');
+    controlT.className = 'mapControl_text';
+    controlT.innerHTML = 'Orange!';
+    controlU.appendChild(controlT);
+
+    addControlCustom(controlWrap, controlU, turnEverythingOrange, google.maps.ControlPosition.TOP_RIGHT);
+    */
 }
 
 function set_coordinates(val) {
@@ -105,7 +103,6 @@ function bindInfoWindow(marker, map, infoWindow) {
 			'); return false;">Save</a></div>' +
 			'</div>';
 
-		//console.log("MARKER CAPACITY FOR STA #" + marker.id + " = " + marker.capacity);
 		infoWindow.setContent(contentString);
 		infoWindow.open(map, marker);
 		openWindow = infoWindow;	
@@ -145,22 +142,25 @@ function appendCapacityChange(id) {
 
 	capacity_dict[id] = newCapacity;
 
-	//capacity_dict.push({
-	//	key: id,
-	//	value: newCapacity
-	//});
-
 	console.log("CAPACITY DICTIONARY:");
 	console.log(capacity_dict);
 
-	//$.ajax({
-	//	type: "POST",
-	//	url: "/unified",
-	//	data: { capacity_dict: capacity_dictionary },
-	//	error: function() {
-	//		console.log("AJAX is not happy about your capacity_dictionary.");
-	//	}
-	//});
+}
+
+
+// used to test functionality of addControlCustom
+function turnEverythingOrange() {
+    console.log("ORANGE TIME");
+    for (station_id in station_markers) {
+        station_markers[station_id].setIcon({
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor:'orange',
+            fillOpacity: 1.0,
+            scale: 6,
+            strokeColor: "Navy",
+            strokeWeight: 1
+        });
+    }
 }
 
 function clusterColors() {
@@ -217,34 +217,15 @@ function changeMarkerColor(marker_id, color) {
 	});
 } 
 
-function addControlPlz() {
-    $.getScript("/static/js/test-control.js")
-        .done(function(script, textStatus) {
-            console.log("hello");
-            oControl = new HomeControl(oDiv);
-            oControl.index = 1;
-            map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(oDiv); 
-       })
-        .fail(function(jqxhr, settings, exception) {
-            console.log("error");
-            console.log(exception);
-            console.log(jqxhr);
-            console.log(settings);
-        });
-}
-
-function addControlCustom(cDiv) {
+function addControlCustom(cDivWrapper, cUI, cFunction, mapPosition) {
     $.getScript("/static/js/add-control.js")
         .done(function(script, textStatus) {
-            console.log("hello");
-            oControl = new CustomControl(cDiv);
-            google.maps.event.addDomListener(cDiv, 'click', function() {
-                console.log("Yay! A cool thing!")
-            });
-            pushToMap();
+            newControl = new CustomControl(cDivWrapper, cUI, cFunction);
+            newControl.index = 1;
+            map.controls[mapPosition].push(cDivWrapper);
         })
         .fail(function(jqxhr, settings, exception) {
-            console.log("error");
+            console.log("error!");
             console.log(exception);
             console.log(jqxhr);
             console.log(settings);
