@@ -34,9 +34,10 @@ LINEARLASTYEAR = 5
 # Log regression, but predicting based on actual prev_month values instead of ones from regression line
 LOGREALYEARS = 6
 # Jeff's suggestion to do regression over year-long chunks starting at each month
-JEFF = 7
+JEFFLINEAR = 7
+JEFFLOG = 8
 # Do regression for each individual lambda. This is fairly bad.
-OLD = 8
+OLD = 9
 
 
 class PoissonLogic(SimulationLogic):
@@ -58,7 +59,7 @@ class PoissonLogic(SimulationLogic):
         print "Loaded Gammas"
         self.moving_bikes = 0
         if end_time > self.time_of_last_data:
-            self.regression_type = LINEAR
+            self.regression_type = JEFFLINEAR
             regression_data = self.init_regression()
             self.monthly_slope = regression_data[0]
             self.monthly_intercept = regression_data[1]
@@ -69,56 +70,60 @@ class PoissonLogic(SimulationLogic):
             return self.init_regression_LINEAR_hardcoded()
         elif self.regression_type == LOG2 or self.regression_type == LOGLASTYEAR or self.regression_type == LOGREALYEARS:
             return self.init_regression_LOG2_hardcoded()
-        elif self.regression_type == JEFF:
-            return self.init_regression_jeff()
+        elif self.regression_type == JEFFLINEAR:
+            return self.init_regression_jeff_linear()
+        elif self.regression_type == JEFFLOG:
+            return self.init_regression_jeff_log()
         elif self.regression_type == OLD:
             return [None, None]
         else:
             return self.init_regression_with_calculations()
 
-
-    def init_regression_jeff(self):
-        # for month of data:
-        #     get riders within a year after that month including it
-        #     x = the month number
-        #     y = riders
-        #     get the percentage of rides that happen in that month (for all years)
-        # do regression, it will just return one slope and one intercept
-
-        # num_months = (self.time_of_last_data.year - self.time_of_first_data.year - 1) * 12 + \
-        #             self.time_of_last_data.month - self.time_of_first_data.month
-        # x_months = []
-        # y_trips = []
-        # for month in range(num_months):
-        #     year_start = self.time_of_first_data + relativedelta(months=month)
-        #     year_end = year_start + relativedelta(months=12) - datetime.timedelta(days=1)
-        #     print "Start:", year_start, "\tEnd:", year_end
-        #     data = self.session.query(func.count(Trip.id))\
-        #                         .filter(Trip.start_date > year_start)\
-        #                         .filter(Trip.start_date < year_end)
-        #     x_months.append(month)
-        #     y_trips.append(data[0][0])
-        #     print "month", month, "trips", data[0][0]
-        # print "x_year_chunks:", x_months, "y_trips:", y_trips
-        # slope, intercept = self.linear_regression(x_months, y_trips)
-        # print "Slope:", slope, "\tIntercept:", intercept
-
-        # # TODO: you are currently getting the fraction of trips that happen each month incorrectly because some of the months appear 3 times and some appear 2 times, so the 3x months will be falsely higher percentage...but do you even need this?
-        # self.percent_trips_per_month = [0] * 12
-        # total_trips = 0
-        # for month in range(12):
-        #     # Find the percentage of trips that happen in that month
-        #     month_data = self.session.query(func.count(Trip.id))\
-        #                         .filter(func.date_part('month', Trip.start_date) == month+1)\
-        #                         .filter(Trip.trip_type_id == 1)
-        #     self.percent_trips_per_month[month] = month_data[0][0]
-        #     total_trips += month_data[0][0]
-        # for month in range(12):
-        #     self.percent_trips_per_month[month] /= float(total_trips)
-        # print "Trips per month:", self.percent_trips_per_month
+    def init_regression_jeff_linear(self):
         slope = 59980.791
         intercept = 1085035.710
         return [slope], [intercept]
+
+
+    def init_regression_jeff_log(self):
+        slope = 436233.562891
+        intercept = 742160.777324
+        return [slope], [intercept]
+
+
+    def init_regression_jeff_with_calculations(self):
+        num_months = (self.time_of_last_data.year - self.time_of_first_data.year - 1) * 12 + \
+                    self.time_of_last_data.month - self.time_of_first_data.month
+        x_months = []
+        y_trips = []
+        for month in range(num_months):
+            year_start = self.time_of_first_data + relativedelta(months=month)
+            year_end = year_start + relativedelta(months=12) - datetime.timedelta(days=1)
+            print "Start:", year_start, "\tEnd:", year_end
+            data = self.session.query(func.count(Trip.id))\
+                                .filter(Trip.start_date > year_start)\
+                                .filter(Trip.start_date < year_end)
+            # x_months.append(math.log(month+1))
+            x_months.append(month)
+            y_trips.append(data[0][0])
+            print "month", month, "trips", data[0][0]
+        print "x_year_chunks:", x_months, "y_trips:", y_trips
+        slope, intercept = self.linear_regression(x_months, y_trips)
+        print "Slope:", slope, "\tIntercept:", intercept
+
+        # TODO: you are currently getting the fraction of trips that happen each month incorrectly because some of the months appear 3 times and some appear 2 times, so the 3x months will be falsely higher percentage...but do you even need this?
+        self.percent_trips_per_month = [0] * 12
+        total_trips = 0
+        for month in range(12):
+            # Find the percentage of trips that happen in that month
+            month_data = self.session.query(func.count(Trip.id))\
+                                .filter(func.date_part('month', Trip.start_date) == month+1)\
+                                .filter(Trip.trip_type_id == 1)
+            self.percent_trips_per_month[month] = month_data[0][0]
+            total_trips += month_data[0][0]
+        for month in range(12):
+            self.percent_trips_per_month[month] /= float(total_trips)
+        print "Trips per month:", self.percent_trips_per_month
 
 
     def init_regression_LINEAR_hardcoded(self):
@@ -258,7 +263,7 @@ class PoissonLogic(SimulationLogic):
 
     def predict_future_lambda(self, start_time, start_station_id, end_station_id):
         month = start_time.month
-        if self.regression_type == JEFF:
+        if self.regression_type == JEFFLOG or self.regression_type == JEFFLINEAR:
             slope = self.monthly_slope[0]
             intercept = self.monthly_intercept[0]
         else:
@@ -304,22 +309,37 @@ class PoissonLogic(SimulationLogic):
             return self.log_predict_with_year_deltas(prev_year, prev_year_lambda, slope, intercept, start_time)
         elif self.regression_type == LOGREALYEARS:
             return self.log_predict_with_real_years(prev_year, prev_year_lambda, slope, intercept, start_time)
-        elif self.regression_type == JEFF:
-            return self.jeff_predict(prev_year, prev_year_lambda, slope, intercept, start_time)
+        elif self.regression_type == JEFFLINEAR:
+            return self.jeff_linear_predict(prev_year, prev_year_lambda, slope, intercept, start_time)
+        elif self.regression_type == JEFFLOG:
+            return self.jeff_log_predict(prev_year, prev_year_lambda, slope, intercept, start_time)
+        else:
+            print "Not a valid regression type"
 
-
-    def jeff_predict(self, prev_year, prev_year_lambda, slope, intercept, start_time):
-        # Get the predicted total number of trips per year
-        # Get the fraction of trips that happen that month
-        # TODO: Check your logic if you're getting the correct month for prev and future_year_trips
+    def jeff_linear_predict(self, prev_year, prev_year_lambda, slope, intercept, start_time):
         # Predicting month n means the year chunk should start at month n-6
         future_month = (start_time.year - self.time_of_first_data.year) * 12 + \
                     start_time.month - self.time_of_first_data.month - 5
-        prev_month = future_month - 12
+        prev_month = (prev_year - self.time_of_first_data.year) * 12 + \
+                    start_time.month - self.time_of_first_data.month - 5
         prev_year_trips = slope * prev_month + intercept
         future_year_trips = slope * future_month + intercept
         lam_prediction = prev_year_lambda.value * future_year_trips / prev_year_trips
-        return lam_prediction
+        return lam_prediction 
+
+    def jeff_log_predict(self, prev_year, prev_year_lambda, slope, intercept, start_time):
+        # Predicting month n means the year chunk should start at month n-6
+        future_month = (start_time.year - self.time_of_first_data.year) * 12 + \
+                    start_time.month - self.time_of_first_data.month - 5
+        prev_month = (prev_year - self.time_of_first_data.year) * 12 + \
+                    start_time.month - self.time_of_first_data.month - 5
+        # This seems like a bad idea, but I don't have any better ones
+        if prev_month < 0:
+            prev_month = 0
+        prev_year_trips = slope * math.log(prev_month+1) + intercept
+        future_year_trips = slope * math.log(future_month+1) + intercept
+        lam_prediction = prev_year_lambda.value * future_year_trips / prev_year_trips
+        return lam_prediction 
 
 
     def linear_predict(self, prev_year, prev_year_lambda, slope, intercept, start_time):
