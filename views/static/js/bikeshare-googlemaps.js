@@ -59,6 +59,8 @@ function initialize() {
 			title: locations[station][3],
 			capacity: locations[station][4],
 			alt_capacity: locations[station][4],
+			departure: -1,
+			arrival: -1,
 			disappointment: -1,
 			dep_disappointment: -1,
 			arr_disappointment: -1
@@ -104,8 +106,11 @@ function bindInfoWindow(marker, map, infoWindow) {
 			'<div class="infoWindow_capacity"><label class="left inline infoWindow_capacity_label">Capacity</label><input type="text" id="infoWindow_capacity_text" value="' + marker.alt_capacity + '" />' +  
 			'<a class="button tiny" id="infoWindow_capacity_button" onclick="appendCapacityChange(' + marker.id +
 			'); return false;">Save</a></div>' +
-			'<div class="infoWindow_disappointment"><label>Disappointments</label>' +
-			'<div class="infoWindow_disappointment_text">Dep <div class="infoWindow_disappointment_number">' + marker.dep_disappointment + '</div> + ' +
+			'<div class="infoWindow_item"><label>Trips Completed</label>' +
+			'<div class="infoWindow_item_text">Dep <div class="infoWindow_trip_number">' + marker.departure + '</div> + ' +
+			'Arr <div class="infoWindow_trip_number">' + marker.arrival + '</div></div></div>' +
+			'<div class="infoWindow_item"><label>Disappointments</label>' +
+			'<div class="infoWindow_item_text">Dep <div class="infoWindow_disappointment_number">' + marker.dep_disappointment + '</div> + ' +
 			'Arr <div class="infoWindow_disappointment_number">' + marker.arr_disappointment + '</div> = Tot <div class="infoWindow_disappointment_number">' + marker.disappointment + '</div></div></div>' + 
 			'</div>';
 
@@ -113,8 +118,12 @@ function bindInfoWindow(marker, map, infoWindow) {
 		infoWindow.open(map, marker);
 		openWindow = infoWindow;
 
+		if (marker.departure == -1) {
+			$("div.infoWindow_item").css("display", "none");
+		}
+
 		if (marker.disappointment == -1) {
-			$("div.infoWindow_disappointment").css("display", "none");
+			$("div.infoWindow_item").css("display", "none");
 		}	
 	});
 }

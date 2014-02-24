@@ -5,7 +5,10 @@ function changeMapVis() {
 			s_cap = data_for_maps["simulated_station_caps"][station_id];
 			s_final_count = data_for_maps["final_station_counts"][station_id];
 			s_percentage = s_final_count/s_cap;
-	
+
+
+			station_markers[station_id].departure = data_for_maps["num_departures_per_station"][station_id];
+			station_markers[station_id].arrival = data_for_maps["num_arrivals_per_station"][station_id];	
 			station_markers[station_id].disappointment = data_for_maps["num_disappointments_per_station"][station_id];
 			station_markers[station_id].dep_disappointment = data_for_maps["num_dep_disappointments_per_station"][station_id];
 			station_markers[station_id].arr_disappointment = data_for_maps["num_arr_disappointments_per_station"][station_id];

@@ -392,6 +392,7 @@ form button[type="submit"] {
 .infoWindow_capacity_label { 
     line-height: 15px;
     padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
 }
 
 #infoWindow_capacity_text {
@@ -410,12 +411,19 @@ form button[type="submit"] {
     margin-bottom: 0;
 }
 
-.infoWindow_disappointment {
+.infoWindow_item {
     margin-top: 10px;
 }
 
-.infoWindow_disappointment_text {
+.infoWindow_item_text {
     font-size: 12px !important;
+}
+
+.infoWindow_trip_number {
+    font-size: 1.3em !important;
+    font-weight: 400 !important;
+    display: inline;
+    color: #3987c7;
 }
 
 .infoWindow_disappointment_number {
