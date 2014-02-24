@@ -57,9 +57,9 @@ class RangeEvaluator:
         print "total real: ", total_real
 
     def get_produced_trips(self):
-        # logic = PoissonLogic(self.session)
+        logic = PoissonLogic(self.session)
         #logic = ExponentialLogic(self.session)
-        logic = AltPoissonLogic(self.session)
+        # logic = AltPoissonLogic(self.session)
         simulator = Simulator(logic)
         results = simulator.run(self.start_date, self.end_date,
                                 logic_options = self.logic_options)

@@ -42,7 +42,7 @@ class AltPoissonLogic(SimulationLogic):
         self.dest_distrs = self.load_dest_distrs(start_time, end_time)
         self.moving_bikes = 0
         if end_time > self.time_of_last_data:
-            self.regression_type = LOG2
+            self.regression_type = LINEAR
             regression_data = self.init_regression_hardcoded()
             self.monthly_slope = regression_data[0]
             self.monthly_intercept = regression_data[1]
@@ -149,18 +149,21 @@ class AltPoissonLogic(SimulationLogic):
             if start_hour == end_hour:
                 break
 
-
-            print "DAY", day, "Hour", start_hour, "end hour:", end_hour, "month:", day.month, "year", day.year
+            if day > self.time_of_last_data:
+                # TODO: work on this
+                year = self.get_year_range_of_data(day.month)[-1]
+            else:
+                year = day.year
+            print "Year", year
 
             date_distrs = self.session.query(data_model.DestDistr) \
-               .filter(DestDistr.year == day.year)\
+               .filter(DestDistr.year == year)\
                .filter(DestDistr.month == day.month-1)\
                .filter(DestDistr.is_week_day == (dow < 5)) \
                .filter(DestDistr.hour.between(start_hour, end_hour))\
                .yield_per(10000)
 
             # TODO REMOVE count stuff
-            print "Date_distrs:", date_distrs
             count = 0
             s_count = 0
             for distr in date_distrs:
@@ -179,9 +182,6 @@ class AltPoissonLogic(SimulationLogic):
                         result[0].append(distr.prob)
                         result[1].append(distr.end_station_id)
                     num_distrs += 1
-
-                    print "Appended", distr.prob, "for station", distr.end_station_id
-            print "Total count", count, "\ts_count", s_count
 
             print "\t\tStarting reductions"
             # Change all of the probability vectors into cumulative probability vectors
@@ -202,7 +202,11 @@ class AltPoissonLogic(SimulationLogic):
         '''
             Returns a destination station given dest_distrs
         '''
-        vectors = self.dest_distrs[s_id][time.year][time.month][time.weekday() < 5][time.hour]
+        if time > self.time_of_last_data:
+            year = self.get_year_range_of_data(time.month)[-1]
+        else:
+            year = time.year
+        vectors = self.dest_distrs[s_id][year][time.month][time.weekday() < 5][time.hour]
         if vectors:
             cum_prob_vector = vectors[0]
             station_vector = vectors[1]
