@@ -16,6 +16,7 @@ import operator as op
 
 DEPARTURE_TYPE = 0
 ARRIVAL_TYPE = 1
+DEBUG = False
 
 class SimulationLogic:
 
@@ -247,14 +248,13 @@ class SimulationLogic:
                 self.unavailable_stations.add(s_id)
                 self.empty_stations.put((self.time, s_id))
 
-        for s_id, count in self.station_counts.iteritems():
-            assert 0 <= count <= self._get_station_cap(s_id)    
+        if DEBUG:
+            for s_id, count in self.station_counts.iteritems():
+                assert 0 <= count <= self._get_station_cap(s_id)    
 
 
     def update(self, timestep):
         '''Moves the simulation forward one timestep from given time'''
-        for count in self.station_counts.itervalues():
-            assert count != 0
         self.generate_new_trips(self.time)
         self.time += timestep
         self.resolve_trips()
@@ -401,8 +401,9 @@ class SimulationLogic:
         # NOTE: potential error, if you have a rebalance time < 1 hour 
         # could potentially exceed that time
 
-        in_both = set([v for k,v in self.full_stations.queue]).intersection(set([v for k,v in self.empty_stations.queue]))
-        assert len(in_both) == 0
+        if DEBUG:
+            in_both = set([v for k,v in self.full_stations.queue]).intersection(set([v for k,v in self.empty_stations.queue]))
+            assert len(in_both) == 0
 
         while not self.full_stations.empty():
             time = self.full_stations.queue[0][0]
@@ -461,11 +462,12 @@ class SimulationLogic:
                 self.moving_bikes -= max_bikes
                 self.unavailable_stations.remove(s_id)
 
-        for s_id, count in self.station_counts.iteritems():
-            assert 0 <= count <= self._get_station_cap(s_id)    
+        if DEBUG:
+            for s_id, count in self.station_counts.iteritems():
+                assert 0 <= count <= self._get_station_cap(s_id)    
 
-        in_both = set([v for k,v in self.full_stations.queue]).intersection(set([v for k,v in self.empty_stations.queue]))
-        assert len(in_both) == 0
+            in_both = set([v for k,v in self.full_stations.queue]).intersection(set([v for k,v in self.empty_stations.queue]))
+            assert len(in_both) == 0
 
 
 
