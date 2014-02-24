@@ -55,6 +55,29 @@ function load_results() {
         .attr('onclick', 'load_trans()');
 }
 
+function load_comp_stats(comp) {
+var desired_stats;
+    if (comp) {desired_stats = "#comp_picker_2";}
+    else {desired_stats = "#comp_picker_1";}
+
+    var stats_name = $(desired_stats).val();
+    var desired_package = sessionStorage[stats_name];
+    var desired_unpacked = desired_package.split('!?!');
+    var desired = desired_unpacked[0];
+    var from = desired_unpacked[1];
+    var to = desired_unpacked[2];
+
+    if (comp) {
+       $("#comp_stats_name").html(stats_name);
+       $("#comp_stats_range").html(from + ' to ' + to); 
+    }
+    else {
+        $("#stats_name").html(stats_name);
+        $("#stats_range").html(from + ' to ' + to);
+    }
+    displaySummaryStats(JSON.parse(desired),from,to,comp);
+}
+
 function sliderSetup() {
 	$( "#slider-range" ).slider({
 		range: true,
@@ -266,7 +289,7 @@ function plotKeysVals(htmlIdName, map) {
 
 function displaySummaryStats(data, from, to, comp) {
 	var comps = '';
-	if (comp != undefined) {comps = 'comp_';}
+	if (comp == true) {comps = 'comp_';}
 	// set 'total_num_trips', 'total_num_disappointments',
 	// 'avg_trip_time', and 'std_trip_time' 
 	$("#" + comps + "total_num_trips").text(data["total_num_trips"]);
