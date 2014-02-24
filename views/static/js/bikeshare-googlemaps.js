@@ -105,13 +105,17 @@ function bindInfoWindow(marker, map, infoWindow) {
 			'<a class="button tiny" id="infoWindow_capacity_button" onclick="appendCapacityChange(' + marker.id +
 			'); return false;">Save</a></div>' +
 			'<div class="infoWindow_disappointment"><label>Disappointments</label>' +
-			'<div class="infoWindow_disappointment_text">Dep ' + marker.dep_disappointment + ' + ' +
-			'Arr ' + marker.arr_disappointment + ' = Tot ' + marker.disappointment + '</div></div>' + 
+			'<div class="infoWindow_disappointment_text">Dep <div class="infoWindow_disappointment_number">' + marker.dep_disappointment + '</div> + ' +
+			'Arr <div class="infoWindow_disappointment_number">' + marker.arr_disappointment + '</div> = Tot <div class="infoWindow_disappointment_number">' + marker.disappointment + '</div></div></div>' + 
 			'</div>';
 
 		infoWindow.setContent(contentString);
 		infoWindow.open(map, marker);
-		openWindow = infoWindow;	
+		openWindow = infoWindow;
+
+		if (marker.disappointment == -1) {
+			$("div.infoWindow_disappointment").css("display", "none");
+		}	
 	});
 }
 

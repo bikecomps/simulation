@@ -5,12 +5,11 @@ function changeMapVis() {
 			s_cap = data_for_maps["simulated_station_caps"][station_id];
 			s_final_count = data_for_maps["final_station_counts"][station_id];
 			s_percentage = s_final_count/s_cap;
-
-			// UNDER DEVELOPMENT. ADDING DISAPPOINTMENT.
-			s_disappointment = data_for_maps["num_disappointments_per_station"][station_id];
-			s_dep_disappointment = data_for_maps["num_dep_disappointments_per_station"][station_id];
-			s_arr_disappointment = data_for_maps["num_arr_disappointments_per_station"][station_id];
 	
+			station_markers[station_id].disappointment = data_for_maps["num_disappointments_per_station"][station_id];
+			station_markers[station_id].dep_disappointment = data_for_maps["num_dep_disappointments_per_station"][station_id];
+			station_markers[station_id].arr_disappointment = data_for_maps["num_arr_disappointments_per_station"][station_id];
+
 			var s_color;
 			if (s_percentage <= .2) {
 				s_color = marker_cap_gradient[0];
@@ -32,11 +31,6 @@ function changeMapVis() {
 				strokeColor: "Navy",
 				strokeWeight: 1
 			});
-			
-			//ADDING DISAPPOINTMENT
-			station_markers[station_id].disappointment = s_disappointment;
-			station_markers[station_id].dep_disappointment = s_dep_disappointment;
-			station_markers[station_id].arr_disappointment = s_arr_disappointment;
 		}
 	}
 }

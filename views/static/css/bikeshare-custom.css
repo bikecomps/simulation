@@ -387,11 +387,11 @@ form button[type="submit"] {
 
 .infoWindow_capacity {
     margin-top: 15px;
-    float: right;
 }
 
 .infoWindow_capacity_label { 
     line-height: 15px;
+    padding-bottom: 0 !important;
 }
 
 #infoWindow_capacity_text {
@@ -399,6 +399,7 @@ form button[type="submit"] {
     width: 70px;
     margin-left: 5px;
     margin-right: 10px;
+    margin-bottom: 0;
     top: 0;
 }
 
@@ -406,6 +407,22 @@ form button[type="submit"] {
     height: 30px;
     line-height: 15px;
     background-color: #3987c7;
+    margin-bottom: 0;
+}
+
+.infoWindow_disappointment {
+    margin-top: 10px;
+}
+
+.infoWindow_disappointment_text {
+    font-size: 12px !important;
+}
+
+.infoWindow_disappointment_number {
+    font-size: 1.3em !important;
+    font-weight: 400 !important;
+    display: inline;
+    color: #c60f13;
 }
 
 .mapControl_wrapper {
