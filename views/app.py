@@ -88,7 +88,7 @@ if __name__ == "__main__":
     ], **settings)
 
 
-    port_num = 3000
+    port_num = 1337
     application.listen(port_num)
     print "listening on port", port_num
 
