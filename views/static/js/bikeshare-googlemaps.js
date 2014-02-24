@@ -54,7 +54,10 @@ function initialize() {
 			id: locations[station][2],
 			title: locations[station][3],
 			capacity: locations[station][4],
-			alt_capacity: locations[station][4] // holds user-altered capacities
+			alt_capacity: locations[station][4],
+			disappointment: -1,
+			dep_disappointment: -1,
+			arr_disappointment: -1
 		});
 		station_markers[locations[station][2]] = marker;
 		var infoWindow = new google.maps.InfoWindow({
@@ -81,6 +84,9 @@ function bindInfoWindow(marker, map, infoWindow) {
 			'<div class="infoWindow_capacity"><label class="left inline infoWindow_capacity_label">Capacity</label><input type="text" id="infoWindow_capacity_text" value="' + marker.alt_capacity + '" />' +  
 			'<a class="button tiny" id="infoWindow_capacity_button" onclick="appendCapacityChange(' + marker.id +
 			'); return false;">Save</a></div>' +
+			'<div class="infoWindow_disappointment"><label>Disappointments</label>' +
+			'<div class="infoWindow_disappointment_text">Dep ' + marker.dep_disappointment + ' + ' +
+			'Arr ' + marker.arr_disappointment + ' = Tot ' + marker.disappointment + '</div></div>' + 
 			'</div>';
 
 		//console.log("MARKER CAPACITY FOR STA #" + marker.id + " = " + marker.capacity);
