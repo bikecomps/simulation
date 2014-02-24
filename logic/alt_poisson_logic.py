@@ -42,7 +42,7 @@ class AltPoissonLogic(SimulationLogic):
         self.dest_distrs = self.load_dest_distrs(start_time, end_time)
         self.moving_bikes = 0
         if end_time > self.time_of_last_data:
-            self.regression_type = LOG2
+            self.regression_type = LINEAR
             regression_data = self.init_regression_hardcoded()
             self.monthly_slope = regression_data[0]
             self.monthly_intercept = regression_data[1]
@@ -143,26 +143,40 @@ class AltPoissonLogic(SimulationLogic):
         num_distrs = 0
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
-            
+
             start_hour = start_time.hour if start_time.weekday() == dow else 0
             end_hour = end_time.hour if end_time.weekday() == dow else 24
+            if start_hour == end_hour:
+                break
+
+            if day > self.time_of_last_data:
+                # TODO: work on this
+                year = self.get_year_range_of_data(day.month)[-1]
+            else:
+                year = day.year
+            print "Year", year
 
             date_distrs = self.session.query(data_model.DestDistr) \
-               .filter(DestDistr.year == day.year)\
-               .filter(DestDistr.month == day.month)\
+               .filter(DestDistr.year == year)\
+               .filter(DestDistr.month == day.month-1)\
                .filter(DestDistr.is_week_day == (dow < 5)) \
                .filter(DestDistr.hour.between(start_hour, end_hour))\
                .yield_per(10000)
 
+            # TODO REMOVE count stuff
+            count = 0
+            s_count = 0
             for distr in date_distrs:
+                count += 1
                 # Faster to do this than be smart about the db query
                 if distr.start_station_id in self.stations \
                         and distr.end_station_id in self.stations:
-                    result = distr_dict[distr.start_station_id][distr.year][distr.month][distr.is_week_day][distr.hour]
+                    s_count += 1
+                    result = distr_dict[distr.start_station_id][distr.year][distr.month+1][distr.is_week_day][distr.hour]
 
                     # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
                     if len(result) == 0:
-                        distr_dict[distr.start_station_id][distr.year][distr.month][distr.is_week_day]\
+                        distr_dict[distr.start_station_id][distr.year][distr.month+1][distr.is_week_day]\
                                   [distr.hour] = [[distr.prob], [distr.end_station_id]]
                     else:
                         result[0].append(distr.prob)
@@ -188,7 +202,11 @@ class AltPoissonLogic(SimulationLogic):
         '''
             Returns a destination station given dest_distrs
         '''
-        vectors = self.dest_distrs[s_id][time.year][time.month][time.weekday() < 5][time.hour]
+        if time > self.time_of_last_data:
+            year = self.get_year_range_of_data(time.month)[-1]
+        else:
+            year = time.year
+        vectors = self.dest_distrs[s_id][year][time.month][time.weekday() < 5][time.hour]
         if vectors:
             cum_prob_vector = vectors[0]
             station_vector = vectors[1]

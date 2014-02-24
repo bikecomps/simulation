@@ -10,6 +10,8 @@ var station_markers;
 var marker_colors;
 var marker_cap_gradient;
 
+var display_modes = {};
+
 var capacity_dict = {};
 
 function initialize() {
@@ -30,16 +32,18 @@ function initialize() {
 							  mapOptions);
 	
 	station_markers = {};
+
+    // currently used for clustering
 	marker_colors = ["blue", "orange", "green", "red", "purple", "yellow"];
-	// red, red-purple, purple, blue-purple, blue
-	//marker_cap_gradient = ["ED5A1D","C34E31","843D50","452B6E","1B2083"]
-	// light-green to dark-blue gradient?
+
+	// light-green to dark-blue gradient? for grouping after sim?
 	marker_cap_gradient = ["#16E31E","#14BA3B","#137C68","#115385","#1016B2"]
+
+    display_modes
 
 
 	for (station=0; station < Object.keys(locations).length; station++) {
 		var stationLatLng = new google.maps.LatLng(locations[station][0], locations[station][1]);
-		// console.log("lat = " + locations[station][0] + "and lon = " + locations[station][1]);
 		var marker = new google.maps.Marker({
 			position: stationLatLng,
 			map: map,
@@ -67,6 +71,22 @@ function initialize() {
 		openWindow = infoWindow;
 		bindInfoWindow(marker, map, infoWindow);
 	}
+
+    /*
+    var controlWrap = document.createElement('div');
+    controlWrap.className = 'mapControl_wrapper';
+
+    var controlU = document.createElement('div');
+    controlU.className = 'mapControl_UI';
+    controlWrap.appendChild(controlU);
+
+    var controlT = document.createElement('div');
+    controlT.className = 'mapControl_text';
+    controlT.innerHTML = 'Orange!';
+    controlU.appendChild(controlT);
+
+    addControlCustom(controlWrap, controlU, turnEverythingOrange, google.maps.ControlPosition.TOP_RIGHT);
+    */
 }
 
 function set_coordinates(val) {
@@ -89,7 +109,6 @@ function bindInfoWindow(marker, map, infoWindow) {
 			'Arr ' + marker.arr_disappointment + ' = Tot ' + marker.disappointment + '</div></div>' + 
 			'</div>';
 
-		//console.log("MARKER CAPACITY FOR STA #" + marker.id + " = " + marker.capacity);
 		infoWindow.setContent(contentString);
 		infoWindow.open(map, marker);
 		openWindow = infoWindow;	
@@ -129,22 +148,25 @@ function appendCapacityChange(id) {
 
 	capacity_dict[id] = newCapacity;
 
-	//capacity_dict.push({
-	//	key: id,
-	//	value: newCapacity
-	//});
-
 	console.log("CAPACITY DICTIONARY:");
 	console.log(capacity_dict);
 
-	//$.ajax({
-	//	type: "POST",
-	//	url: "/unified",
-	//	data: { capacity_dict: capacity_dictionary },
-	//	error: function() {
-	//		console.log("AJAX is not happy about your capacity_dictionary.");
-	//	}
-	//});
+}
+
+
+// used to test functionality of addControlCustom
+function turnEverythingOrange() {
+    console.log("ORANGE TIME");
+    for (station_id in station_markers) {
+        station_markers[station_id].setIcon({
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor:'orange',
+            fillOpacity: 1.0,
+            scale: 6,
+            strokeColor: "Navy",
+            strokeWeight: 1
+        });
+    }
 }
 
 function clusterColors() {
@@ -201,23 +223,20 @@ function changeMarkerColor(marker_id, color) {
 	});
 } 
 
-var oDiv = document.createElement('div');
-console.log("oDiv?");
-$.getScript("/static/js/map-overlay.js")
-    .done(function(script, textStatus) {
-        console.log("hello");
-        overlay = new OptionsOverlay(map, oDiv);
-        overlay.onAdd();
-        overlay.setSizeAndPos("100px","100px", "relative");
-        overlay.show();
-        console.log("should be showing now");
-       
-    })
-    .fail(function(jqxhr, settings, exception) {
-        console.log("error");
-        console.log(exception);
-        console.log(jqxhr);
-        console.log(settings);
-    });
+function addControlCustom(cDivWrapper, cUI, cFunction, mapPosition) {
+    $.getScript("/static/js/add-control.js")
+        .done(function(script, textStatus) {
+            newControl = new CustomControl(cDivWrapper, cUI, cFunction);
+            newControl.index = 1;
+            map.controls[mapPosition].push(cDivWrapper);
+        })
+        .fail(function(jqxhr, settings, exception) {
+            console.log("error!");
+            console.log(exception);
+            console.log(jqxhr);
+            console.log(settings);
+        });
+}
+
 
 google.maps.event.addDomListener(window, 'load', initialize);

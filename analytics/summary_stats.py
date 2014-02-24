@@ -169,7 +169,7 @@ class SummaryStats:
             
         self.stats['num_departures_per_station'] = dep_counts
         self.stats['num_arrivals_per_station'] = arr_counts
-        self.stats['num_trips_per_pair_station'] = pair_counts
+        # self.stats['num_trips_per_pair_station'] = pair_counts
         self.stats['num_disappointments_per_station'] = self.dis_station_counts
         self.stats['num_dep_disappointments_per_station'] = self.dep_dis_station_counts 
         self.stats['num_arr_disappointments_per_station'] = self.arr_dis_station_counts
@@ -272,8 +272,10 @@ def main():
                                           
 
     sstats = SummaryStats(start_date, end_date, {})
-    sstats.indent = True
-    # print sstats.get_stats()
+    sstats.indent = False
+    result = sstats.get_stats()
+    print result
+    print len(result)
 
 if __name__ == '__main__':
     main()
