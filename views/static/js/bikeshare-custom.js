@@ -318,7 +318,7 @@ function displaySummaryStats(data, from, to, comp) {
 	$("#" + comps + "total_num_full_disappointments").text(data["total_num_full_disappointments"]);
 	$("#" + comps + "most_disappointing_dep_station").text(data["most_disappointing_dep_station"]);
 	$("#" + comps + "most_disappointing_arr_station").text(data["most_disappointing_arr_station"]);
-    console.log("got past the disappointments");
+        console.log("got past the disappointments");
 
 	// set 'min_duration_trip' 
 	var minTrip = data["min_duration_trip"];
@@ -349,13 +349,15 @@ function displaySummaryStats(data, from, to, comp) {
 		.text(formatDate(maxTrip["end_datetime"]));
 
 	// plot 'num_arrivals_per_station'
-	plotKeysVals("num_arrivals_per_station", 
+	plotKeysVals(comps + "num_arrivals_per_station", 
 				 data["num_arrivals_per_station"]);
 	
 	// plot 'num_departures_per_station'
-	plotKeysVals("num_departures_per_station",
+	plotKeysVals(comps + "num_departures_per_station",
 				 data["num_departures_per_station"]);
-	groupBarPlot("num_trips_per_hour",
+
+        // plot 'num_trips_per_hour'
+	groupBarPlot(comps + "num_trips_per_hour",
 				 data["num_trips_per_hour"]);
 }
 
@@ -372,6 +374,7 @@ var flexy_tables =
      #comp_max_duration_trip"
 
 function toggle_comps() {
+    $("#comp_picker_1, #comp_picker_2").prop('selectedIndex', '-1');
     if (in_comp_mode != true) {
         var slider = $('#stats_slider');
         var left_pos = parseInt(slider.css('left'),10);
@@ -473,6 +476,7 @@ function processStatsForm() {
 	    url: "/unified",
 	    data: datatosend,
 	    beforeSend: function() {
+                if (in_comp_mode) {toggle_comps();}
 	        $("#stats_slider").animate({left: 20});
 
 	        console.log("=== DATA ===");

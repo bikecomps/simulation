@@ -216,7 +216,7 @@ form button[type="submit"] {
 
 #comp_picker_1,
 #comp_picker_2 {
-  width: 50%;
+  width: 275px;
   float: left;
   display: none;
 }
@@ -283,52 +283,65 @@ form button[type="submit"] {
   fill: #000;
 }
 
-#num_departures_per_station {
+#num_departures_per_station,
+#comp_num_departures_per_station {
   margin-top: 30px;
   width: 100%;
 }
 
-#num_departures_per_station div {
+#num_departures_per_station div,
+#comp_num_departures_per_station div {
   height: 300px;
   overflow-x: hidden;
   overflow-y: scroll;
   width: inherit;
 }
 
-#num_arrivals_per_station {
+#num_arrivals_per_station,
+#comp_num_arrivals_per_station {
   margin-top: 30px;
   width: 100%;
 }
 
-#num_arrivals_per_station div {
+#num_arrivals_per_station div,
+#comp_num_arrivals_per_station div {
   height: 300px;
   width: inherit;
   overflow-x: hidden;
   overflow-y: scroll;
 }
 
-#num_trips_per_hour {
+#num_trips_per_hour,
+#comp_num_trips_per_hour {
   margin-top: 30px;
 }
 
-#num_trips_per_hour div {
+#num_trips_per_hour div,
+#comp_num_trips_per_hour div {
   font: 10px sans-serif;
 }
 
 #num_trips_per_hour div
 .axis path,
+#comp_num_trips_per_hour div
+.axis path,
 #num_trips_per_hour div
+.axis line,
+#comp_num_trips_per_hour div
 .axis line {
   fill: none;
   stroke: #000;
   shape-rendering: crispEdges;
 }
 
-#num_trips_per_hour .bar {
+#num_trips_per_hour .bar,
+#comp_num_trips_per_hour .bar {
   fill: steelblue;
 }
 
 #num_trips_per_hour
+.x.axis path,
+#comp_num_trips_per_hour
 .x.axis path {
   display: none;
 }
