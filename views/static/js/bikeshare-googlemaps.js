@@ -108,7 +108,7 @@ function set_coordinates(val) {
 	locations=jQuery.parseJSON(j_val);
 }
 
-function set_controls() { 
+function set_controls() {
        
     for (var c in control_dict) {
  
@@ -124,15 +124,7 @@ function set_controls() {
         controlT.innerHTML = c;
         controlU.appendChild(controlT);
 
-        addControlCustom(
-            controlWrap, 
-            controlU, 
-            $.getScript("static/js/visualize-helper.js")
-                .done(function(){changeMapVis(control_dict[c][0], control_dict[c][1]);})
-                .fail(function(jqxhr,settings,exception){
-                    console.log(exception);
-                }),
-            google.maps.ControlPosition.TOP_RIGHT);
+        addMapDisplayControl(controlWrap, controlU, google.maps.ControlPosition.TOP_RIGHT, c[0], c[1]);
     }
 }
 
@@ -207,21 +199,6 @@ function appendCapacityChange(id) {
 }
 
 
-// used to test functionality of addControlCustom
-function turnEverythingOrange() {
-    console.log("ORANGE TIME");
-    for (station_id in station_markers) {
-        station_markers[station_id].setIcon({
-            path: google.maps.SymbolPath.CIRCLE,
-            fillColor:'orange',
-            fillOpacity: 1.0,
-            scale: 6,
-            strokeColor: "Navy",
-            strokeWeight: 1
-        });
-    }
-}
-
 function clusterColors() {
 	var clusterMethod = $("#clustering_method").val();
         var startDate = $("#start_date").val();
@@ -283,14 +260,50 @@ function addControlCustom(cDivWrapper, cUI, cFunction, mapPosition) {
         console.log(cUI, cFunction);
 }
 
+function addMapDisplayControl(cDivWrapper, cUI, mapPosition, view_mode, secondary_mode) {
+        newControl = new MapControl(cDivWrapper, cUI, view_mode, secondary_mode);
+        newControl.index = 1;
+        map.controls[mapPosition].push(cDivWrapper);
+}
+
 function CustomControl(controlDiv, controlUI, controlFunction) {
 
-  // Setup the click event listeners: simply set the map to
-  // Chicago
   google.maps.event.addDomListener(controlUI, 'click', function() {
     controlFunction
   });
 
-
 }
+
+function MapControl(controlDiv, controlUI, view_mode, secondary_mode) {
+ 
+    $.getScript("static/js/visualize-helper.js")
+    .done(function(){
+        google.maps.event.addDomListener(controlUI, 'click', function(view_mode, secondary_mode) {
+            changeMapVis(view_mode, secondary_mode);
+        });
+    })
+    .fail(function(kqxhr, settings, exception) {
+        console.log(exception);
+    });
+
+/*
+  google.maps.event.addDomListener(controlUI, 'click', 
+    $.getScript("static/js/visualize-helper.js")
+    .done(function(){changeMapVis(view_mode, secondary_mode);})
+    .fail(function(kqxhr, settings, exception) {
+        console.log(exception);
+    }));
+
+    google.maps.event.addListener(map, 'click', function(e) {
+        
+    }
+*/
+}
+
+function stupidFun(evt) {
+    window.alert(evt.target.my_parameter);
+}
+
+
+
 google.maps.event.addDomListener(window, 'load', initialize);

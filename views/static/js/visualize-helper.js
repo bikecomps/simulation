@@ -1,8 +1,3 @@
-function setDisplayMode(mode) {
-    current_display_mode = mode;
-}
-
-
 function changeMapVis(view_mode, secondary_mode) {
 
     if (typeof data_for_maps == 'undefined') {
