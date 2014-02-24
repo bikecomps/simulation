@@ -35,6 +35,8 @@ LINEARLASTYEAR = 5
 LOGREALYEARS = 6
 # Jeff's suggestion to do regression over year-long chunks starting at each month
 JEFF = 7
+# Do regression for each individual lambda. This is fairly bad.
+OLD = 8
 
 
 class PoissonLogic(SimulationLogic):
@@ -69,6 +71,8 @@ class PoissonLogic(SimulationLogic):
             return self.init_regression_LOG2_hardcoded()
         elif self.regression_type == JEFF:
             return self.init_regression_jeff()
+        elif self.regression_type == OLD:
+            return [None, None]
         else:
             return self.init_regression_with_calculations()
 
@@ -263,6 +267,8 @@ class PoissonLogic(SimulationLogic):
         lam_prediction = 0
         if self.regression_type == LASTYEAR or self.regression_type == LOGLASTYEAR or self.regression_type == LINEARLASTYEAR:
             lam_prediction = self.predict_from_last_year(start_time, start_station_id, end_station_id)
+        elif self.regression_type == OLD:
+            lam_prediction = self.old_predict(start_time, start_station_id, end_station_id)
         else:
             for prev_year in self.get_year_range_of_data(month):
                 prev_year_lambda = self.get_lambda(prev_year, month, start_time.weekday(), start_time.hour, start_station_id, end_station_id) 
@@ -343,6 +349,35 @@ class PoissonLogic(SimulationLogic):
         future_year_trips = slope * math.log(start_time.year-2010+2) + intercept
         lam_prediction = prev_year_lambda.value * future_year_trips / prev_year_trips
         return lam_prediction
+
+
+    def old_predict(self, start_time, start_station_id, end_station_id):
+        x_dates = []
+        y_lambdas = []
+        #TODO: Don't hard-code year that the data starts and ends
+#        print "Start time:", start_time, "Stations:", start_station_id, end_station_id
+        for year in range(2010, 2014):
+            lam = self.get_lambda(year, start_time.month, start_time.weekday(), start_time.hour, start_station_id, end_station_id)
+#            print year, start_time.hour, lam
+            x_dates.append(year)
+            y_lambdas.append(lam.value if lam else 0)
+           
+        if len(x_dates) == 0:
+            return 0
+        # If not using log regression, remove the math.log calls 
+        for i in range(len(x_dates)):
+           x_dates[i] = math.log(x_dates[i])
+        slope, intercept, r_val, p_val, std_err = stats.linregress(x_dates, y_lambdas)
+        new_lam_val = slope * math.log(start_time.year) + intercept
+
+#        for i in range(len(x_dates)):
+#            print x_dates[i], y_lambdas[i]
+        # slope, intercept, r_val, p_val, std_err = stats.linregress(x_dates, y_lambdas)
+        # new_lam_val = slope * start_time.year + intercept
+#        print slope, intercept, new_lam_val
+        if new_lam_val <= 0:
+            new_lam_val = self.avg_lambda(y_lambdas)
+        return Lambda(start_station_id, end_station_id, start_time.hour, start_time.weekday()<5, start_time.year, start_time.month, new_lam_val)
 
 
     def get_year_range_of_data(self, month):

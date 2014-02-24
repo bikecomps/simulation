@@ -5,7 +5,6 @@ import csv
 import datetime
 import sys
 import random
-random.seed(23526)
 
 # Our modules
 from models import *
@@ -95,6 +94,8 @@ def print_usage():
     print "Simulator Usage: python simulator.py <name of logic> <start_date> <end_date> <output file>"
 
 def main():
+
+    #random.seed(23526)
     logic_options = {
         "SimulationLogic" : SimulationLogic,
         "PoissonLogic" : PoissonLogic,
@@ -142,8 +143,8 @@ def main():
     print start_date, end_date
     #logic_options = {'station_caps':{31237:5}, 'drop_stations':[31704,31000,31001,31002],
     #                 'rebalancing_time':datetime.timedelta(seconds=3600)}
-    logic_options = {'rebalancing_time':datetime.timedelta(seconds=0), 'drop_stations':[31704]}
 
+    logic_options = {'rebalancing_time':datetime.timedelta(seconds=0), 'drop_stations':[31704]}
     results = simulator.run(start_date, end_date, logic_options=logic_options)
     print "trips:", len(results['trips'])
     print "Num rebalances",results['total_rebalances']

@@ -139,21 +139,21 @@ class SummaryStats:
         pair_counts = {}
         # disapointment counts per station
         #dis_counts = {}
-
+        
         for station1 in self.station_list:
             station1_name = station1.name.encode('ascii', 'ignore')
             self.station_name_dict[station1.id] = station1_name
 
             dep_counts[station1_name] = 0
             arr_counts[station1_name] = 0            
-            
+ 
             if station1_name not in self.arr_dis_station_counts: 
-                self.arr_dis_station_counts[station1_name] = 0
+                self.arr_dis_station_counts[station1.id] = 0
         
             if station1_name not in self.dep_dis_station_counts: 
-                self.dep_dis_station_counts[station1_name] = 0
+                self.dep_dis_station_counts[station1.id] = 0
 
-            self.dis_station_counts[station1_name] = self.arr_dis_station_counts[station1_name] + self.dep_dis_station_counts[station1_name]
+            self.dis_station_counts[station1.id] = self.arr_dis_station_counts[station1.id] + self.dep_dis_station_counts[station1.id]
             
             pair_counts[station1_name] = {}
             for station2 in self.station_list:
@@ -169,12 +169,12 @@ class SummaryStats:
             
         self.stats['num_departures_per_station'] = dep_counts
         self.stats['num_arrivals_per_station'] = arr_counts
-        self.stats['num_trips_per_pair_station'] = pair_counts
+        # self.stats['num_trips_per_pair_station'] = pair_counts
         self.stats['num_disappointments_per_station'] = self.dis_station_counts
         self.stats['num_dep_disappointments_per_station'] = self.dep_dis_station_counts 
         self.stats['num_arr_disappointments_per_station'] = self.arr_dis_station_counts
-        self.stats['most_disappointing_dep_station'] = max(self.dep_dis_station_counts, key = lambda x: self.dep_dis_station_counts[x])
-        self.stats['most_disappointing_arr_station'] = max(self.arr_dis_station_counts, key = lambda x: self.arr_dis_station_counts[x])
+        self.stats['most_disappointing_dep_station'] = self.station_name_dict[max(self.dep_dis_station_counts, key = lambda x: self.dep_dis_station_counts[x])]
+        self.stats['most_disappointing_arr_station'] = self.station_name_dict[max(self.arr_dis_station_counts, key = lambda x: self.arr_dis_station_counts[x])]
 
 
     def calculate_per_hour_stats(self):
@@ -272,8 +272,10 @@ def main():
                                           
 
     sstats = SummaryStats(start_date, end_date, {})
-    sstats.indent = True
-    print sstats.get_stats()
+    sstats.indent = False
+    result = sstats.get_stats()
+    print result
+    print len(result)
 
 if __name__ == '__main__':
     main()

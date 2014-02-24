@@ -11,6 +11,8 @@ var marker_colors;
 var marker_cap_gradient;
 
 var capacity_dict = {};
+var oDiv = document.createElement('div');
+var oControl;
 
 function initialize() {
 	connections = [];
@@ -64,6 +66,26 @@ function initialize() {
 		openWindow = infoWindow;
 		bindInfoWindow(marker, map, infoWindow);
 	}
+    // addControlPlz();
+   // Set CSS for the control border
+    var controlUI = document.createElement('div');
+    controlUI.style.backgroundColor = 'white';
+    controlUI.style.borderStyle = 'solid';
+    controlUI.style.borderWidth = '2px';
+    controlUI.style.cursor = 'pointer';
+    controlUI.style.textAlign = 'center';
+    controlUI.title = 'Click to set the map to Home';   
+    // Set CSS for the control interior
+    var controlText = document.createElement('div');
+    controlText.style.fontFamily = 'Arial,sans-serif';
+    controlText.style.fontSize = '12px';
+    controlText.style.paddingLeft = '4px';
+    controlText.style.paddingRight = '4px';
+    controlText.innerHTML = '<b>Say hi</b>';
+    controlUI.appendChild(controlText);
+    
+    addControlCustom(controlUI);
+
 }
 
 function set_coordinates(val) {
@@ -78,9 +100,9 @@ function bindInfoWindow(marker, map, infoWindow) {
 		var contentString = '<div class="infoWindow_wrapper">' + 
 			'<div class="infoWindow_id">' + marker.id + '</div>' +
 			'<div class="infoWindow_title">' + marker.title + '</div>' +
-			'<div class="infoWindow_capacity"><label>Capacity<input type="text" id="infoWindow_capacity_text" value="' + marker.alt_capacity + '" />' +  
+			'<div class="infoWindow_capacity"><label class="left inline infoWindow_capacity_label">Capacity</label><input type="text" id="infoWindow_capacity_text" value="' + marker.alt_capacity + '" />' +  
 			'<a class="button tiny" id="infoWindow_capacity_button" onclick="appendCapacityChange(' + marker.id +
-			'); return false;">Save</a></label></div>' +
+			'); return false;">Save</a></div>' +
 			'</div>';
 
 		//console.log("MARKER CAPACITY FOR STA #" + marker.id + " = " + marker.capacity);
@@ -193,6 +215,41 @@ function changeMarkerColor(marker_id, color) {
 		strokeColor: 'Navy',
 		strokeWeight: 1
 	});
+} 
+
+function addControlPlz() {
+    $.getScript("/static/js/test-control.js")
+        .done(function(script, textStatus) {
+            console.log("hello");
+            oControl = new HomeControl(oDiv);
+            oControl.index = 1;
+            map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(oDiv); 
+       })
+        .fail(function(jqxhr, settings, exception) {
+            console.log("error");
+            console.log(exception);
+            console.log(jqxhr);
+            console.log(settings);
+        });
 }
+
+function addControlCustom(cDiv) {
+    $.getScript("/static/js/add-control.js")
+        .done(function(script, textStatus) {
+            console.log("hello");
+            oControl = new CustomControl(cDiv);
+            google.maps.event.addDomListener(cDiv, 'click', function() {
+                console.log("Yay! A cool thing!")
+            });
+            pushToMap();
+        })
+        .fail(function(jqxhr, settings, exception) {
+            console.log("error");
+            console.log(exception);
+            console.log(jqxhr);
+            console.log(settings);
+        });
+}
+
 
 google.maps.event.addDomListener(window, 'load', initialize);

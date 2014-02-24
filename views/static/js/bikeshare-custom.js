@@ -49,6 +49,7 @@ function load_results() {
     $("#load_stats").html('Load Results');
     $("#load_stats").animate({width: '100px', right: '125px'}, function() {
         $("#stats_name").html(stats_name);
+        $("#stats_range").html(from + ' to ' + to);
         displaySummaryStats(JSON.parse(desired),from,to);
     })
         .attr('onclick', 'load_trans()');
@@ -420,6 +421,7 @@ function pollProgress(hasZero, currentUrl) {
             }
             , error: function() {
                 hasError = true;
+		console.log("found some error");
                 updateProgressBar(null, null, true);
             }
         });
