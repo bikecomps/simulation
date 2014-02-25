@@ -13,6 +13,8 @@ from datetime import datetime
 from dateutil import rrule
 
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
 
 import sys
 import random
@@ -123,7 +125,7 @@ class RangeEvaluator:
         return trips, total_trips
 
     
-    def calc_p_value_perm(self, metric):
+    def calc_p_value_perm(self, metric, shuffle_n=10**4-1):
         '''
         Returns the P-value using permutation tests.
         For a large number of times, it permutes the rows of the 
@@ -131,10 +133,10 @@ class RangeEvaluator:
         It returns the proportion of times the permuted data produced better 
         results than the observed.
         '''
-        shuffle_times = 10**4 - 1
+        shuffle_times = shuffle_n
         perm_results = []
         dist_observed = metric()
-
+        
         all_trips = (self.produced + self.real)[:]
         dist_observed = metric()
         
@@ -153,9 +155,37 @@ class RangeEvaluator:
             perm_results.append(dist_new)
             
         # number of results greater than observed
-        gtobserved = sum([1 for res in perm_results if res >= dist_observed])
+        gt_observed = sum([1 for res in perm_results if res >= dist_observed])
+        # plot the permutation distribution obtained 
+        self.plot_null_dist(perm_results, dist_observed)
+        
+        return float(gt_observed + 1) / (shuffle_times + 1)
 
-        return float(gtobserved + 1) / (shuffle_times + 1)
+    def plot_null_dist(self, perm_results, dist_observed):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
+        num_bins = 20
+
+        # the histogram of the data
+        n, bins, patches = ax.hist(perm_results, 
+                                   num_bins,
+                                   facecolor = "red",
+                                   alpha= 0.75)
+        ax.set_xlabel("Percentage Accuracies Based on Manhattan Distance")
+        ax.set_ylabel("Frequencies")
+        ax.set_xlim(0, 100)
+        ax.set_xticks(np.arange(0, 100, 5))
+
+        plt.axvline(dist_observed,                    
+                    color = "blue",
+                    linestyle = "dashed",
+                    linewidth = 2)        
+
+        plt.savefig("perm_dist_{0}-{1}.png".format(datetime.strftime(self.start_date, 
+                                                                     "%Y-%m-%d %H:%M"),
+                                                   datetime.strftime(self.end_date,
+                                                                     "%Y-%m-%d %H:%M")))
 
     def eval_man_dist(self):
         total_diff = 0
@@ -318,9 +348,9 @@ def main():
 
     print "accuracy based on manhattan distance: ", man, "%"
     print "accuracy based on euclidean distance: ", eucl, "%"
-    print "accuracy of arrivals by m-distance: ",man_arr, "%"
-    print "accuracy of departures by m-distance: ",man_dep, "%"
-    # print "p-value: ", re.calc_p_value_perm(re.eval_man_dist)
+    print "accuracy of arrivals by m-distance: ", man_arr, "%"
+    print "accuracy of departures by m-distance: ", man_dep, "%"
+    print "p-value: ", re.calc_p_value_perm(re.eval_man_dist)
 
 if __name__ == "__main__":
     main()
