@@ -55,6 +55,29 @@ function load_results() {
         .attr('onclick', 'load_trans()');
 }
 
+function load_comp_stats(comp) {
+var desired_stats;
+    if (comp) {desired_stats = "#comp_picker_2";}
+    else {desired_stats = "#comp_picker_1";}
+
+    var stats_name = $(desired_stats).val();
+    var desired_package = sessionStorage[stats_name];
+    var desired_unpacked = desired_package.split('!?!');
+    var desired = desired_unpacked[0];
+    var from = desired_unpacked[1];
+    var to = desired_unpacked[2];
+
+    if (comp) {
+       $("#comp_stats_name").html(stats_name);
+       $("#comp_stats_range").html(from + ' to ' + to); 
+    }
+    else {
+        $("#stats_name").html(stats_name);
+        $("#stats_range").html(from + ' to ' + to);
+    }
+    displaySummaryStats(JSON.parse(desired),from,to,comp);
+}
+
 function sliderSetup() {
 	$( "#slider-range" ).slider({
 		range: true,
@@ -249,7 +272,7 @@ function nonGroupBarPlot(htmlIdName, labels, counts) {
 }
 
 function plotKeysVals(htmlIdName, map) {
-	sortedMap = [];
+	var sortedMap = [];
 	for (var key in map) {
 		sortedMap.push([key, map[key]]);
 		console.log(sortedMap[key]);
@@ -266,7 +289,7 @@ function plotKeysVals(htmlIdName, map) {
 
 function displaySummaryStats(data, from, to, comp) {
 	var comps = '';
-	if (comp != undefined) {comps = 'comp_';}
+	if (comp == true) {comps = 'comp_';}
 	// set 'total_num_trips', 'total_num_disappointments',
 	// 'avg_trip_time', and 'std_trip_time' 
 	$("#" + comps + "total_num_trips").text(data["total_num_trips"]);
@@ -295,7 +318,7 @@ function displaySummaryStats(data, from, to, comp) {
 	$("#" + comps + "total_num_full_disappointments").text(data["total_num_full_disappointments"]);
 	$("#" + comps + "most_disappointing_dep_station").text(data["most_disappointing_dep_station"]);
 	$("#" + comps + "most_disappointing_arr_station").text(data["most_disappointing_arr_station"]);
-    console.log("got past the disappointments");
+        console.log("got past the disappointments");
 
 	// set 'min_duration_trip' 
 	var minTrip = data["min_duration_trip"];
@@ -326,13 +349,15 @@ function displaySummaryStats(data, from, to, comp) {
 		.text(formatDate(maxTrip["end_datetime"]));
 
 	// plot 'num_arrivals_per_station'
-	plotKeysVals("num_arrivals_per_station", 
+	plotKeysVals(comps + "num_arrivals_per_station", 
 				 data["num_arrivals_per_station"]);
 	
 	// plot 'num_departures_per_station'
-	plotKeysVals("num_departures_per_station",
+	plotKeysVals(comps + "num_departures_per_station",
 				 data["num_departures_per_station"]);
-	groupBarPlot("num_trips_per_hour",
+
+        // plot 'num_trips_per_hour'
+	groupBarPlot(comps + "num_trips_per_hour",
 				 data["num_trips_per_hour"]);
 }
 
@@ -349,6 +374,7 @@ var flexy_tables =
      #comp_max_duration_trip"
 
 function toggle_comps() {
+    $("#comp_picker_1, #comp_picker_2").prop('selectedIndex', '-1');
     if (in_comp_mode != true) {
         var slider = $('#stats_slider');
         var left_pos = parseInt(slider.css('left'),10);
@@ -450,6 +476,7 @@ function processStatsForm() {
 	    url: "/unified",
 	    data: datatosend,
 	    beforeSend: function() {
+                if (in_comp_mode) {toggle_comps();}
 	        $("#stats_slider").animate({left: 20});
 
 	        console.log("=== DATA ===");
@@ -492,9 +519,15 @@ function processStatsForm() {
                 $(flexy_tables).removeClass('large-6');
                 displaySummaryStats(jsond, from, to);
                 map.panBy(-320,0);
-                console.log(data_for_maps);	
-		$.getScript("static/js/visualize-helper.js", function(){changeMapVis();});
-            },
+		        
+                $.getScript("static/js/visualize-helper.js")
+                .done(function(){changeMapVis("by_popularity");})
+                .fail(function(jqxhr, settings, exception) {
+                    console.log(jqxhr);
+                    console.log(settings);
+                    console.log(exception);
+                });
+        },
 
         error: function() {
             console.log("damn it.");
