@@ -156,6 +156,7 @@ class RangeEvaluator:
             
         # number of results greater than observed
         gt_observed = sum([1 for res in perm_results if res >= dist_observed])
+
         # plot the permutation distribution obtained 
         self.plot_null_dist(perm_results, dist_observed)
         
@@ -350,7 +351,8 @@ def main():
     print "accuracy based on euclidean distance: ", eucl, "%"
     print "accuracy of arrivals by m-distance: ", man_arr, "%"
     print "accuracy of departures by m-distance: ", man_dep, "%"
-    print "p-value: ", re.calc_p_value_perm(re.eval_man_dist)
+    print "p-value based on manhattan distance: ", re.calc_p_value_perm(re.eval_man_dist)
+    print "p-value based on euclidean distance: ", re.calc_p_value_perm(re.eval_eucl_dist)
 
 if __name__ == "__main__":
     main()
