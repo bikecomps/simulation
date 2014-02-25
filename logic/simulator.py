@@ -40,7 +40,7 @@ class Simulator:
         progress_buffer["done_steps"] = 0
         progress_buffer["current_time"] = start_time
 
-        nfile = open("progress_buffer.dat", "w")
+        nfile = open("progress_buffer.dat", "wb")
         pickle.dump(progress_buffer, nfile)       
         nfile.close()
 
