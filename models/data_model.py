@@ -512,9 +512,11 @@ def main():
 
     dd_day_index = Index('dest_distr_day_index', DestDistr.is_week_day)
     dd_hour_index = Index('dest_distr_hour_index', DestDistr.hour)
+    dd_station_index = Index('dest_distr_start_station_index', DestDistr.start_station_id)
 
     #dd_day_index.create(engine)
     #dd_hour_index.create(engine)
+    dd_station_index.create(engine)
 
     # For increasing speed of training
     trip_date_index = Index('trip_date_index', Trip.start_date)
