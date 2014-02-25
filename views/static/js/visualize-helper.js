@@ -1,11 +1,9 @@
 function changeMapVis(view_mode, secondary_mode) {
 
     console.log("in change map vis");
-    console.log(view_mode);
-
-    console.log(secondary_mode);
-
     console.log(data_for_maps);
+    console.log(view_mode);
+    console.log(secondary_mode);
 
     if (typeof data_for_maps == 'undefined') {
         return;
@@ -13,7 +11,6 @@ function changeMapVis(view_mode, secondary_mode) {
 
     view_mode = typeof view_mode !== 'undefined' ? view_mode : "default";
     console.log(data_for_maps);
-
 
     var num_stations = Object.keys(data_for_maps["num_departures_per_station"]).length;
     var mean;
@@ -33,9 +30,11 @@ function changeMapVis(view_mode, secondary_mode) {
         case "end_caps":
             break;
     }
+
     console.log("mean and s_dev");
     console.log(mean);
     console.log(s_dev);
+
 	for (station_id in station_markers) {
 		if (station_id in data_for_maps["simulated_station_caps"]) {
 			
@@ -60,7 +59,8 @@ function changeMapVis(view_mode, secondary_mode) {
                     break;
                 case "by_disappointments":
                     s_color = colorByDisappointment(station_markers[station_id], mean, s_dev);
-                case "end_caps":
+                    break;
+                case "end_caps": {
         			if (s_percentage <= .2) {
         				s_color = marker_cap_gradient[0];
         			} else if (s_percentage <= .4) {
@@ -73,7 +73,9 @@ function changeMapVis(view_mode, secondary_mode) {
     			    	s_color = marker_cap_gradient[4];
     			    }
                     break;
-    		}	
+                }
+    		}
+
     		station_markers[station_id].setIcon({
     		path: google.maps.SymbolPath.CIRCLE,
     			fillColor: s_color,
@@ -117,18 +119,23 @@ function colorByPopularity(marker, pop_type, mean, s_dev) {
 
 function colorByDisappointment(marker, mean, s_dev) {
 
-    t_score = (marker.trip_total - mean['total']) / s_dev['total'];
-    a_score = (marker.arrival - mean['arr']) / s_dev['arr'];
-    d_score = (marker.departure - mean['dep']) / s_dev['dep'];
-   
-    if (a_score > 1.0) {
-        return display_modes['by_disappointments']['full']; 
+    t_score = (marker.disappointment - mean['total']) / s_dev['total'];
+    a_score = (marker.arr_disappointment - mean['arr']) / s_dev['arr'];
+    d_score = (marker.dep_disappointment - mean['dep']) / s_dev['dep'];
+//    console.log("marker,score:");
+//    console.log(marker);
+//    console.log(t_score + " " + a_score + " " + d_score); 
+    if (a_score < 1.0 && d_score < 1.0 && t_score > 1.0) {
+        window.alert(marker.id + " " + t_score + " " + a_score + " " + d_score);
     }
-    else if (d_score > 1.0) {
+    if (a_score > 1.0 && a_score > d_score) {
+       return display_modes['by_disappointments']['full']; 
+    }
+    else if (d_score > 1.0 && d_score > a_score) {
         return display_modes['by_disappointments']['empty'];
     }
     else if (t_score > 1.0) {
-        return 'red';
+         return 'red';
     }
     else {
         return display_modes['by_disappointments']['average'];
