@@ -119,7 +119,7 @@
 	<div class="row" id="stats_name_div"><div class="large-12 columns">
 	    <h3 id="stats_name">Run a simulation first!</h3>
             <div id="stats_range">You're not even supposed to see this.</div>
-            <select id="comp_picker_1"></select>
+            <select id="comp_picker_1" onchange="load_comp_stats(false)"></select>
 	</div></div>
         <div class="row">
           <div class="large-12 columns" id="overall_trip_stats">
@@ -159,19 +159,19 @@
                 <td id="total_num_disappointments"></td>
               </tr>
               <tr>
-                <td>Total Empty Station Station Disappointments</td>
+                <td>Total Departure Disappointments</td>
                 <td id="total_num_empty_disappointments"></td>
               </tr>
               <tr>
-                <td>Total Full Station Disappointments</td>
+                <td>Total Arrival Disappointments</td>
                 <td id="total_num_full_disappointments"></td>
               </tr>
               <tr>
-                <td>Station Most Likely to Disappoint (when departing)</td>
+                <td>Station Most Likely to Disappoint: Departures</td>
                 <td id="most_disappointing_dep_station"></td>
               </tr>
                <tr>
-                <td>Station Most Likely to Disappoint (when arriving)</td>
+                <td>Station Most Likely to Disappoint: Arrivals</td>
                 <td id="most_disappointing_arr_station"></td>
               </tr>
            </table>
@@ -256,9 +256,9 @@
       <!-- Stats panel for side-by-side comparisons -->
       <div id="comp_stats_panel">
 	<div class="row" id="comp_stats_name_div"><div class="large-12 columns">
-	    <h3 id="comp_stats_name">Run a simulation first!</h3>
-            <div id="comp_stats_range">You're not even supposed to see this.</div>
-            <select id="comp_picker_2"></select>
+	    <h3 id="comp_stats_name">Select a trip for comparison!</h3>
+            <div id="comp_stats_range">To do so, use the drop-down selector below.</div>
+            <select id="comp_picker_2" onchange="load_comp_stats(true)"></select>
 	</div></div>
         <div class="row">
           <div class="large-12 columns" id="comp_overall_trip_stats">
@@ -298,19 +298,19 @@
                 <td id="comp_total_num_disappointments"></td>
               </tr>
               <tr>
-                <td>Total Empty Station Station Disappointments</td>
+                <td>Total Departure Disappointments</td>
                 <td id="comp_total_num_empty_disappointments"></td>
               </tr>
               <tr>
-                <td>Total Full Station Disappointments</td>
+                <td>Total Arrival Disappointments</td>
                 <td id="comp_total_num_full_disappointments"></td>
               </tr>
               <tr>
-                <td>Station Most Likely to Disappoint (when departing)</td>
+                <td>Station Most Likely to Disappoint: Departures</td>
                 <td id="comp_most_disappointing_dep_station"></td>
               </tr>
                <tr>
-                <td>Station Most Likely to Disappoint (when arriving)</td>
+                <td>Station Most Likely to Disappoint: Arrivals</td>
                 <td id="comp_most_disappointing_arr_station"></td>
               </tr>
            </table>
@@ -323,23 +323,23 @@
             <table>
               <tr>
                 <td>Start Station</td>
-                <td class="comp_start_station_name"></td>
+                <td class="start_station_name"></td>
               </tr>
               <tr>
                 <td>End Station</td>
-                <td class="comp_end_station_name"></td>              
+                <td class="end_station_name"></td>              
               </tr>
               <tr>
                 <td>Duration</td>
-                <td class="comp_duration"></td>
+                <td class="duration"></td>
               </tr>
               <tr>
                 <td>Trip Start Time</td>
-                <td class="comp_start_datetime"></td>
+                <td class="start_datetime"></td>
               </tr>
               <tr>
                 <td>Trip End Time</td>
-                <td class="comp_end_datetime"></td>
+                <td class="end_datetime"></td>
               </tr>
             </table>
           </div>
@@ -371,21 +371,21 @@
         </div>
 
         <div class="row">
-          <div id="num_departures_per_station">
+          <div id="comp_num_departures_per_station">
             <h5>Number of Departures per Station</h5>
             <div style = "max-width:878px;"></div>
           </div>
         </div>
 
         <div class="row">
-          <div id="num_arrivals_per_station">
+          <div id="comp_num_arrivals_per_station">
             <h5>Number of Arrivals per Station</h5>
             <div style = "max-width:878px;"></div>
           </div>
         </div>
 
         <div class="row">
-          <div class="large-12 columns" id="num_trips_per_hour">
+          <div class="large-12 columns" id="comp_num_trips_per_hour">
             <h5>Number of Trips per Hour</h5>
             <div></div>
           </div>
@@ -425,8 +425,9 @@
 
   function set_stats_panel_height() {
     var slider_height = $('#stats_slider').css('height');
-    var panel_height = parseInt(slider_height,10) - 40;
+    var panel_height = parseInt(slider_height,10) - 60;
     $("#stats_panel").css("height",panel_height);
+    $("#comp_stats_panel").css("height",panel_height);
   }
 
   var progressbar = $( "#progressbar" ),

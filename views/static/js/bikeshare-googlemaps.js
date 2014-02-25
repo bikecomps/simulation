@@ -10,9 +10,17 @@ var station_markers;
 var marker_colors;
 var marker_cap_gradient;
 
+var display_modes = {};
+
+var popularity_maps = {};
+
+var disappointment_maps = {};
+
 var capacity_dict = {};
-var oDiv = document.createElement('div');
-var oControl;
+
+var current_display_mode;
+
+var control_dict = {};
 
 function initialize() {
 	connections = [];
@@ -32,16 +40,24 @@ function initialize() {
 							  mapOptions);
 	
 	station_markers = {};
+
+    // currently used for clustering
 	marker_colors = ["blue", "orange", "green", "red", "purple", "yellow"];
-	// red, red-purple, purple, blue-purple, blue
-	//marker_cap_gradient = ["ED5A1D","C34E31","843D50","452B6E","1B2083"]
-	// light-green to dark-blue gradient?
+
+	// light-green to dark-blue gradient? for grouping after sim?
 	marker_cap_gradient = ["#16E31E","#14BA3B","#137C68","#115385","#1016B2"]
+    
+    current_display_mode = "default";
 
-
+    display_modes = {
+        'default': {"average":"CornFlowerBlue"},
+        'by_popularity': {"low":"red", "average":"yellow", "high":"green"},
+        'by_disappointments': {"average":"CornFlowerBlue","full":"yellow","empty":"black"},
+        'end_modes': marker_cap_gradient
+    };
+    
 	for (station=0; station < Object.keys(locations).length; station++) {
 		var stationLatLng = new google.maps.LatLng(locations[station][0], locations[station][1]);
-		// console.log("lat = " + locations[station][0] + "and lon = " + locations[station][1]);
 		var marker = new google.maps.Marker({
 			position: stationLatLng,
 			map: map,
@@ -56,7 +72,13 @@ function initialize() {
 			id: locations[station][2],
 			title: locations[station][3],
 			capacity: locations[station][4],
-			alt_capacity: locations[station][4] // holds user-altered capacities
+			alt_capacity: locations[station][4],
+			departure: -1,
+			arrival: -1,
+            trip_total: -1,
+			disappointment: -1,
+			dep_disappointment: -1,
+			arr_disappointment: -1
 		});
 		station_markers[locations[station][2]] = marker;
 		var infoWindow = new google.maps.InfoWindow({
@@ -66,31 +88,44 @@ function initialize() {
 		openWindow = infoWindow;
 		bindInfoWindow(marker, map, infoWindow);
 	}
-    // addControlPlz();
-   // Set CSS for the control border
-    var controlUI = document.createElement('div');
-    controlUI.style.backgroundColor = 'white';
-    controlUI.style.borderStyle = 'solid';
-    controlUI.style.borderWidth = '2px';
-    controlUI.style.cursor = 'pointer';
-    controlUI.style.textAlign = 'center';
-    controlUI.title = 'Click to set the map to Home';   
-    // Set CSS for the control interior
-    var controlText = document.createElement('div');
-    controlText.style.fontFamily = 'Arial,sans-serif';
-    controlText.style.fontSize = '12px';
-    controlText.style.paddingLeft = '4px';
-    controlText.style.paddingRight = '4px';
-    controlText.innerHTML = '<b>Say hi</b>';
-    controlUI.appendChild(controlText);
-    
-    addControlCustom(controlUI);
 
+
+    control_dict = {
+        "View by Overall Popularity":["by_popularity", "total"],
+        "View by Arrival Popularity":["by_popularity","arr"],
+        "View by Departure Popularity":["by_popularity","dep"],
+        "View by Disappointments":["by_disappointments", undefined],
+        "View by End Capacity":["end_caps", undefined],
+        "Default View":["default", undefined],
+    };
+
+
+    set_controls();   
 }
 
 function set_coordinates(val) {
 	j_val = val.replace(/&quot;/g,'"');
 	locations=jQuery.parseJSON(j_val);
+}
+
+function set_controls() {
+       
+    for (var c in control_dict) {
+ 
+        var controlWrap = document.createElement('div');
+        controlWrap.className = 'mapControl_wrapper';
+
+        var controlU = document.createElement('div');
+        controlU.className = 'mapControl_UI';
+        controlWrap.appendChild(controlU);
+
+        var controlT = document.createElement('div');
+        controlT.className = 'mapControl_text';
+        controlT.innerHTML = c;
+        controlU.appendChild(controlT);
+
+        addMapDisplayControl(controlWrap, controlU, google.maps.ControlPosition.TOP_RIGHT, c[0], c[1]);
+    }
 }
 
 function bindInfoWindow(marker, map, infoWindow) {
@@ -103,12 +138,25 @@ function bindInfoWindow(marker, map, infoWindow) {
 			'<div class="infoWindow_capacity"><label class="left inline infoWindow_capacity_label">Capacity</label><input type="text" id="infoWindow_capacity_text" value="' + marker.alt_capacity + '" />' +  
 			'<a class="button tiny" id="infoWindow_capacity_button" onclick="appendCapacityChange(' + marker.id +
 			'); return false;">Save</a></div>' +
+			'<div class="infoWindow_item"><label>Trips Completed</label>' +
+			'<div class="infoWindow_item_text">Dep <div class="infoWindow_trip_number">' + marker.departure + '</div> + ' +
+			'Arr <div class="infoWindow_trip_number">' + marker.arrival + '</div></div></div>' +
+			'<div class="infoWindow_item"><label>Disappointments</label>' +
+			'<div class="infoWindow_item_text">Dep <div class="infoWindow_disappointment_number">' + marker.dep_disappointment + '</div> + ' +
+			'Arr <div class="infoWindow_disappointment_number">' + marker.arr_disappointment + '</div> = Tot <div class="infoWindow_disappointment_number">' + marker.disappointment + '</div></div></div>' + 
 			'</div>';
 
-		//console.log("MARKER CAPACITY FOR STA #" + marker.id + " = " + marker.capacity);
 		infoWindow.setContent(contentString);
 		infoWindow.open(map, marker);
-		openWindow = infoWindow;	
+		openWindow = infoWindow;
+
+		if (marker.departure == -1) {
+			$("div.infoWindow_item").css("display", "none");
+		}
+
+		if (marker.disappointment == -1) {
+			$("div.infoWindow_item").css("display", "none");
+		}	
 	});
 }
 
@@ -145,23 +193,11 @@ function appendCapacityChange(id) {
 
 	capacity_dict[id] = newCapacity;
 
-	//capacity_dict.push({
-	//	key: id,
-	//	value: newCapacity
-	//});
-
 	console.log("CAPACITY DICTIONARY:");
 	console.log(capacity_dict);
 
-	//$.ajax({
-	//	type: "POST",
-	//	url: "/unified",
-	//	data: { capacity_dict: capacity_dictionary },
-	//	error: function() {
-	//		console.log("AJAX is not happy about your capacity_dictionary.");
-	//	}
-	//});
 }
+
 
 function clusterColors() {
 	var clusterMethod = $("#clustering_method").val();
@@ -217,39 +253,44 @@ function changeMarkerColor(marker_id, color) {
 	});
 } 
 
-function addControlPlz() {
-    $.getScript("/static/js/test-control.js")
-        .done(function(script, textStatus) {
-            console.log("hello");
-            oControl = new HomeControl(oDiv);
-            oControl.index = 1;
-            map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(oDiv); 
-       })
-        .fail(function(jqxhr, settings, exception) {
-            console.log("error");
-            console.log(exception);
-            console.log(jqxhr);
-            console.log(settings);
-        });
+function addControlCustom(cDivWrapper, cUI, cFunction, mapPosition) {
+        newControl = new CustomControl(cDivWrapper, cUI, cFunction);
+        newControl.index = 1;
+        map.controls[mapPosition].push(cDivWrapper);
+        console.log(cUI, cFunction);
 }
 
-function addControlCustom(cDiv) {
-    $.getScript("/static/js/add-control.js")
-        .done(function(script, textStatus) {
-            console.log("hello");
-            oControl = new CustomControl(cDiv);
-            google.maps.event.addDomListener(cDiv, 'click', function() {
-                console.log("Yay! A cool thing!")
-            });
-            pushToMap();
-        })
-        .fail(function(jqxhr, settings, exception) {
-            console.log("error");
-            console.log(exception);
-            console.log(jqxhr);
-            console.log(settings);
-        });
+function addMapDisplayControl(cDivWrapper, cUI, mapPosition, view_mode, secondary_mode) {
+        newControl = new MapControl(cDivWrapper, cUI, view_mode, secondary_mode);
+        newControl.index = 1;
+        map.controls[mapPosition].push(cDivWrapper);
 }
+
+function CustomControl(controlDiv, controlUI, controlFunction) {
+
+  google.maps.event.addDomListener(controlUI, 'click', function() {
+    controlFunction
+  });
+
+}
+
+function MapControl(controlDiv, controlUI, view_mode, secondary_mode) {
+ 
+    $.getScript("static/js/visualize-helper.js")
+    .done(function(){
+        google.maps.event.addDomListener(controlUI, 'click', function(e) {
+            console.log(e.target.innerHTML);
+            console.log(control_dict[e.target.innerHTML]);
+            console.log(control_dict[e.target.innerHTML][0]);
+            changeMapVis(control_dict[e.target.innerHTML][0], control_dict[e.target.innerHTML][1]);
+        });
+    })
+    .fail(function(kqxhr, settings, exception) {
+        console.log(exception);
+    });
+
+}
+
 
 
 google.maps.event.addDomListener(window, 'load', initialize);

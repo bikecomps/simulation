@@ -108,13 +108,20 @@ class SummaryStats:
         trips_and_times = [(trip.duration().total_seconds(), trip) for trip in self.trips]
         trip_times = [x[0] for x in trips_and_times]
 
-
+        self.stats['std_disappointments'] = {'total': numpy.std(self.stats['num_disappointments_per_station'].values()), 'dep': numpy.std(self.stats['num_dep_disappointments_per_station'].values()), 'arr': numpy.std(self.stats['num_arr_disappointments_per_station'].values())}
+        self.stats['avg_disappointments'] = {'total': numpy.average(self.stats['num_disappointments_per_station'].values()), 'dep': numpy.average(self.stats['num_dep_disappointments_per_station'].values()), 'arr': numpy.average(self.stats['num_arr_disappointments_per_station'].values())}
+       
+        
+        trips_per_station = dict([(a, self.stats["num_departures_per_station"][a] + self.stats["num_arrivals_per_station"][a]) for a in self.stats["num_arrivals_per_station"].keys()])
+        self.stats['std_trips'] = {'total': numpy.std(trips_per_station.values()), 'dep': numpy.std(self.stats['num_departures_per_station'].values()), 'arr': numpy.std(self.stats['num_arrivals_per_station'].values())}
+        self.stats['avg_trips'] = numpy.average(self.stats['num_departures_per_station'].values())
         self.stats['total_num_trips'] = len(self.trips)
         self.stats['total_num_disappointments'] = len(self.full_station_disappointments) + len(self.empty_station_disappointments)
         self.stats['total_num_full_disappointments'] = len(self.full_station_disappointments)
         self.stats['total_num_empty_disappointments'] = len(self.empty_station_disappointments)
         self.stats['avg_trip_time'] = numpy.average(trip_times)
-        self.stats['std_trip_time'] = numpy.std(trip_times)        
+        self.stats['std_trip_time'] = numpy.std(trip_times)
+        
         min_trip = 0 if len(trips_and_times) == 0 else min(trips_and_times)[1]
         max_trip = 0 if len(trips_and_times) == 0 else max(trips_and_times)[1]
         
@@ -139,7 +146,7 @@ class SummaryStats:
         pair_counts = {}
         # disapointment counts per station
         #dis_counts = {}
-        
+ 
         for station1 in self.station_list:
             station1_name = station1.name.encode('ascii', 'ignore')
             self.station_name_dict[station1.id] = station1_name
@@ -157,7 +164,7 @@ class SummaryStats:
             
             pair_counts[station1_name] = {}
             for station2 in self.station_list:
-                station2_name = station2.name.encode('ascii', 'ignore')
+                station2_name = station2.name.encode('ascii','ignore')
                 pair_counts[station1_name][station2_name] = 0            
 
         for trip in self.trips:
@@ -166,10 +173,10 @@ class SummaryStats:
             dep_counts[start_station_name] += 1
             arr_counts[end_station_name] += 1
             pair_counts[start_station_name][end_station_name] += 1
-            
+        self.stats['station_name_dict'] = self.station_name_dict
         self.stats['num_departures_per_station'] = dep_counts
         self.stats['num_arrivals_per_station'] = arr_counts
-        self.stats['num_trips_per_pair_station'] = pair_counts
+        # self.stats['num_trips_per_pair_station'] = pair_counts
         self.stats['num_disappointments_per_station'] = self.dis_station_counts
         self.stats['num_dep_disappointments_per_station'] = self.dep_dis_station_counts 
         self.stats['num_arr_disappointments_per_station'] = self.arr_dis_station_counts
@@ -272,8 +279,9 @@ def main():
                                           
 
     sstats = SummaryStats(start_date, end_date, {})
-    sstats.indent = True
-    # print sstats.get_stats()
+    sstats.indent = False
+    result = sstats.get_stats()
+    print len(result)
 
 if __name__ == '__main__':
     main()
