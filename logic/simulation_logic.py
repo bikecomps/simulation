@@ -72,7 +72,7 @@ class SimulationLogic:
 
     def initialize(self, start_time, end_time, 
                     rebalancing_time=datetime.timedelta(seconds=7200),
-                    bike_total=None, station_caps={}, drop_stations=[]):
+                    bike_total=None, station_caps={}, drop_stations=[]):#32006, 31062, 31063, 31064, 31065, 31066, 31269, 31270, 31513, 31271, 31272, 31633, 31514, 31067, 31068, 31069, 32001, 32002, 32003, 32004, 32005, 32000, 32007, 32008, 32009, 32010, 32011, 32012, 32013, 32014, 31119, 31634, 31120, 31635, 32015, 32016, 32020, 32021, 32023, 31118, 32018]):
         '''
         Sets states of stations at the start_time
         '''
@@ -82,7 +82,7 @@ class SimulationLogic:
         self.end_time = end_time
     
         self.total_rebalances = 0
-        # Keys: all currently empty/full station ids. Values: empty or full
+        # Keys: all station ids. Values: number of disappointments
         self.arr_dis_stations = {}
         self.dep_dis_stations = {}
 
@@ -124,7 +124,6 @@ class SimulationLogic:
         # stations for each stations.
         self.nearest_station_dists = {}
         station_ids = self.stations.keys()
-
         for s_id in station_ids:
             nearest_distances = self.session.query(StationDistance)\
                     .filter(StationDistance.station1_id == s_id)\
@@ -158,7 +157,6 @@ class SimulationLogic:
                                    .filter(~Station.id.in_(drop_stations))
         else:
             stations = self.session.query(Station)
-
         for s in stations:
             # Initialize capacity
             if s.id in station_caps:
@@ -188,7 +186,6 @@ class SimulationLogic:
             self.stations[s.id] = s
             self.station_counts[s.id] = count
             self.station_caps[s.id] = s_cap
-        
         # If we distribute too many bikes, reclaim them, otherwise redistribute more bikes
         bike_delta = bike_total - distributed_bikes
 

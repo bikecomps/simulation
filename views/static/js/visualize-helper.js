@@ -15,6 +15,9 @@ function changeMapVis(view_mode, secondary_mode) {
     var num_stations = Object.keys(data_for_maps["num_departures_per_station"]).length;
     var mean;
     var s_dev;
+    var greens = 0;
+    var black = 0;
+    var yellow = 0;
 
     switch(view_mode) {
         case "default":
@@ -36,6 +39,7 @@ function changeMapVis(view_mode, secondary_mode) {
     console.log(s_dev);
 
 	for (station_id in station_markers) {
+        var s_color;
 		if (station_id in data_for_maps["simulated_station_caps"]) {
 			
 			s_cap = data_for_maps["simulated_station_caps"][station_id];
@@ -47,8 +51,6 @@ function changeMapVis(view_mode, secondary_mode) {
             station_markers[station_id].disappointment = data_for_maps["num_disappointments_per_station"][station_id];
 			station_markers[station_id].dep_disappointment = data_for_maps["num_dep_disappointments_per_station"][station_id];
 			station_markers[station_id].arr_disappointment = data_for_maps["num_arr_disappointments_per_station"][station_id];
-
-            var s_color; 
 
             switch(view_mode) {
                 case "default":
@@ -75,18 +77,31 @@ function changeMapVis(view_mode, secondary_mode) {
                     break;
                 }
     		}
+        } else {
+            s_color = display_modes[view_mode]['no_info'];
+        }
 
-    		station_markers[station_id].setIcon({
-    		path: google.maps.SymbolPath.CIRCLE,
-    			fillColor: s_color,
-    			fillOpacity: 1.0,
-    			scale: 6,
-    			strokeColor: "Navy",
-    			strokeWeight: 1
-    		});
-            
-		}
+        if (s_color == "green") {
+            greens = greens + 1;
+        }
+        if (s_color == "yellow") {
+            yellow = yellow + 1;
+        } 
+        if (s_color == "black") {
+            black = black + 1;
+        }
+      	station_markers[station_id].setIcon({
+   		path: google.maps.SymbolPath.CIRCLE,
+   			fillColor: s_color,
+   			fillOpacity: 1.0,
+   			scale: 6,
+   			strokeColor: "Navy",
+   			strokeWeight: 1
+   		});            
 	}
+    console.log("greens:" + greens);
+    console.log("yellow:" + yellow);
+    console.log("black:" + black);
 }
 
 function colorByPopularity(marker, pop_type, mean, s_dev) {
