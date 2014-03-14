@@ -60,7 +60,7 @@ class SummaryStats:
         options = {'station_caps' : self.capacity_dict}
         session = Connector().getDBSession()
         self.session = session
-        self.station_list = self.session.query(Station)
+        #self.station_list = self.session.query(Station)
 
         # we only have 'real' trips up to the end of 2013
         # so we can't do comparisons/evaluations for 2014
@@ -77,7 +77,7 @@ class SummaryStats:
             self.stats['simulated_station_caps'] = re.sim_station_caps
             self.arr_dis_station_counts = re.arr_dis_station_counts
             self.dep_dis_station_counts = re.dep_dis_station_counts
- 
+            self.station_list = self.session.query(Station).filter(Station.id.in_(re.station_counts.keys()))
         else:
             logic = PoissonLogic(session)
             simulator = Simulator(logic)            
@@ -90,6 +90,7 @@ class SummaryStats:
             self.dep_dis_station_counts = results['dep_dis_stations']
             self.stats['final_station_counts'] = results['station_counts']
             self.stats['simulated_station_caps'] = results['sim_station_caps']
+            self.station_list = self.session.query(Station).filter(Station.id.in_(results['station_counts'].keys()))
 
     def get_dummy_simulation(self):
         station_ids = [0,1,2,3,4]
@@ -107,11 +108,9 @@ class SummaryStats:
     def calculate_overall_stats(self):
         trips_and_times = [(trip.duration().total_seconds(), trip) for trip in self.trips]
         trip_times = [x[0] for x in trips_and_times]
-
         self.stats['std_disappointments'] = {'total': numpy.std(self.stats['num_disappointments_per_station'].values()), 'dep': numpy.std(self.stats['num_dep_disappointments_per_station'].values()), 'arr': numpy.std(self.stats['num_arr_disappointments_per_station'].values())}
         self.stats['avg_disappointments'] = {'total': numpy.average(self.stats['num_disappointments_per_station'].values()), 'dep': numpy.average(self.stats['num_dep_disappointments_per_station'].values()), 'arr': numpy.average(self.stats['num_arr_disappointments_per_station'].values())}
-       
-        
+
         trips_per_station = dict([(a, self.stats["num_departures_per_station"][a] + self.stats["num_arrivals_per_station"][a]) for a in self.stats["num_arrivals_per_station"].keys()])
         self.stats['std_trips'] = {'total': numpy.std(trips_per_station.values()), 'dep': numpy.std(self.stats['num_departures_per_station'].values()), 'arr': numpy.std(self.stats['num_arrivals_per_station'].values())}
         self.stats['avg_trips'] = numpy.average(self.stats['num_departures_per_station'].values())
@@ -146,18 +145,19 @@ class SummaryStats:
         pair_counts = {}
         # disapointment counts per station
         #dis_counts = {}
- 
+        i = 0
         for station1 in self.station_list:
+            i+=1
             station1_name = station1.name.encode('ascii', 'ignore')
             self.station_name_dict[station1.id] = station1_name
 
             dep_counts[station1_name] = 0
             arr_counts[station1_name] = 0            
  
-            if station1_name not in self.arr_dis_station_counts: 
+            if station1.id not in self.arr_dis_station_counts: 
                 self.arr_dis_station_counts[station1.id] = 0
-        
-            if station1_name not in self.dep_dis_station_counts: 
+ 
+            if station1.id not in self.dep_dis_station_counts: 
                 self.dep_dis_station_counts[station1.id] = 0
 
             self.dis_station_counts[station1.id] = self.arr_dis_station_counts[station1.id] + self.dep_dis_station_counts[station1.id]
@@ -166,7 +166,7 @@ class SummaryStats:
             for station2 in self.station_list:
                 station2_name = station2.name.encode('ascii','ignore')
                 pair_counts[station1_name][station2_name] = 0            
-
+        print i, "in station_list"
         for trip in self.trips:
             start_station_name = self.station_name_dict[trip.start_station_id]
             end_station_name = self.station_name_dict[trip.end_station_id]

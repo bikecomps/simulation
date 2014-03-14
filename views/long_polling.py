@@ -21,7 +21,7 @@ class PollingHandler(RequestHandler):
         self.set_header("Access-Control-Allow-Origin", "http://cmc307-04.mathcs.carleton.edu:3000")
 
     def get(self):
-        pb = pickle.load(open("progress_buffer.dat")) 
+        pb = pickle.load(open("progress_buffer.dat", "rb")) 
 
         info = {}               
         info["current_time"] = datetime.datetime.strftime(

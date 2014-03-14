@@ -156,12 +156,13 @@ class RangeEvaluator:
             
         # number of results greater than observed
         gt_observed = sum([1 for res in perm_results if res >= dist_observed])
+
         # plot the permutation distribution obtained 
-        self.plot_null_dist(perm_results, dist_observed)
+        self.plot_null_dist(metric, perm_results, dist_observed)
         
         return float(gt_observed + 1) / (shuffle_times + 1)
 
-    def plot_null_dist(self, perm_results, dist_observed):
+    def plot_null_dist(self, metric, perm_results, dist_observed):
         fig = plt.figure()
         ax = fig.add_subplot(111)
 
@@ -171,8 +172,12 @@ class RangeEvaluator:
         n, bins, patches = ax.hist(perm_results, 
                                    num_bins,
                                    facecolor = "red",
-                                   alpha= 0.75)
-        ax.set_xlabel("Percentage Accuracies Based on Manhattan Distance")
+                                   alpha = 0.75)
+        if metric == self.eval_man_dist:
+            ax.set_xlabel("Percentage Accuracies Based on Manhattan Distance")
+        else:
+            ax.set_xlabel("Percentage Accuracies Based on Euclidean Distance")
+            
         ax.set_ylabel("Frequencies")
         ax.set_xlim(0, 100)
         ax.set_xticks(np.arange(0, 100, 5))
@@ -182,11 +187,13 @@ class RangeEvaluator:
                     linestyle = "dashed",
                     linewidth = 2)        
 
-        plt.savefig("perm_dist_{0}-{1}.png".format(datetime.strftime(self.start_date, 
-                                                                     "%Y-%m-%d %H:%M"),
-                                                   datetime.strftime(self.end_date,
-                                                                     "%Y-%m-%d %H:%M")))
-
+        print "dist_observed=", dist_observed
+        plt.savefig("perm_dist_{0}-{1}-{2}.png".format(datetime.strftime(self.start_date, 
+                                                                         "%Y-%m-%d-%H:%M"),
+                                                       datetime.strftime(self.end_date,
+                                                                         "%Y-%m-%d-%H:%M"),
+                                                       "man" if metric == self.eval_man_dist else "eucl"))
+        
     def eval_man_dist(self):
         total_diff = 0
         total_real = 0
@@ -350,7 +357,13 @@ def main():
     print "accuracy based on euclidean distance: ", eucl, "%"
     print "accuracy of arrivals by m-distance: ", man_arr, "%"
     print "accuracy of departures by m-distance: ", man_dep, "%"
-    print "p-value: ", re.calc_p_value_perm(re.eval_man_dist)
+    
+    copy_produced = re.produced[:]
+    copy_real = re.real[:]
+    print "p-value based on manhattan distance: ", re.calc_p_value_perm(re.eval_man_dist)
+    re.produced = copy_produced
+    re.real = copy_real
+    print "p-value based on euclidean distance: ", re.calc_p_value_perm(re.eval_eucl_dist)
 
 if __name__ == "__main__":
     main()

@@ -533,5 +533,5 @@ function processStatsForm() {
             console.log("damn it.");
             updateProgressBar(null, null, true);
         }
-	});	
+	});
 }

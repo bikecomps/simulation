@@ -50,10 +50,10 @@ function initialize() {
     current_display_mode = "default";
 
     display_modes = {
-        'default': {"average":"CornFlowerBlue"},
-        'by_popularity': {"low":"red", "average":"yellow", "high":"green"},
-        'by_disappointments': {"average":"CornFlowerBlue","full":"yellow","empty":"black"},
-        'end_modes': marker_cap_gradient
+        'default': {"average":"CornFlowerBlue", "no_info": "CornFlowerBlue"},
+        'by_popularity': {"low":"red", "average":"CornFlowerBlue", "high":"green", "no_info":"gray"},
+        'by_disappointments': {"average":"CornFlowerBlue","full":"yellow","empty":"black","no_info":"gray"},
+        'end_caps': {'no_info':'gray'}
     };
     
 	for (station=0; station < Object.keys(locations).length; station++) {
@@ -111,7 +111,7 @@ function set_coordinates(val) {
 function set_controls() {
        
     for (var c in control_dict) {
- 
+         
         var controlWrap = document.createElement('div');
         controlWrap.className = 'mapControl_wrapper';
 
@@ -126,6 +126,7 @@ function set_controls() {
 
         addMapDisplayControl(controlWrap, controlU, google.maps.ControlPosition.TOP_RIGHT, c[0], c[1]);
     }
+    console.log($('.mapControl_wrapper'));
 }
 
 function bindInfoWindow(marker, map, infoWindow) {
