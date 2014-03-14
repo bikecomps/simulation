@@ -144,8 +144,8 @@ class AltPoissonLogic(SimulationLogic):
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
 
-            start_hour = start_time.hour if start_time.weekday() == dow else 0
-            end_hour = end_time.hour if end_time.weekday() == dow else 24
+            start_hour = start_time.hour if start_time.date == day else 0
+            end_hour = end_time.hour if end_time.date == day else 24
             if start_hour == end_hour:
                 break
 

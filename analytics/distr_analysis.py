@@ -4,13 +4,15 @@ from models import *
 from utils import Connector
 import random
 from collections import defaultdict
+import math
 
 import numpy as np
 import scipy.stats as stats
 from operator import itemgetter
-#import matplotlib
-#matplotlib.use('Agg')
-#import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
 
 allmeans = []
 allstds = []
@@ -71,15 +73,26 @@ def plot_dur_distributions(results, s_id, e_id):
     # Still a ton of outliers! Remove top 20 values?
     trip_lengths = sorted(trip_lengths)#[:-20]
 
-    print "Avg.",np.average(trip_lengths),"Variance",np.std(trip_lengths)**2
+    mean = np.average(trip_lengths)
+    std = np.std(trip_lengths)
+    print "Avg.",np.average(trip_lengths),"Variance",math.sqrt(np.std(trip_lengths))
     n, bins, patches = plt.hist(trip_lengths, num_bins, 
-                                facecolor='blue')#, log=True)
-    plt.xlabel('Trip Times: %s -> %s' % (s_id, e_id))
-    plt.ylabel('Counts')
-    plt.title('Trip time destinations')
-    filename = "analytics/distr_output/durations/trip_durs-{s_id}-{e_id}.png"\
-                .format(s_id=s_id, e_id=e_id)
-    plt.savefig(filename)
+                                facecolor='blue', normed=True, alpha=.7)#, log=True)
+    y = mlab.normpdf(bins, mean, std)
+    plt.plot(bins, y, 'r--', linewidth=3, label='Normal Distr.')
+    plt.xlabel('Average Trip Duration (s)')
+    plt.ylabel('Observed Occurrences (normalized)')
+    plt.title('Trips Between Station %s and %s' % (s_id, e_id))
+    plt.legend()
+    #filename = "analytics/distr_output/gamma_normal_distrs/trip_durs-{s_id}-{e_id}-{type}.png"
+    filename = "trip_durs-{s_id}-{e_id}-{type}.png"
+    plt.savefig(filename.format(s_id=s_id, e_id=e_id, type='normal'))
+
+    shape, loc, scale = stats.gamma.fit(trip_lengths, floc=0, fscale=1)
+    y = stats.gamma.pdf(bins, shape, scale=scale)
+    plt.plot(bins, y, 'g--', linewidth=3, label='Gamma Distr.')
+    plt.legend()
+    plt.savefig(filename.format(s_id=s_id, e_id=e_id, type='gamma'))
     plt.clf()
 
 def plot_poisson_hour(results, s_id, e_id):
@@ -152,8 +165,14 @@ def test_trip_time_distribution(session, test, limit=100,
                     s[len(p_vals)/2], s[3*len(p_vals)/4], s[-1]
 
 def main():
-    random.seed()
+    #random.seed()
     c = Connector()
+    #trips = sample_distrs(c, plot_dur_distributions, samples=100)
+    session = c.getDBSession()
+    trips = get_data_for_station_pair(session, 31227, 31239)
+    plot_dur_distributions(trips, 31227, 31239)
+
+    return
     #sample_distrs(c, plot_dur_distributions, sam_size=300, samples=30,
     #              date_one="2013-01-01")
     #test_trip_time_distribution(c.getDBSession(), normal_test, limit=100)

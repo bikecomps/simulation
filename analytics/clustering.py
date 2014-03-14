@@ -86,12 +86,22 @@ def gen_hour_obs(conn, start_d, end_d, week_day=True, remove_zeroes=False):
         num_days = num_weekend_days
 
 
-    # Identify the stations with zero counts
-
     # Want averages
     departures = [[x/num_days for x in station] for station in  departures]
     arrivals = [[x/num_days for x in station] for station in arrivals]
-    totals = [x + y for x,y in itertools.izip(departures, arrivals)]
+
+    #totals = [x + y for x,y in itertools.izip(departures, arrivals)]
+    #total  = [[x[i] + y[i]] for i in xrange(len(x))
+    #             for x,y in itertools.izip(departures, arrivals)]
+
+    totals = [[0] * 24 for x in xrange(len(departures))]
+    for i in xrange(len(departures)):
+        for j in xrange(24):
+            if i != j:
+                totals[i][j] = departures[i][j] + arrivals[i][j]
+            # Don't double up on self loops
+            else:
+                totals[i][j] = departures[i][j]
 
     return s_ids, departures, arrivals, totals
 
@@ -108,14 +118,7 @@ def generate_trip_count_obs(eng, start_d, end_d, remove_zeroes=False):
     rows = list(eng.execute(q))
 
     s_ids = get_stations(eng, start_d, end_d)
-
     s_id_map = {s_ids[i]:i for i in range(len(s_ids))}
-
-    ## Rather than query directly for stations, just get them from our original query
-    #unique_start_stations = {row[0] for row in rows}
-    #unique_end_stations = {row[1] for row in rows}
-    #s_ids = sorted(list(unique_start_stations.union(unique_end_stations)))
-    #s_id_map = {s_ids[i]:i for i in xrange(len(s_ids))}
 
     trip_counts = [[0]*len(s_ids) for x in xrange(len(s_ids))]
 
@@ -149,7 +152,9 @@ def op_cluster_obs(obs, max_k=30, npass=10):
     ''' 
     Info on pycluster available here:
          http://bonsai.hgc.jp/~mdehoon/software/cluster/cluster.pdf 
+    Will break if max_k < 2
     '''    
+    
     obs = np.vstack(obs)
     # Minus 2 for at least two clusters
     errors = [0] * (max_k - 1)
@@ -161,9 +166,14 @@ def op_cluster_obs(obs, max_k=30, npass=10):
         errors[i - 2] = error
         labels[i - 2] = label
         
-
     # Find "kink" in error -> length is 1 less than errors
+    # Error should decrease at each step
     error_deriv = [errors[i] - errors[i-1] for i in range(1, len(errors))]
+
+    # If increasing k adds more error, just choose the best one
+    if reduce(lambda x,y: x and y > 0, error_deriv, True):
+        print "Cutting off as they're all negative"
+        return labels[0]  
     
     # Want to maximize difference of the two slopes
     opt_diff = -1
@@ -176,7 +186,6 @@ def op_cluster_obs(obs, max_k=30, npass=10):
         if diff > opt_diff:
             opt_diff = diff
             opt_i = i 
-
     return labels[opt_i]
 
 def clusters_to_coords(session, id_key, clusters):
@@ -202,7 +211,7 @@ def get_centroids_from_clusters(s_ids, obs, opt_clusters):
     return centroids
 
 def normalize_centroids(centroids):
-    return {c_id:[x/sum(cen) for x in cen] 
+    return {c_id:[x/sum(cen) if sum(cen) != 0 else 0 for x in cen]
             for c_id, cen in centroids.iteritems()}
 
 def dump_centroids_to_csv(centroids):
@@ -253,29 +262,6 @@ def info_from_trip_clusters(raw_obs, obs, s_ids, opt_clusters, centroids):
         # Converts absolute sums to percentages of total
         sums_percentages = [x/float(sum(sums)) for x in sums]
         data[c_id]['obs_sums_percentages'] = sums_percentages
-        ''' Me being dumb 
-        # Sums pairwise of observations from this cluster (row) to others (columns)
-        sums = [0.]*len(centroids) 
-        # Corresponds to s_ids
-        for o in range(len(obs)):
-            # Row corresponds to station in our current cluster
-            if opt_clusters[o] == c_id: 
-                ob = obs[o]
-                print "Test", c_id, o, ob
-                for j in range(len(ob)):
-                    # Get the index from opt_clusters for this particular column
-                    sums[opt_clusters[j]] += ob[j]
-        data[c_id]['obs_sums'] = sums
-
-        # Converts absolute sums to percentages of total
-        sums_percentages = [x/float(sum(sums)) for x in sums]
-        data[c_id]['obs_sums_percentages'] = sums_percentages
-
-        # ASSUMES NORMALIZED CENTROIDS
-        # Difference between centroid pairwise counts and observed pairwise counts 
-        data[c_id]['percent_off'] = [x - y for x,y in zip(centroid_sums, sums_percentages)]
-        '''
-    
     return data
 
 def get_clusters_as_dict(start_dstr, end_dstr, k, choice_str, cluster_type):
@@ -315,7 +301,7 @@ def json_dump_handler(obj):
 
 
 def trip_count_cluster(start_d='2010-09-15 00:00', end_d='2013-12-31 00:00', normalize=True, cluster_empties=False, choice="totals",
-                       max_k=5):
+                       max_k=10):
     conn = Connector()
     engine = conn.getDBEngine()
 
@@ -342,13 +328,14 @@ def trip_count_cluster(start_d='2010-09-15 00:00', end_d='2013-12-31 00:00', nor
     centroids = normalize_centroids(centroids)
     info = info_from_trip_clusters(raw_obs, obs, s_ids, opt_clusters, centroids)
 
+
     clusters_dict = {}
     for c_id, data in info.iteritems():
         clusters_dict[c_id] = data["stations"]
     return clusters_dict
 
 def hour_count_cluster(start_d='2010-09-15 00:00', end_d='2013-12-31 00:00', normalize=True, cluster_empties=False,
-                       choice="departures", max_k=8):
+                       choice="totals", max_k=8):
     conn = Connector()
     engine = conn.getDBEngine()
     s_ids, departures, arrivals, totals = gen_hour_obs(engine, start_d, end_d, remove_zeroes=(not cluster_empties))
@@ -372,13 +359,7 @@ def hour_count_cluster(start_d='2010-09-15 00:00', end_d='2013-12-31 00:00', nor
     opt_clusters = op_cluster_obs(obs, max_k)
     centroids = get_centroids_from_clusters(s_ids, obs, opt_clusters)
     centroids = normalize_centroids(centroids)
-    #print dump_centroids_to_csv(centroids)
-    #print "\n\n\n"
     info = info_from_hour_clusters(raw_obs, obs, s_ids, opt_clusters, centroids)
-    #for c_id, data in info.iteritems():
-    #    print "-"*40,c_id,"-"*40
-    #    for label, d in data.iteritems():
-    #        print label+":",d
 
     clusters_dict = {}
     for c_id, data in info.iteritems():
@@ -387,8 +368,8 @@ def hour_count_cluster(start_d='2010-09-15 00:00', end_d='2013-12-31 00:00', nor
 
 
 def main():
-    print hour_count_cluster('2012-05-01 00:00', '2012-06-1 00:00') 
-    print trip_count_cluster('2012-05-01 00:00', '2012-06-1 00:00')
+    hour_count_cluster('2012-05-01 00:00', '2012-09-1 00:00') 
+    #trip_count_cluster('2012-05-01 00:00', '2012-06-1 00:00')
 
     # print hour_count_cluster('2014-02-23 01:21', '2014-02-24 01:21') 
     # print trip_count_cluster('2014-02-23 01:21', '2014-02-24 01:21')

@@ -21,6 +21,10 @@ class ExponentialLogic(SimulationLogic):
 
     def initialize(self, start_time, end_time, **kwargs):
         SimulationLogic.initialize(self, start_time, end_time, **kwargs)
+        #TODO: Don't just hard-code the last day of data
+        self.time_of_first_data = datetime.datetime(2010, 10, 01)
+        self.time_of_last_data = datetime.datetime(2013, 07, 01)
+
         print "\tLoading Exp Distributions"
         self.exp_distrs = self.load_exp_lambdas(start_time, end_time)
         print "\tLoading gamma distributions"
@@ -127,10 +131,8 @@ class ExponentialLogic(SimulationLogic):
         s_id->year->month->[weekend, weekday]->hours
         '''
         # kind of gross but makes for easy housekeeping
-        distr_dict = {s:[[None]*24, [None]*24] for s in self.stations.iterkeys()}
-        distr_dict = {s: {y:[[[None] * 24, [None] * 24] for m in range(12)] 
-                           for y in xrange(start_time.year, end_time.year + 1)} 
-                           for s in self.stations.iterkeys()}
+        distr_dict = defaultdict(lambda: defaultdict(lambda: 
+                        defaultdict(lambda: defaultdict(lambda: defaultdict(list)))))
 
         distrs = self.session.query(data_model.ExpLambda)\
                              .filter(ExpLambda.year >= start_time.year)\
@@ -162,32 +164,51 @@ class ExponentialLogic(SimulationLogic):
         distr_dict = defaultdict(lambda: defaultdict(lambda: 
                         defaultdict(lambda: defaultdict(lambda: defaultdict(list)))))
 
+        print "STARTING"
         # Inclusive
         #TODO figure out what to do if timespan > a week -> incline to say ignore it
         #TODO Bug: loading too much data at the moment, by a fair amount
         num_distrs = 0
         for day in rrule.rrule(rrule.DAILY, dtstart=start_time, until=end_time):
             dow = day.weekday()
-            
-            start_hour = start_time.hour if start_time.weekday() == dow else 0
-            end_hour = end_time.hour if end_time.weekday() == dow else 24
+            print "DAY?",day
+
+            start_hour = start_time.hour if start_time.date == day.date else 0
+            end_hour = end_time.hour if end_time.date == day.date else 24
+            if start_hour == end_hour:
+                print "BREAKING?"
+                break
+
+            if day > self.time_of_last_data:
+                # TODO: work on this
+                year = self.get_year_range_of_data(day.month)[-1]
+            else:
+                year = day.year
+            print "Year", year
 
             date_distrs = self.session.query(data_model.DestDistr) \
-               .filter(DestDistr.year == day.year)\
-               .filter(DestDistr.month == day.month)\
+               .filter(DestDistr.year == year)\
+               .filter(DestDistr.month == day.month-1)\
                .filter(DestDistr.is_week_day == (dow < 5)) \
                .filter(DestDistr.hour.between(start_hour, end_hour))\
                .yield_per(10000)
+            print "Start hour, end hour",start_hour,end_hour
+            print date_distrs
 
+            # TODO REMOVE count stuff
+            count = 0
+            s_count = 0
             for distr in date_distrs:
+                count += 1
                 # Faster to do this than be smart about the db query
                 if distr.start_station_id in self.stations \
                         and distr.end_station_id in self.stations:
-                    result = distr_dict[distr.start_station_id][distr.year][distr.month][distr.is_week_day][distr.hour]
+                    s_count += 1
+                    result = distr_dict[distr.start_station_id][distr.year][distr.month+1][distr.is_week_day][distr.hour]
 
                     # Unencountered  day, hour, start_station_id -> Create the list of lists containing distribution probability values and corresponding end station ids.
                     if len(result) == 0:
-                        distr_dict[distr.start_station_id][distr.year][distr.month][distr.is_week_day]\
+                        distr_dict[distr.start_station_id][distr.year][distr.month+1][distr.is_week_day]\
                                   [distr.hour] = [[distr.prob], [distr.end_station_id]]
                     else:
                         result[0].append(distr.prob)
@@ -208,6 +229,9 @@ class ExponentialLogic(SimulationLogic):
         print "Loaded %d distrs" % num_distrs
         return distr_dict
 
+
+
+
     def get_trip_duration(self, gamma):
         '''
         Samples from a gamma distribution and returns a timedelta representing
@@ -219,11 +243,6 @@ class ExponentialLogic(SimulationLogic):
     def resolve_departure(self, trip):
         '''Decrement station count, put in pending_arrivals queue. If station is empty, put it in the disappointments list.'''
         departure_station_ID = trip.start_station_id
-
-        # For some reason this is more apt to develop dissapointments -> ensure perfection
-        for s_id in self.stations.iterkeys():
-            if self.station_counts[s_id] <= 1:
-                self.full_stations_set.add(s_id)
 
         # No bike to depart on, log a dissapointment
         if self.station_counts[departure_station_ID] == 0:
